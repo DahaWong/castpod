@@ -1,5 +1,5 @@
 import configparser
-from utils.persistence import bot_persistence
+from utils.persistence import persistence
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -9,35 +9,23 @@ config.read('config.ini')
 bot_token_test = config['BOT']['TOKEN_TEST']
 bot_token = config['BOT']['TOKEN']
 proxy = config['BOT']['PROXY']
-
-
-# Oauth
-oauth_consumer_id = config['OAUTH']['CONSUMER_ID']
-oauth_consumer_secret = config['OAUTH']['CONSUMER_SECRET']
-
-# Encrypt
-encrypt_key = config['ENCRYPT']['KEY']
-
-#Database:
-mongo_user = config['MONGODB']['USER']
-mongo_pwd = config['MONGODB']['PWD']
-mongo_ip = config['MONGODB']['IP']
-mongodb_uri = f"mongodb://{mongo_user}:{mongo_pwd}@{mongo_ip}/instasaver"
+bot_api = config['BOT']['API']
 
 # Test(with proxy)
-# update_info = {
-#   'token': bot_token_test,
-#   'use_context': True,
-#   'request_kwargs': {
-#     'proxy_url':proxy
-#   },
-#   'persistence': bot_persistence
-# }
-
-
-# Build
 update_info = {
   'token': bot_token,
   'use_context': True,
-  'persistence': bot_persistence
+  'request_kwargs': {
+    'proxy_url':proxy
+  },
+  'persistence': persistence,
+  # 'base_url': bot_api
 }
+
+
+# Build
+# update_info = {
+#   'token': bot_token,
+#   'use_context': True,
+#   'persistence': persistence
+# }

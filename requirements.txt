@@ -1,5 +1,2 @@
 python-telegram-bot
-configparser
-oauth2
-cryptography
-pymongo
+

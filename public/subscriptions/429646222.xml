@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<opml version="1.0">
+  <head>
+    <title>Pocket Casts Feeds</title>
+  </head>
+  <body>
+    <outline text="feeds">
+      <outline type="rss" text="疯投圈" xmlUrl="https://crazy.capital/feed" />
+      <outline type="rss" text="一天世界" xmlUrl="https://yitianshijie.net/episodes/feed.xml" />
+      <outline type="rss" text="Overtime" xmlUrl="https://feeds.simplecast.com/ge7lYlnT" />
+      <outline type="rss" text="sayo cast" xmlUrl="https://sayo-melu.xyz/podcast.xml" />
+      <outline type="rss" text="拆盒子" xmlUrl="https://watchoutside.typlog.io/episodes/feed.xml" />
+      <outline type="rss" text="试刊号Numero Zero" xmlUrl="https://anchor.fm/s/143a4a94/podcast/rss" />
+      <outline type="rss" text="字谈字畅" xmlUrl="https://www.thetype.com/typechat/feed/" />
+      <outline type="rss" text="Casticle" xmlUrl="https://feeds.fireside.fm/casticle/rss" />
+      <outline type="rss" text="Whatever.FM 随便侬" xmlUrl="https://whatever.fm/rss.xml" />
+      <outline type="rss" text="Anyway.FM 设计杂谈" xmlUrl="https://Anyway.FM/rss.xml" />
+      <outline type="rss" text="独立日" xmlUrl="https://riyu.squarespace.com/independenceday?format=rss" />
+      <outline type="rss" text="内核恐慌" xmlUrl="https://pan.icu/feed" />
+      <outline type="rss" text="一时兴起Whim" xmlUrl="https://anchor.fm/s/9aa7298/podcast/rss" />
+      <outline type="rss" text="NHKラジオニュース" xmlUrl="http://www.nhk.or.jp/r-news/podcast/nhkradionews.xml" />
+      <outline type="rss" text="执异" xmlUrl="https://zhiyi.life/episodes/feed.xml" />
+      <outline type="rss" text="Hyperbola" xmlUrl="https://feeds.fireside.fm/hyperbola/rss" />
+      <outline type="rss" text="食见" xmlUrl="http://www.ximalaya.com/album/16126437.xml" />
+      <outline type="rss" text="梁文道·八分" xmlUrl="https://api.vistopia.com.cn/rss/program/11.xml" />
+      <outline type="rss" text="不在场" xmlUrl="http://buzaichang.xyz/episodes/feed.xml" />
+      <outline type="rss" text="得意忘形播客" xmlUrl="http://rss.lizhi.fm/rss/1959617.xml" />
+      <outline type="rss" text="人间指南" xmlUrl="https://renjianzhinan.xyz/podcast.xml" />
+      <outline type="rss" text="灭茶苦茶" xmlUrl="http://ipn.li/feed" />
+      <outline type="rss" text="剩余价值SurplusValue" xmlUrl="https://www.surplusvalue.club/rss" />
+      <outline type="rss" text="科技島讀" xmlUrl="http://feeds.soundcloud.com/users/soundcloud:users:322164009/sounds.rss" />
+      <outline type="rss" text="要不然FM" xmlUrl="http://rss.lizhi.fm/rss/127504986.xml" />
+      <outline type="rss" text="良人拾號Smart Food" xmlUrl="https://open.firstory.me/rss/user/cjzdv56fubswu07581j8tkert" />
+      <outline type="rss" text="Steve说" xmlUrl="https://feeds.fireside.fm/steve/rss" />
+      <outline type="rss" text="道听途说" xmlUrl="http://fakefestival.org/episodes/feed.xml" />
+      <outline type="rss" text="WūJīMāChā瞭望台" xmlUrl="https://wujimachavalley.typlog.io/episodes/feed.xml" />
+      <outline type="rss" text="大人课" xmlUrl="https://growup.rocks/feed/podcast" />
+      <outline type="rss" text="VoicerFM" xmlUrl="http://rss.lizhi.fm/rss/1569925.xml" />
+      <outline type="rss" text="生活在别处" xmlUrl="https://www.spreaker.com/show/2721510/episodes/feed" />
+      <outline type="rss" text="Man立" xmlUrl="https://feeds.fireside.fm/manli/rss" />
+      <outline type="rss" text="日语日语" xmlUrl="https://riyu.squarespace.com/hibi?format=rss" />
+      <outline type="rss" text="交差点" xmlUrl="https://jiaocha.io/feed.xml" />
+      <outline type="rss" text="怪物尚志 MonsLog" xmlUrl="https://feeds.fireside.fm/fashionmonster/rss" />
+      <outline type="rss" text="IT 公论" xmlUrl="https://www.itgonglun.com/episodes/feed.xml" />
+    </outline>
+  </body>
+</opml>

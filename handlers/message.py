@@ -1,11 +1,14 @@
 from telegram.ext import MessageHandler, Filters
 import callbacks.message as callback
 
-username_handler = MessageHandler(Filters.text, callback.request_password)
-password_handler = MessageHandler(Filters.text, callback.verify_login)
+subscription_handler = MessageHandler(
+    Filters.document.mime_type('text/xml') | Filters.document.mime_type('application/octet-stream'), 
+    callback.save_subscription
+)
 
-link_handler = MessageHandler(Filters.text, callback.save_link)
+feed_handler = MessageHandler(
+    Filters.entity("url") | Filters.entity("text_link"), 
+    callback.save_feed
+)
 
-
-
-
+handlers=[feed_handler, subscription_handler]

@@ -1,7 +1,9 @@
 from telegram.ext import CommandHandler
 import callbacks.command as callback
+import inspect
 
-start_handler = CommandHandler('start', callback.start)
-today_handler = CommandHandler('today', callback.today)
-quit_handler = CommandHandler('quit', callback.quit_)
-about_handler = CommandHandler('about', callback.about)
+handlers=[]
+for value in vars(callback).values():
+  if inspect.isfunction(value):
+      handler = value
+      handlers.append(CommandHandler(handler.__name__, handler))

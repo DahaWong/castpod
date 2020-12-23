@@ -1,12 +1,13 @@
-from handlers import command, conversation
-from handlers.message import link_handler
-from handlers.callbackquery import unlike_link_handler,like_link_handler,delete_link_handler
-from handlers.command import about_handler, today_handler
+from handlers.message import handlers as message
+# from handlers.callbackquery import handlers as callbackquery
+from handlers.command import handlers as command
 
-handlers = [conversation.login_handler, conversation.quit_handler, about_handler, today_handler]
-handlers.append(link_handler)
-handlers += [unlike_link_handler,like_link_handler,delete_link_handler]
+handlers = []
+handlers.extend(command)
+handlers.extend(message)
+
+# handlers = [].extend([message, callbackquery, command,  conversation])
 
 def register(dispatcher):
-  for handler in handlers:
-    dispatcher.add_handler(handler)
+    for handler in handlers:
+      dispatcher.add_handler(handler)
