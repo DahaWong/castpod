@@ -4,3 +4,4 @@ __pycache__/*
 config.ini
 persistence
 manifest.py 
+public/*

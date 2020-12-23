@@ -172,6 +172,9 @@ def save_feed(update, context):
 
     url = update['message']['text']
     new_podcast = user.add_feed(url)
-    if new_podcast.name in podcasts.keys():
-        
+
+    if new_podcast.name not in podcasts.keys():
+        podcasts.update({new_podcast.name:new_podcast})
+    new_podcast.subscribers.add(user)
+    
     persistence.flush()
