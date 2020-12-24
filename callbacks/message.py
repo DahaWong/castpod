@@ -158,8 +158,6 @@ def save_subscription(update, context):
 
     doc = update['message']['document']
     doc_name, doc_file = doc['file_name'], context.bot.getFile(doc['file_id'])
-    # print(doc_file)
-    # print(doc_file['file_path'])
     path = doc_file.download(f"public/subscriptions/{user_id}.xml")
     user.import_feeds(path)
     persistence.flush()
@@ -176,5 +174,37 @@ def save_feed(update, context):
     if new_podcast.name not in podcasts.keys():
         podcasts.update({new_podcast.name:new_podcast})
     new_podcast.subscribers.add(user)
-    
+
     persistence.flush()
+
+
+def handle_text(update, context):
+    text = update.message.text
+
+    user_id = update.message['from_user']['id']
+    user = context.bot_data['users'][user_id]
+
+    if text in user.subscription.keys():
+        feed_name = text
+        feed_info = {"from_user":user, "feed_name":name}
+        manage_feed(update, **feed_info)
+    else:
+        #del msg
+        #show alert
+
+
+def manage_feed(update, from_user, feed_name):
+    # 是否用 conversaion handler?
+    feed = from_user.subscription[feed_name]
+
+    keyboard = [[[InlineKeyboardButton("退 订", url = manifest.repo)],
+                [InlineKeyboardButton("喜 欢", url = manifest.author_url)]]， # toggle
+                [InlineKeyboardButton("关于此节目", url = manifest.author_url)]，
+                ] # 删除记得加「撤销」
+
+    update.message.reply_text(
+        text = "",
+        reply_markup = InlineKeyboardMarkup(keyboard)
+    )
+
+    

@@ -11,4 +11,9 @@ feed_handler = MessageHandler(
     callback.save_feed
 )
 
-handlers=[feed_handler, subscription_handler]
+text_handler = MessageHandler(
+    Filters.text, 
+    callback.handle_text
+)
+
+handlers=[feed_handler, subscription_handler, text_handler]

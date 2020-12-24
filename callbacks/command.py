@@ -31,16 +31,20 @@ def about(update, context):
 
 
 def search(update, context):
+    # 支持行内搜索、命令搜索
     message = update.message.reply_text(
         f'欢迎使用 {manifest.name}！\n您可以发送 OPML 文件以批量导入播客订阅。'
     )
     return USERNAME
 
+
 def manage(update, context):
+    # 回复一个列表，用 `` 包裹每一个条目，每一页呈现的个数有限制，用按键翻页。复制并发送播客名字，即可获得该节目的所有信息/操作选项
     message = update.message.reply_text(
         f'欢迎使用 {manifest.name}！\n您可以发送 OPML 文件以批量导入播客订阅。'
     )
     return USERNAME
+
 
 def settings(update, context):
     message = update.message.reply_text(
@@ -48,14 +52,31 @@ def settings(update, context):
     )
     return USERNAME
 
+
 def tips(update, context):
-    message = update.message.reply_text(
-        f'欢迎使用 {manifest.name}！\n您可以发送 OPML 文件以批量导入播客订阅。'
+    keyboard = [[InlineKeyboardButton("阅  读  完  毕", url = manifest.repo)]]
+    message = update.message.reply_markdown_v2(
+        """**本客户端使用说明**""",# import constants
+        reply_markup = InlineKeyboardMarkup(keyboard)
+    ) # 参考 instasaver 的 删除文章
+
+
+def export(update, context):
+    message = update.message
+    user_id = message['from_user']['id']
+    user = context.bot_data["users"][user_id]
+    update.message.reply_document(
+        document = user.subscription_path, 
+        filename = f"{user.name} 的 Podcasted 订阅.xml",
+        thumb = "" # pathLib.Path/file-like, jpeg, w,h<320px, thumbnail
     )
+
 
 def log_out(update, context):
     keyboard = [[InlineKeyboardButton("源    代    码", url = manifest.repo)],
                 [InlineKeyboardButton("工    作    室", url = manifest.author_url)]]
+
     update.message.reply_text(
-        "您确定要退出吗？这将清除所有后台存储的个人数据。"
+        "您确定要退出吗？\n\n这将清除所有后台存储的个人数据。",
+        reply_markup = InlineKeyboardMarkup(keyboard)
     )
