@@ -53,7 +53,7 @@ class Podcast(object):
         self.name = name
         self.feed = feed
         self.need_update = False
-        self.subscribers = set()
+        self.subscribers = {}
 
     def check_update(self):
         pass

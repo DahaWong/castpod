@@ -6,22 +6,32 @@ from models import User
 
 def start(update, context):
     message = update.message
-    message.reply_text(
-        f'欢迎使用 {manifest.name}！\n\n您可以发送 OPML 文件或 RSS 链接以导入播客订阅。'
-    )
     user_id = message['from_user']['id']
     first_name = message['from_user']['first_name']
     users = context.bot_data["users"]
 
     if user_id not in users.keys():
         user = User(first_name, user_id)
-        context.bot_data["users"].update({user_id: user})  
-         
+        context.bot_data["users"].update({user_id: user})
+        context.user_data.update({"user": user})
+
     user = users[user_id]
-    context.user_data.update({"user": user})
 
-    print(user.subscription)
+    if not context.args:
+        message.reply_text(
+            f'嗨，{first_name}。欢迎使用 {manifest.name}！\n\n您可以发送 OPML 文件或 RSS 链接以导入播客订阅。'
+        )
 
+    else: # deeplinking
+        podcast_id = context.args[0]
+
+        # 搜索 id，订阅当前用户，反馈结果:
+        podcasts = context.bot_data['podcasts']
+        # 这可否编写一个可调用的函数？is_podcast_cached : 
+        if podcast_id not in podcasts.keys():
+            pass # 添加新播客
+        podcast = podcasts[podcast_id]
+        podcast.subscribers.update({user_id: user}) # 订阅当前用户
 
 def about(update, context):
     keyboard = [[InlineKeyboardButton("源    代    码", url = manifest.repo)],

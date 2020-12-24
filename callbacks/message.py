@@ -191,20 +191,17 @@ def handle_text(update, context):
     else:
         #del msg
         #show alert
+        pass
 
 
 def manage_feed(update, from_user, feed_name):
     # 是否用 conversaion handler?
     feed = from_user.subscription[feed_name]
 
-    keyboard = [[[InlineKeyboardButton("退 订", url = manifest.repo)],
-                [InlineKeyboardButton("喜 欢", url = manifest.author_url)]]， # toggle
-                [InlineKeyboardButton("关于此节目", url = manifest.author_url)]，
-                ] # 删除记得加「撤销」
+    keyboard = [[[InlineKeyboardButton("退 订", url = manifest.repo)],[InlineKeyboardButton("喜 欢", url = manifest.author_url)]], # toggle
+                [InlineKeyboardButton("关于此节目", url = manifest.author_url)]] # 删除记得加「撤销」
 
     update.message.reply_text(
         text = "",
         reply_markup = InlineKeyboardMarkup(keyboard)
     )
-
-    
