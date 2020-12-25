@@ -3,6 +3,23 @@ from utils.persistence import persistence
 from manifest import manifest
 from models import User
 
+welcome_text = f"""欢迎使用 {manifest.name}。                                              
+
+您可以发送 OPML 文件或 RSS 链接以**导入播客订阅**。
+
+以下是全部的操作指令，在对话框输入 `/` 可以随时唤出:
+
+/search：搜索播客
+/manage：管理订阅
+/about：幕后信息
+/settings：偏好设置
+/help：使用说明
+/export：导出订阅
+/logout：退出登录
+
+本条消息已置顶，点击置顶消息即可查看。
+"""
+
 
 def start(update, context):
     message = update.message
@@ -17,12 +34,20 @@ def start(update, context):
 
     user = users[user_id]
 
-    if not context.args:
-        message.reply_text(
-            f'嗨，{first_name}。欢迎使用 {manifest.name}！\n\n您可以发送 OPML 文件或 RSS 链接以导入播客订阅。'
-        )
+    if (not context.args) or (context.args[0] == "login"):
+        keyboard = [[InlineKeyboardButton(
+            '开始搜索播客', 
+            switch_inline_query_current_chat = ""
+            )
+        ]]
 
-    else: # deeplinking
+        welcome_message = message.reply_text(
+            welcome_text,
+            reply_markup = InlineKeyboardMarkup(keyboard)
+        )
+        welcome_message.pin(disable_notification=True)
+
+    else: # deeplinking subscription
         podcast_id = context.args[0]
 
         # 搜索 id，订阅当前用户，反馈结果:
@@ -37,15 +62,16 @@ def about(update, context):
     keyboard = [[InlineKeyboardButton("源    代    码", url = manifest.repo)],
                 [InlineKeyboardButton("工    作    室", url = manifest.author_url)]]
     markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_markdown(f"*{manifest.name}*  `{manifest.version}`", reply_markup=markup)
+    update.message.reply_text(f"*{manifest.name}*  `{manifest.version}`\n@dahawong 出品", reply_markup=markup)
 
 
 def search(update, context):
-    # 支持行内搜索、命令搜索
+    keyboard = [[InlineKeyboardButton('🔍️', switch_inline_query_current_chat = '')]]
+
     message = update.message.reply_text(
-        f'欢迎使用 {manifest.name}！\n您可以发送 OPML 文件以批量导入播客订阅。'
+        f'点击下方按钮进入搜索模式',
+        reply_markup = InlineKeyboardMarkup(keyboard)
     )
-    return USERNAME
 
 
 def manage(update, context):
@@ -63,9 +89,9 @@ def settings(update, context):
     return USERNAME
 
 
-def tips(update, context):
+def help(update, context):
     keyboard = [[InlineKeyboardButton("阅  读  完  毕", url = manifest.repo)]]
-    message = update.message.reply_markdown_v2(
+    message = update.message.reply_text(
         """**本客户端使用说明**""",# import constants
         reply_markup = InlineKeyboardMarkup(keyboard)
     ) # 参考 instasaver 的 删除文章
@@ -82,11 +108,11 @@ def export(update, context):
     )
 
 
-def log_out(update, context):
-    keyboard = [[InlineKeyboardButton("源    代    码", url = manifest.repo)],
-                [InlineKeyboardButton("工    作    室", url = manifest.author_url)]]
+def logout(update, context):
+    keyboard = [[InlineKeyboardButton("返   回", callback_data = "delete_message"),
+                 InlineKeyboardButton("注   销", callback_data = "delete_account")]]
 
     update.message.reply_text(
-        "您确定要退出吗？\n\n这将清除所有后台存储的个人数据。",
+        "您确定要注销账号吗？\n这将清除所有存储在后台的个人数据。",
         reply_markup = InlineKeyboardMarkup(keyboard)
     )

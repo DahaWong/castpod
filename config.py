@@ -1,5 +1,6 @@
 import configparser
 from utils.persistence import persistence
+from telegram.ext import Defaults
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -10,6 +11,9 @@ bot_token_test = config['BOT']['TOKEN_TEST']
 bot_token = config['BOT']['TOKEN']
 proxy = config['BOT']['PROXY']
 bot_api = config['BOT']['API']
+defaults = Defaults(
+  parse_mode="MARKDOWN"
+)
 
 # Test(with proxy)
 update_info = {
@@ -19,6 +23,7 @@ update_info = {
     'proxy_url':proxy
   },
   'persistence': persistence,
+  'defaults': defaults
   # 'base_url': bot_api
 }
 

@@ -140,8 +140,7 @@
 #             chat_id=update.message.chat_id,
 #             message_id=update.message.message_id,
 #             text=f"[{title}]({link})",
-#             reply_markup=markup, 
-#             parse_mode='MARKDOWN'
+#             reply_markup=markup
 #           )
 
         
@@ -151,15 +150,31 @@
 
 
 from utils.persistence import persistence
+from utils.parser import parse_opml
+from models import Podcast
 
 def save_subscription(update, context):
     user_id = update['message']['from_user']['id']
     user = context.bot_data['users'][user_id]
+    cached_podcasts = context.bot_data['podcasts']
 
     doc = update['message']['document']
     doc_name, doc_file = doc['file_name'], context.bot.getFile(doc['file_id'])
     path = doc_file.download(f"public/subscriptions/{user_id}.xml")
-    user.import_feeds(path)
+
+    with open(path, 'r') as f:
+        feeds = parse_opml(f)
+
+    podcasts = []
+    for feed in feeds:
+        if feed['name'] not in cached_podcasts.items():
+            podcast = Podcast(**feed)
+            cached_podcasts.update({podcast.name: podcast})
+        else:
+            podcast = cached_podcasts[feed['name']]
+        podcasts.append(podcast)
+
+    user.import_feeds(podcasts)
     persistence.flush()
 
 
@@ -171,6 +186,7 @@ def save_feed(update, context):
     url = update['message']['text']
     new_podcast = user.add_feed(url)
 
+    # 检查播客是否存在、添加新播客的逻辑可以复用。应该重构出来。
     if new_podcast.name not in podcasts.keys():
         podcasts.update({new_podcast.name:new_podcast})
     new_podcast.subscribers.add(user)

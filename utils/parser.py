@@ -1,13 +1,24 @@
 import feedparser
 from bs4 import BeautifulSoup
+import pprint
 
 def parse_feed(url):
     result = feedparser.parse(url)
-    print('test')
+    feed = result.feed
+    latest_entry = result.entries[0]
+
+    website = feed.link
+    # print(website)
+    # pprint.pp(feed)
     title = result.feed.title
-    logo = result.feed.image['href']
-    latest_audio =  result.entries[0].enclosures[0]['href']
-    return (title, logo, latest_audio)
+    logo_url = feed.image.href
+    email = feed.author_detail.email
+    update_time =  latest_entry.published_parsed
+    latest_audio_url =  latest_entry.enclosures[0].href
+    return (link, title, logo_url)
+
+
+# parse_feed('https://renjianzhinan.xyz/podcast.xml')
 
 def parse_opml(f):
     feeds = []

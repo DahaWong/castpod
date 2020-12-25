@@ -7,7 +7,7 @@ subscription_handler = MessageHandler(
 )
 
 feed_handler = MessageHandler(
-    Filters.entity("url") | Filters.entity("text_link"), 
+    Filters.entity("url"), 
     callback.save_feed
 )
 

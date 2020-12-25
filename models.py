@@ -22,10 +22,8 @@ class User(object):
     def set_favorite(feed):
         pass
 
-    def import_feeds(self, path):
-        with open(path, 'r') as f:
-            feeds = parse_opml(f)
-            self.subscription  = {feed['name']: Feed(Podcast(**feed)) for feed in feeds}
+    def import_feeds(self, podcasts):
+        self.subscription = {podcast.name: Feed(podcast) for podcast in podcasts}
 
     def add_feed(self, url:str):
         name = parse_feed(url)[0]
@@ -54,6 +52,7 @@ class Podcast(object):
         self.feed = feed
         self.need_update = False
         self.subscribers = {}
+        parse_feed(feed)
 
     def check_update(self):
         pass
