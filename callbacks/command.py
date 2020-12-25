@@ -79,7 +79,9 @@ def manage(update, context):
     message = update.message.reply_text(
         f'欢迎使用 {manifest.name}！\n您可以发送 OPML 文件以批量导入播客订阅。'
     )
-    return USERNAME
+    context.bot.send_chat_action(update.message.chat_id,'record_audio')
+    update.message.reply_audio('https://renjianzhinan.xyz/ep/rjzn_ep009.mp3')
+
 
 
 def settings(update, context):
