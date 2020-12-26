@@ -17,7 +17,7 @@ def save_subscription(update, context):
     podcasts = []
     for feed in feeds:
         if feed['name'] not in cached_podcasts.items():
-            podcast = Podcast(**feed)
+            podcast = Podcast(feed['url'])
             cached_podcasts.update({podcast.name: podcast})
         else:
             podcast = cached_podcasts[feed['name']]

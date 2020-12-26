@@ -42,11 +42,11 @@ class Podcast(object):
         self.subscribers = {}
 
     def parse_feed(self, url):
-        result = feedparser.parse(feed_url)
+        result = feedparser.parse(url)
         feed = result.feed
         latest_episode = result.entries[0]
         self.name = feed.title
-        self.latest_episode = Episode(latest_episode, self)
+        self.latest_episode = Episode(self, latest_episode)
         self.host = feed.author
         self.email = feed.author_detail.email
         self.logo_url = feed.image.href
@@ -54,7 +54,7 @@ class Podcast(object):
     def update(self):
         last_published_time = self.latest_episode.published_time
         self.parse_feed(self.feed_url)
-        if self.latest_episode.published_time != last_published_time
+        if self.latest_episode.published_time != last_published_time:
             return self.latest_episode
         else: 
             return None
@@ -78,9 +78,10 @@ class Episode(object):
 
     def __init__(self, from_podcast, episode):
         self.from_podcast = from_podcast
-        self.audio_url = episode.links[0].href,
-        self.title = episode.title,
-        self.subtitle = episode.subtitle
-        self.published_time = episode.published_parsed,
-        self.file_size = episode.length,
-        self.duration = episode.itunes_duration, # string, mm:ss
+        print(self.from_podcast.name)
+        self.audio_url = episode.links[0].href
+        self.title = episode.title
+        # self.subtitle = episode.subtitle
+        self.published_time = episode.published_parsed
+        # self.file_size = episode.length
+        self.duration = episode.itunes_duration # string, mm:ss

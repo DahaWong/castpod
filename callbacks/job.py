@@ -4,6 +4,7 @@ def update_podcasts(context):
     podcasts = context.bot_data['podcasts']
     for podcast in podcasts.values():
         latest_episode = podcast.update()
+        print('test')
         if latest_episode:
             bot = context.bot
             audio_message = bot.send_audio(
@@ -14,6 +15,7 @@ def update_podcasts(context):
                 performer = podcast.host,
                 thumb = podcast.logo
             )
+            # 用 setter:
             latest_episode.vault_url = f"https://t.me/{podcast_vault}/{audio_message.message_id}"
 
 # 自定义的更新周期应划分为几个档：30min, 1h, 6h, 1day ...?
