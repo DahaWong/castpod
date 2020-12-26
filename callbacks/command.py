@@ -94,9 +94,13 @@ def settings(update, context):
 
 
 def help(update, context):
-    keyboard = [[InlineKeyboardButton("阅  读  完  毕", url = manifest.repo)]]
-    message = update.message.reply_text(
-        """**本客户端使用说明**""",# import constants
+    command_id = update.message.message_id
+    keyboard = [[
+        InlineKeyboardButton("阅  读  完  毕了", 
+        callback_data = f'delete_message_with_command_{command_id}')
+    ]]
+    update.message.reply_text(
+        """**Podcasted 使用说明**""",# import constants
         reply_markup = InlineKeyboardMarkup(keyboard)
     ) # 参考 instasaver 的 删除文章
 

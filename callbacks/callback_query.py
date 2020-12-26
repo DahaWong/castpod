@@ -4,12 +4,19 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 def delete_message(update, context):
     update.callback_query.delete_message()
 
+def delete_message_with_command(update, context):
+    print('test')
+    query = update.callback_query
+    print(query)
+    command_id = ""
+    query.delete_message()
+    context.bot.delete_message(update.callback_query.chat_id, command_id)
+
 def pin_message(update, context):
     update.callback_query.pin_message(disable_notification=True)
 
 def unpin_message(update, context):
     update.callback_query.unpin_message()
-
 
 # Episode
 def toggle_like_episode(update, context, to:str):
