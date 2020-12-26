@@ -2,24 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from utils.persistence import persistence
 from manifest import manifest
 from models import User
-
-welcome_text = f"""欢迎使用 {manifest.name}。                                              
-
-您可以发送 OPML 文件或 RSS 链接以**导入播客订阅**。
-
-以下是全部的操作指令，在对话框输入 `/` 可以随时唤出:
-
-/search：搜索播客
-/manage：管理订阅
-/about：幕后信息
-/settings：偏好设置
-/help：使用说明
-/export：导出订阅
-/logout：退出登录
-
-本条消息已置顶，点击置顶消息即可查看。
-"""
-
+from config import podcast_vault
 
 def start(update, context):
     message = update.message
@@ -76,15 +59,34 @@ def search(update, context):
 
 def manage(update, context):
     # 回复一个列表，用 `` 包裹每一个条目，每一页呈现的个数有限制，用按键翻页。复制并发送播客名字，即可获得该节目的所有信息/操作选项
-    message = update.message.reply_text(
-        f'欢迎使用 {manifest.name}！\n您可以发送 OPML 文件以批量导入播客订阅。'
+    bot = context.bot
+    bot.send_chat_action(update.message.chat_id, 'record_audio')
+    audio_message = bot.send_audio(
+        chat_id = podcast_vault,
+        audio = 'https://renjianzhinan.xyz/ep/rjzn_ep011.mp3',
+        caption = "#人间指南\n\n #杂烩 #科普",
+        performer = "hb",
+        title = "人间指南 #009",
+        # thumb = None
     )
-    context.bot.send_chat_action(update.message.chat_id,'record_audio')
-    update.message.reply_audio('https://renjianzhinan.xyz/ep/rjzn_ep009.mp3')
 
+    # 所有喜欢的节目可以在某个入口调出，也就是说要把用户喜欢的节目记录下来
+    keyboard = [[InlineKeyboardButton('删  除', callback_data="delete_message"), 
+                 InlineKeyboardButton('喜  欢', callback_data="like_episode")
+    ]] 
+
+    # copy 还是 forward？想清楚：
+    bot.copy_message(
+        chat_id = update.message.chat_id,
+        from_chat_id = podcast_vault,
+        message_id = audio_message.message_id,
+        reply_markup = InlineKeyboardMarkup(keyboard)
+    )
 
 
 def settings(update, context):
+    # 1. 更新频率
+    # 2. 是否喜欢节目的同时置顶节目
     message = update.message.reply_text(
         f'欢迎使用 {manifest.name}！\n您可以发送 OPML 文件以批量导入播客订阅。'
     )
@@ -118,3 +120,20 @@ def logout(update, context):
         "您确定要注销账号吗？\n这将清除所有存储在后台的个人数据。",
         reply_markup = InlineKeyboardMarkup(keyboard)
     )
+
+welcome_text = f"""欢迎使用 {manifest.name}。                                              
+
+您可以发送 OPML 文件或 RSS 链接以**导入播客订阅**。
+
+以下是全部的操作指令，在对话框输入 `/` 可以随时唤出:
+
+/search：搜索播客
+/manage：管理订阅
+/about：幕后信息
+/settings：偏好设置
+/help：使用说明
+/export：导出订阅
+/logout：退出登录
+
+本条消息已置顶，点击置顶消息即可查看。
+"""
