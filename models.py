@@ -11,17 +11,6 @@ class User(object):
         self.subscription = {}
         self.subscription_path = "public/subscriptions/{self.user_id}.xml"
 
-    @property
-    def subscription(self):
-        return self._subscription
-    
-    @subscription.setter
-    def subscription(self, subscription):
-        self._subscription = subscription
-
-    def set_favorite(feed):
-        pass
-
     def import_feeds(self, podcasts):
         self.subscription = {podcast.name: Feed(podcast) for podcast in podcasts}
 
@@ -53,11 +42,17 @@ class Podcast(object):
         self.need_update = False
         self.subscribers = {}
         parse_feed(feed)
+        # self.latest_episode = Episode('','','','')
+        # self.host = ""
+        # self.logo = ""
 
-    def check_update(self):
-        pass
+    def update(self):
+        if self.latest_episode.published_time
+            return True
+        else: 
+            return False
 
-    # should async:
+    # should async:?
     def download_update(self):
         pass
 
@@ -73,10 +68,15 @@ class Feed(object):
         self.audio_path = f'public/audio/{podcast.name}/'
 
 
-# class Episode(object):
-#     """
-#     docstring
-#     """
-#     from_podcast:Podcast
-#     name:str
-#     message_url:str
+class Episode(object):
+    """
+    Episode of a specific podcast.
+    """
+
+    def __init__(self, url, title, discription):
+        self.url = url
+        self.title = title
+        self.discription = discription
+        self.published_time = published_time
+        self.vault_url = ""
+

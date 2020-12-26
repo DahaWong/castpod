@@ -1,16 +1,16 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+import re
 
 # Message
 def delete_message(update, context):
     update.callback_query.delete_message()
 
-def delete_message_with_command(update, context):
-    print('test')
+def delete_command_context(update, context):
+    pattern = r'(delete_command_context_)([0-9]+)'
     query = update.callback_query
-    print(query)
-    command_id = ""
+    command_message_id = re.match(pattern, query.data)[2]
     query.delete_message()
-    context.bot.delete_message(update.callback_query.chat_id, command_id)
+    context.bot.delete_message(query.message.chat_id, command_message_id)
 
 def pin_message(update, context):
     update.callback_query.pin_message(disable_notification=True)

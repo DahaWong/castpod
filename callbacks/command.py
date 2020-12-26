@@ -2,7 +2,6 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from utils.persistence import persistence
 from manifest import manifest
 from models import User
-from config import podcast_vault
 
 def start(update, context):
     message = update.message
@@ -61,21 +60,13 @@ def manage(update, context):
     # 回复一个列表，用 `` 包裹每一个条目，每一页呈现的个数有限制，用按键翻页。复制并发送播客名字，即可获得该节目的所有信息/操作选项
     bot = context.bot
     bot.send_chat_action(update.message.chat_id, 'record_audio')
-    audio_message = bot.send_audio(
-        chat_id = podcast_vault,
-        audio = 'https://renjianzhinan.xyz/ep/rjzn_ep011.mp3',
-        caption = "#人间指南\n\n #杂烩 #科普",
-        performer = "hb",
-        title = "人间指南 #009",
-        # thumb = None
-    )
 
     # 所有喜欢的节目可以在某个入口调出，也就是说要把用户喜欢的节目记录下来
     keyboard = [[InlineKeyboardButton('删  除', callback_data="delete_message"), 
                  InlineKeyboardButton('喜  欢', callback_data="like_episode")
     ]] 
 
-    # copy 还是 forward？想清楚：
+    # copy 还是 forward？：
     bot.copy_message(
         chat_id = update.message.chat_id,
         from_chat_id = podcast_vault,
@@ -94,15 +85,17 @@ def settings(update, context):
 
 
 def help(update, context):
-    command_id = update.message.message_id
+    command_message_id = update.message.message_id
+
     keyboard = [[
-        InlineKeyboardButton("阅  读  完  毕了", 
-        callback_data = f'delete_message_with_command_{command_id}')
+        InlineKeyboardButton("阅  读  完  毕", 
+        callback_data = f'delete_command_context_{command_message_id}')
     ]]
+
     update.message.reply_text(
         """**Podcasted 使用说明**""",# import constants
         reply_markup = InlineKeyboardMarkup(keyboard)
-    ) # 参考 instasaver 的 删除文章
+    )
 
 
 def export(update, context):
