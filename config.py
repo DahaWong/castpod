@@ -16,6 +16,9 @@ defaults = Defaults(
   parse_mode="MARKDOWN"
 )
 
+# Dev
+dev_user_id = config['DEV']['USER_ID']
+
 # Test(with proxy)
 update_info = {
   'token': bot_token,

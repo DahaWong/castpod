@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from utils.persistence import persistence
 from manifest import manifest
 from models import User
@@ -17,6 +17,18 @@ def start(update, context):
     user = users[user_id]
 
     if (not context.args) or (context.args[0] == "login"):
+        welcome_text = (
+            f'欢迎使用 {manifest.name}。                                              '
+            f'\n\n您可以发送 OPML 文件或 RSS 链接以*导入播客订阅*。\n'
+            f'\n\n以下是全部的操作指令，在对话框输入 `/` 即可随时唤出'
+            f'\n\n/search：搜索播客'
+            f'\n/manage：管理订阅'
+            f'\n/about：幕后信息'
+            f'\n/help：使用说明'
+            f'\n\n/export：导出订阅'
+            f'\n/logout：退出登录'
+        )
+
         keyboard = [[InlineKeyboardButton(
             '开始搜索播客', 
             switch_inline_query_current_chat = ""
@@ -27,6 +39,7 @@ def start(update, context):
             welcome_text,
             reply_markup = InlineKeyboardMarkup(keyboard)
         )
+        
         welcome_message.pin(disable_notification=True)
 
     else: # deeplinking subscription
@@ -39,6 +52,7 @@ def start(update, context):
             pass # 添加新播客
         podcast = podcasts[podcast_id]
         podcast.subscribers.update({user_id: user}) # 订阅当前用户
+
 
 def about(update, context):
     keyboard = [[InlineKeyboardButton("源    代    码", url = manifest.repo)],
@@ -58,22 +72,14 @@ def search(update, context):
 
 def manage(update, context):
     # 回复一个列表，用 `` 包裹每一个条目，每一页呈现的个数有限制，用按键翻页。复制并发送播客名字，即可获得该节目的所有信息/操作选项
-    bot = context.bot
-    bot.send_chat_action(update.message.chat_id, 'record_audio')
+    user = context.user_data['user']
+    message_text = '请选择播客'
 
-    # 所有喜欢的节目可以在某个入口调出，也就是说要把用户喜欢的节目记录下来
-    keyboard = [[InlineKeyboardButton('删  除', callback_data="delete_message"), 
-                 InlineKeyboardButton('喜  欢', callback_data="like_episode")
-    ]] 
-
-    # copy 还是 forward？：
-    bot.copy_message(
-        chat_id = update.message.chat_id,
-        from_chat_id = podcast_vault,
-        message_id = audio_message.message_id,
-        reply_markup = InlineKeyboardMarkup(keyboard)
+    keyboard = [[KeyboardButton(podcast_name)] for podcast_name in user.subscription.keys()]
+    message = update.message.reply_text(
+        text = message_text,
+        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard = True, one_time_keyboard = True)
     )
-
 
 def settings(update, context):
     # 1. 更新频率
@@ -117,20 +123,3 @@ def logout(update, context):
         "您确定要注销账号吗？\n这将清除所有存储在后台的个人数据。",
         reply_markup = InlineKeyboardMarkup(keyboard)
     )
-
-welcome_text = f"""欢迎使用 {manifest.name}。                                              
-
-您可以发送 OPML 文件或 RSS 链接以**导入播客订阅**。
-
-以下是全部的操作指令，在对话框输入 `/` 可以随时唤出:
-
-/search：搜索播客
-/manage：管理订阅
-/about：幕后信息
-/settings：偏好设置
-/help：使用说明
-/export：导出订阅
-/logout：退出登录
-
-本条消息已置顶，点击置顶消息即可查看。
-"""

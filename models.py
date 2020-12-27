@@ -1,6 +1,9 @@
 from utils.parser import parse_opml
 import feedparser
+import socket
+from urllib.error import URLError
 
+socket.setdefaulttimeout(3)
 
 class User(object):
     """
@@ -37,19 +40,28 @@ class Podcast(object):
     """
 
     def __init__(self, feed_url):
+        self.name = None
         self.feed_url = feed_url
         self.parse_feed(feed_url)
         self.subscribers = {}
 
     def parse_feed(self, url):
-        result = feedparser.parse(url)
-        feed = result.feed
-        latest_episode = result.entries[0]
-        self.name = feed.title
-        self.latest_episode = Episode(self, latest_episode)
-        self.host = feed.author
-        self.email = feed.author_detail.email
-        self.logo_url = feed.image.href
+        try:
+            result = feedparser.parse(url)
+            if result.status != 200:
+                raise Exception('404 Not Found')
+        except:
+            return
+        else:
+            feed = result.feed
+            latest_episode = result['items'][0]
+            self.name = feed.title
+            print(f'podcast:{self.name}')
+            self.latest_episode = Episode(self, latest_episode)
+            self.host = feed.author_detail.name
+            self.website = feed.link
+            self.email = feed.author_detail.get('email')
+            self.logo_url = feed.image.href
 
     def update(self):
         last_published_time = self.latest_episode.published_time
@@ -58,7 +70,6 @@ class Podcast(object):
             return self.latest_episode
         else: 
             return None
-
 
 class Feed(object):
     """
@@ -70,7 +81,6 @@ class Feed(object):
         self.is_liked = False
         self.audio_path = f'public/audio/{podcast.name}/'
 
-
 class Episode(object):
     """
     Episode of a specific podcast.
@@ -78,10 +88,25 @@ class Episode(object):
 
     def __init__(self, from_podcast, episode):
         self.from_podcast = from_podcast
-        print(self.from_podcast.name)
-        self.audio_url = episode.links[0].href
+        print(f'from:{self.from_podcast.name}')
+        self.audio = episode.enclosures[0]
+        # self.audio_url = self.audio.href
+        # self.audio_size = self.audio.length
         self.title = episode.title
         # self.subtitle = episode.subtitle
         self.published_time = episode.published_parsed
-        # self.file_size = episode.length
-        self.duration = episode.itunes_duration # string, mm:ss
+        self.duration = episode.itunes_duration # string, (hh:)mm:ss
+
+# for test:
+def check(url):
+    r = feedparser.parse(url)
+    f = r.feed
+    # l = f.entries[0]
+    # e = l.enclosures[0]
+
+    print(
+        f'title: {f.title}\n'
+        f'host: {f.author}\n'
+        f'email: {f.author_detail.email}\n'
+        # f'length: {e.length}\n'
+    )

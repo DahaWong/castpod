@@ -18,6 +18,33 @@ def pin_message(update, context):
 def unpin_message(update, context):
     update.callback_query.unpin_message()
 
+# Podcast
+# 其他按键如何处理？ callback_data
+def toggle_like_podcast(update, context, to:str):
+    if (to == 'liked'):
+        pin_method = pin_message
+        button_text = '  ❤️  '
+        callback_data = "unlike_podcast"
+    elif (to == 'unliked'):
+        pin_method = unpin_message
+        button_text = '喜    欢'
+        callback_data = "like_podcast"
+
+    message = update.callback_query.message
+    keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast"),
+                 InlineKeyboardButton(button_text, callback_data = callback_data)],
+               [InlineKeyboardButton("单      集", callback_data = f"show_episodes")],
+               [InlineKeyboardButton("关      于", callback_data = "podcast.website")]] # 删除记得加「撤销」
+    update.callback_query.edit_message_reply_markup(InlineKeyboardMarkup(keyboard))
+    pin_method(update, context)
+
+
+def like_podcast(update, context):
+    toggle_like_podcast(update, context, to="liked")
+
+def unlike_podcast(update, context):
+    toggle_like_podcast(update, context, to="unliked")
+
 # Episode
 def toggle_like_episode(update, context, to:str):
     if (to == 'liked'):
@@ -26,11 +53,11 @@ def toggle_like_episode(update, context, to:str):
         callback_data = "unlike_episode"
     elif (to == 'unliked'):
         pin_method = unpin_message
-        button_text = '喜  欢'
+        button_text = '喜    欢'
         callback_data = "like_episode"
 
     message = update.callback_query.message
-    keyboard = [[InlineKeyboardButton("删  除", callback_data = "delete_message"), 
+    keyboard = [[InlineKeyboardButton("删    除", callback_data = "delete_message"), 
                  InlineKeyboardButton(button_text, callback_data = callback_data)
     ]]
 

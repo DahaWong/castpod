@@ -4,7 +4,6 @@ def update_podcasts(context):
     podcasts = context.bot_data['podcasts']
     for podcast in podcasts.values():
         latest_episode = podcast.update()
-        print('test')
         if latest_episode:
             bot = context.bot
             audio_message = bot.send_audio(
