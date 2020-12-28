@@ -1,4 +1,3 @@
-from utils.persistence import persistence
 from utils.parser import parse_opml
 from models import Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
@@ -24,62 +23,34 @@ def save_subscription(update, context):
             podcast = cached_podcasts[feed['name']]
         podcasts.append(podcast)
     user.import_feeds(podcasts)
-    persistence.flush()
 
 
 def save_feed(update, context):
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']
-
     url = update['message']['text']
     new_podcast = user.add_feed(url)
 
     # 检查播客是否存在、添加新播客的逻辑可以复用。应该重构出来。
     if new_podcast.name not in podcasts.keys():
         podcasts.update({new_podcast.name:new_podcast})
-    new_podcast.subscribers.add(user)
 
-    persistence.flush()
+    new_podcast.subscribers.add(user.user_id)
 
+    context.bot.send_chat_action(
+        chat_id = update.message.chat_id, 
+        action = 'typing'
+    )
+    update.message.reply_text(f"成功订阅 {new_podcast.name}！")
 
-def handle_text(update, context):
+def handle_exit(update, context):
     text = update.message.text
     user = context.user_data['user']
-    # user = context.bot_data['users'][update.message.from_user['id']]
     print(user.subscription.keys())
 
-    if text in user.subscription.keys():
-        feed_name = text
-        manage_feed(update, context, feed_name)
+    if text == '退出播客管理':
+        update.message.reply_text('已退出 /manage 模式', reply_markup = ReplyKeyboardRemove())
+    elif text == '退出偏好设置':
+        update.message.reply_text('已退出 /settings 模式', reply_markup = ReplyKeyboardRemove())
     else:
-        #del msg
-        #show alert
         pass
-
-
-def manage_feed(update, context, feed_name):
-    feed = context.user_data['user'].subscription[feed_name]
-    podcast = feed.podcast
-    podcast_info = (
-        f'[📻️]({podcast.logo_url})  *{podcast.name}*'
-        f'\n{podcast.host}'
-    )
-
-    will_delete = update.message.reply_text(
-        text = "OK.",
-        reply_markup = ReplyKeyboardRemove()
-    )
-
-    will_delete.delete()
-
-    # ⚠️ Conversation handler here: 
-    keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast{podcast.name}"),
-                 InlineKeyboardButton("所 有 单 集", callback_data = f"show_episodes{podcast.name}"),
-                 InlineKeyboardButton("喜    欢", callback_data = f"like_podcast{podcast.name}"),
-               [InlineKeyboardButton("返      回", callback_data= = f"")]],
-               [InlineKeyboardButton("关      于", url = podcast.website)]]
-
-    update.message.reply_text(
-        text = podcast_info,
-        reply_markup = InlineKeyboardMarkup(keyboard)
-    )

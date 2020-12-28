@@ -1,15 +1,18 @@
 from utils.api_method import search
-from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
+from manifest import manifest
+from base64 import urlsafe_b64encode as encode
+from utils.url_shortener import shorten
 
 def handle_inline_query(update, context):
     inline_query = update.inline_query
     query_id = inline_query.id 
     query_text = inline_query.query
     user_id = inline_query.from_user.id
-    users = context.bot_data['users']
+    users = context.dispatcher.user_data
     listed_results = []
 
-    deep_linking_root = "https://t.me/podcasted_bot/start="
+    deeplinking_root = f"https://t.me/{manifest.bot_id}?start="
     switch_to_login = {}
 
     if not query_text:
@@ -25,7 +28,7 @@ def handle_inline_query(update, context):
                 id='0',
                 title = "欢迎使用播客搜索功能",
                 description = "继续输入关键词以检索播客节目",
-                input_message_content = InputTextMessageContent("点击下方按钮开始搜索播客"),
+                input_message_content = InputTextMessageContent("点击按钮以搜索播客"),
                 reply_markup = InlineKeyboardMarkup(keyboard)
             )]
     else:
@@ -34,26 +37,23 @@ def handle_inline_query(update, context):
         for result in searched_results:
             itunes_id = result['collectionId']
             name = result['collectionName']
-            feed = result['feedUrl']
+            feed = result.get('feedUrl')
             host = result['artistName']
+            thumbnail_full = result['artworkUrl600']
+            thumbnail_small = result['artworkUrl60']
 
-            # 遍历 local podcasts， 如果没有，自动添加
-
-            discription = ""
-            local_id = "" # 需要配置一个本地 id
-            logo_url = "" # 头像 
-
-            podcast_info = f"主播：**{name}** \n\n{host}\n\n{discription}"
-
-            keyboard = [[InlineKeyboardButton('返   回', switch_inline_query_current_chat = query_text),
-                         InlineKeyboardButton('订   阅', url=f"{deep_linking_root}{local_id}")]]
+            podcast_info = f"[📻️]({thumbnail_full})  `{name}` \n_by_ {host}\n\n订阅：`{feed}`"
+            keyboard = [[InlineKeyboardButton('返 回 搜 索 模 式', switch_inline_query_current_chat = query_text)]]
 
             result_item = InlineQueryResultArticle(
                 id = itunes_id, 
                 title = name, 
                 input_message_content = InputTextMessageContent(podcast_info), 
                 reply_markup= InlineKeyboardMarkup(keyboard),
-                description = host
+                description = host,
+                thumb_url = thumbnail_small,
+                thumb_height = 60,
+                thumb_width = 60
             )
             listed_results.append(result_item)
 
