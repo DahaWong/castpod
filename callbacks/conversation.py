@@ -99,19 +99,35 @@ def back_to_actions(update, context):
 
     return ACTIONS
 
+
 def show_episodes(update, context):
-    pattern = r'(show_episodes_)(.+)'
     query = update.callback_query
-    podcast_name = re.match(pattern, query.data)[2]
+    pattern = r'show_podcast_(.+)_([0-9]+)'
+    podcast_name = re.match(pattern, query.data)[1]
+    current_page = int(re.match(pattern, query.data)[2])
     podcast = context.bot_data['podcasts'].get(podcast_name)
     episodes = podcast.episodes
+
+    if current_page == 0:
+        query.answer("已经在第一页了")
+        current_page = 1
+    elif current_page == 1:
+        query.answer("已回到首页")
+    # 根据长度，判断末尾
+    keyboard = [[InlineKeyboardButton(f"{episode.title}  {episode.get('itunes_duration')}", 
+                callback_data = "show_episode_{episode.title}")] for episode in episodes[10 * (current_page - 1): 10 * current_page]]
+
+    keyboard.append([
+        InlineKeyboardButton("prev", callback_data=f"show_podcast_{podcast_name}_{current_page-1}"),
+        InlineKeyboardButton("home", callback_data=f"show_podcast_{podcast_name}_1"),
+        InlineKeyboardButton("next", callback_data=f"show_podcast_{podcast_name}_{current_page+1}")
+    ])
+
     query.edit_message_text(
         text = f"{podcast_name} 的全部单集如下：",
-        reply_markup = InlineKeyboardMarkup.from_column([
-            InlineKeyboardButton(
-                f"{episode.title}  {episode.get('itunes_duration')}", 
-                callback_data = "download_episode_{episode.title}") for episode in episodes[:5]])
-        )
+        reply_markup = InlineKeyboardMarkup(keyboard)
+    )
+    return ACTIONS
         
 
 def show_feed(update, context):
@@ -135,7 +151,7 @@ def show_feed(update, context):
         delete_keyboard.delete()
 
         keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast_{podcast.name}"),
-                     InlineKeyboardButton("所 有 单 集", callback_data = f"show_episodes_{podcast.name}"),
+                     InlineKeyboardButton("所 有 单 集", callback_data = f"show_podcast_{podcast.name}_1"),
                      InlineKeyboardButton("喜    欢", callback_data = f"like_podcast_{podcast.name}")],
                     [InlineKeyboardButton("关      于", url = podcast.website)]]
 

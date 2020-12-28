@@ -12,7 +12,6 @@ class User(object):
     def __init__(self, name, user_id):
         self.name = name
         self.user_id = user_id
-        self.refresh_interval = 1800
         self.subscription = {}
         self.subscription_path = "public/subscriptions/{self.user_id}.xml"
 
@@ -51,7 +50,7 @@ class Podcast(object):
         try:
             result = feedparser.parse(url)
             if result.status != 200:
-                raise Exception('404 Not Found')
+                raise Exception('URL Open Error.')
         except:
             return
         else:

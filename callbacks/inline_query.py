@@ -1,7 +1,7 @@
 from utils.api_method import search
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
 from manifest import manifest
-from base64 import urlsafe_b64encode as encode
+# from base64 import urlsafe_b64encode as encode
 from utils.url_shortener import shorten
 
 def handle_inline_query(update, context):
