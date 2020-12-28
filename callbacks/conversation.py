@@ -1,5 +1,6 @@
 import re
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
+from models import Episode
 
 END = -1
 ACTIONS, SHOW_EPISODES, UNSUBSCRIBE = range(3)
@@ -99,11 +100,19 @@ def back_to_actions(update, context):
     return ACTIONS
 
 def show_episodes(update, context):
-    pattern = r'(back_to_actions_)(.+)'
+    pattern = r'(show_episodes_)(.+)'
     query = update.callback_query
     podcast_name = re.match(pattern, query.data)[2]
     podcast = context.bot_data['podcasts'].get(podcast_name)
-    podcast.
+    episodes = podcast.episodes
+    query.edit_message_text(
+        text = f"{podcast_name} 的全部单集如下：",
+        reply_markup = InlineKeyboardMarkup.from_column([
+            InlineKeyboardButton(
+                f"{episode.title}  {episode.get('itunes_duration')}", 
+                callback_data = "download_episode_{episode.title}") for episode in episodes[:5]])
+        )
+        
 
 def show_feed(update, context):
     text = update.message.text

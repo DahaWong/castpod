@@ -43,7 +43,11 @@ def handle_inline_query(update, context):
             thumbnail_small = result['artworkUrl60']
 
             podcast_info = f"[📻️]({thumbnail_full})  `{name}` \n_by_ {host}\n\n订阅：`{feed}`"
-            keyboard = [[InlineKeyboardButton('返 回 搜 索 模 式', switch_inline_query_current_chat = query_text)]]
+            keyboard = [
+                # 如果不在 机器人主页，则：
+                # [InlineKeyboardButton('前  往  B O T', url = f"https://t.me/{manifest.bot_id}")],
+                [InlineKeyboardButton('返 回 搜 索 模 式', switch_inline_query_current_chat = query_text)]
+            ]
 
             result_item = InlineQueryResultArticle(
                 id = itunes_id, 

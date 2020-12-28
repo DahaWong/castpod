@@ -21,7 +21,8 @@ class User(object):
 
     def add_feed(self, url:str):
         new_podcast = Podcast(url)
-        # 这里应该用 setter:
+        # 这里应该用 setter
+        # 与此同时，更新 podcast 中的订阅者
         self.subscription.update({new_podcast.name: Feed(new_podcast)})
         # self.update_subscription_file()
         return new_podcast
@@ -55,7 +56,8 @@ class Podcast(object):
             return
         else:
             feed = result.feed
-            latest_episode = result['items'][0]
+            self.episodes = result['items']
+            latest_episode = self.episodes[0]
             self.name = feed.title
             print(f'podcast:{self.name}')
             self.latest_episode = Episode(self.name, latest_episode)
@@ -83,12 +85,12 @@ class Episode(object):
         self.podcast_name = from_podcast
         print(f'from:{self.podcast_name}')
         self.audio = episode.enclosures[0]
-        # self.audio_url = self.audio.href
-        # self.audio_size = self.audio.length
+        self.audio_url = self.audio.href
+        self.audio_size = self.audio.length
         self.title = episode.title
         self.subtitle = episode.get('subtitle')
         self.published_time = episode.published_parsed
-        self.duration = episode.itunes_duration # string, (hh:)mm:ss
+        self.duration = episode.get('itunes_duration') # string, (hh:)mm:ss
 
 class Feed(object):
     """

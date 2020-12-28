@@ -26,6 +26,10 @@ def save_subscription(update, context):
 
 
 def save_feed(update, context):
+    context.bot.send_chat_action(
+        chat_id = update.message.chat_id, 
+        action = 'typing'
+    )
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']
     url = update['message']['text']
@@ -37,10 +41,6 @@ def save_feed(update, context):
 
     new_podcast.subscribers.add(user.user_id)
 
-    context.bot.send_chat_action(
-        chat_id = update.message.chat_id, 
-        action = 'typing'
-    )
     update.message.reply_text(f"成功订阅 {new_podcast.name}！")
 
 def handle_exit(update, context):
