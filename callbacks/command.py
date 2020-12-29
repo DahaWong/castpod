@@ -73,6 +73,7 @@ def search(update, context):
     )
 
 def manage(update, context):
+    # Pagination!
     user = context.user_data['user']
     message_text = '请选择播客'
 
@@ -88,16 +89,13 @@ def manage(update, context):
 
 
 def settings(update, context):
+    keyboard = [["播客更新频率", "快捷置顶单集", "单集信息显示"],
+                ["播客搜索范围", "快捷置顶播客", "单集排序方式"],
+                ["退出偏好设置"]]
     message = update.message.reply_text(
         f'请选择需调整的偏好设置',
-        reply_markup = ReplyKeyboardMarkup.from_column(
-            ["调节更新频率", 
-             "收藏节目的同时置顶消息",
-             "收藏播客的同时置顶消息", 
-             "退出偏好设置"]
-        )
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
     )
-
 
 def help(update, context):
     command_message_id = update.message.message_id

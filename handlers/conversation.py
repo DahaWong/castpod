@@ -7,7 +7,6 @@ unlike_podcast = CallbackQueryHandler(callbacks.unlike_podcast, pattern = "^unli
 back_to_actions = CallbackQueryHandler(callbacks.back_to_actions, pattern = "^back_to_actions")
 unsubscribe_podcast = CallbackQueryHandler(callbacks.unsubscribe_podcast, pattern = "^unsubscribe_podcast")
 confirm_unsubscribe = CallbackQueryHandler(callbacks.confirm_unsubscribe, pattern = "^confirm_unsubscribe")
-show_episodes = CallbackQueryHandler(callbacks.show_episodes, pattern = "^show_podcast_")
 
 conversation_handler = ConversationHandler(
     entry_points = [show_feed],
@@ -15,7 +14,6 @@ conversation_handler = ConversationHandler(
         callbacks.ACTIONS:[
             like_podcast, 
             unlike_podcast,
-            show_episodes, 
             unsubscribe_podcast
         ],
         callbacks.SHOW_EPISODES:[back_to_actions],

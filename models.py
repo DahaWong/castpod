@@ -41,7 +41,7 @@ class Podcast(object):
     """
 
     def __init__(self, feed_url):
-        self.name = None
+        self.name = "None"
         self.feed_url = feed_url
         self.parse_feed(feed_url)
         self.subscribers = set()
@@ -85,7 +85,7 @@ class Episode(object):
         print(f'from:{self.podcast_name}')
         self.audio = episode.enclosures[0]
         self.audio_url = self.audio.href
-        self.audio_size = self.audio.length
+        self.audio_size = self.audio.get('length')
         self.title = episode.title
         self.subtitle = episode.get('subtitle')
         self.published_time = episode.published_parsed

@@ -26,6 +26,7 @@ def save_subscription(update, context):
 
 
 def save_feed(update, context):
+    subscribing_message = update.message.reply_text(f"订阅中…")
     context.bot.send_chat_action(
         chat_id = update.message.chat_id, 
         action = 'typing'
@@ -33,24 +34,21 @@ def save_feed(update, context):
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']
     url = update['message']['text']
-    new_podcast = user.add_feed(url)
+    promise = context.dispatcher.run_async(user.add_feed, url = url)
 
-    # 检查播客是否存在、添加新播客的逻辑可以复用。应该重构出来。
-    if new_podcast.name not in podcasts.keys():
-        podcasts.update({new_podcast.name:new_podcast})
-
-    new_podcast.subscribers.add(user.user_id)
-
-    update.message.reply_text(f"成功订阅 {new_podcast.name}！")
+    if promise.done:
+        new_podcast = promise.result()  
+        subscribing_message.edit_text(f"成功订阅播客：`{new_podcast.name}`！")
+        new_podcast.subscribers.add(user.user_id)
+        if new_podcast.name not in podcasts.keys():
+            podcasts.update({new_podcast.name:new_podcast})
 
 def handle_exit(update, context):
-    text = update.message.text
-    user = context.user_data['user']
-    print(user.subscription.keys())
+    exit_command = update.message.text
 
-    if text == '退出播客管理':
+    if exit_command == '退出播客管理':
         update.message.reply_text('已退出 /manage 模式', reply_markup = ReplyKeyboardRemove())
-    elif text == '退出偏好设置':
+    elif exit_command == '退出偏好设置':
         update.message.reply_text('已退出 /settings 模式', reply_markup = ReplyKeyboardRemove())
     else:
         pass
