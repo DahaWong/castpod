@@ -47,7 +47,18 @@ def download_episode(update, context):
             fetching_note.delete()
             print(episode.audio_url)
             # get file size?
-            local_download(episode.audio_url)
+            local_download_note = bot.send_message(query.from_user.id, "正在切换至本地线路…")
+            file_path = local_download(episode.audio_url)
+            local_download_note.delete()
+            # 将文件分割为小段？
+            bot.send_audio(
+                chat_id = podcast_vault,
+                audio = file_path,
+                # caption = episode.summary[:1024] or episode.subtitle[:1024],
+                title = episode.title,
+                performer = podcast.host,
+                thumb = podcast.logo_url
+            )
 
 def toggle_like_episode(update, context, to:str):
     if (to == 'liked'):

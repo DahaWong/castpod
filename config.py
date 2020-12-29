@@ -12,9 +12,7 @@ bot_token = config['BOT']['TOKEN']
 proxy = config['BOT']['PROXY']
 bot_api = config['BOT']['API']
 podcast_vault = config['BOT']['PODCAST_VAULT']
-defaults = Defaults(
-  parse_mode="MARKDOWN"
-)
+defaults = Defaults(parse_mode="MARKDOWN")
 
 # Dev
 dev_user_id = config['DEV']['USER_ID']
@@ -25,5 +23,19 @@ update_info = {
    'token': bot_token,
    'use_context': True,
    'persistence': persistence,
-   'base_url': bot_api
+   'base_url': bot_api,
+   'defaults': defaults
  }
+ 
+ 
+# Test
+# update_info = {
+#    'token': bot_token,
+#    'use_context': True,
+#    'request_kwargs': {
+#       'proxy_url':proxy
+#     },
+#    'persistence': persistence,
+#    'base_url': bot_api,
+#    'defaults': defaults
+#  }

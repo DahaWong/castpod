@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<opml version="1.0">
+  <head>
+    <title>Pocket Casts Feeds</title>
+  </head>
+  <body>
+    <outline text="feeds">
+      <outline type="rss" text="疯投圈" xmlUrl="https://crazy.capital/feed" />
+      <outline type="rss" text="一天世界" xmlUrl="https://yitianshijie.net/episodes/feed.xml" />
+    </outline>
+  </body>
+</opml>
