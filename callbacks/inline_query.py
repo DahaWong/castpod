@@ -1,8 +1,8 @@
 from utils.api_method import search
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup, constants
 from manifest import manifest
-from utils.url_shortener import shorten
 import re
+from models import Podcast
 
 def handle_inline_query(update, context):
     query = update.inline_query
@@ -13,28 +13,32 @@ def handle_inline_query(update, context):
     podcasts = context.bot_data['podcasts']
 
     episodes_query_pattern = r'^episodes (.+) page ([0-9]+)'
-    match_episodes_query = re.match(episodes_query_pattern, query_text)
-
-    switch_to_login = {}
+    podcasts_query_pattern = r'^podcasts page ([0-9]+)'
+    switch_to_bot = {}
 
     if not query_text:
-        results, switch_to_login = welcome(users, user_id)
-    elif match_episodes_query:
-        match = match_episodes_query
-        results = show_episodes(query_text, podcasts, podcast_name = match[1], current_page = int(match[2]))
+        results, switch_to_bot = welcome(users, user_id)
+    elif re.match(episodes_query_pattern, query_text):
+        match = re.match(episodes_query_pattern, query_text)
+        results = show_episodes(podcasts, podcast_name = match[1], current_page = int(match[2]))
+    elif re.match(podcasts_query_pattern, query_text):
+        match = re.match(podcasts_query_pattern, query_text)
+        results = show_subscription(podcasts, current_page = int(match[1]))
     else:
         results = search_podcast(query_text)
 
     query.answer(
         results,
-        **switch_to_login
+        **switch_to_bot
     )
 
 def welcome(users, user_id):
-    switch_to_login = {}
+    switch_to_bot = {}
+    print(user_id)
+    print(users.keys())
     if user_id not in users.keys():
         listed_results = []
-        switch_to_login = {
+        switch_to_bot = {
             "switch_pm_text": "登 录",
             "switch_pm_parameter": "login",
             "cache_time": 0
@@ -45,14 +49,25 @@ def welcome(users, user_id):
             id='0',
             title = "欢迎使用播客搜索功能",
             description = "继续输入关键词以检索播客节目",
-            input_message_content = InputTextMessageContent("点击按钮以搜索播客"),
+            input_message_content = InputTextMessageContent("点按以搜索播客"),
             reply_markup = InlineKeyboardMarkup(keyboard)
         )]
-    return listed_results, switch_to_login
+    print(listed_results, switch_to_bot)
+    return listed_results, switch_to_bot
 
-def show_episodes(query, podcasts, podcast_name, current_page):
-    pattern = r'^episodes (.+) page ([0-9]+)'
+def subscribe_feed(podcasts, url):
+    print("in!")
+    podcast = Podcast(url)
+    podcasts.update({podcast.name: podcast})
+    results = []
+    switch_to_bot = {
+        "switch_pm_text": "订阅播客：" + podcast.name,
+        "switch_pm_parameter": podcast.name,
+        "cache_time": 0
+    }
+    return results, switch_to_bot
 
+def show_episodes(podcasts, podcast_name, current_page):
     podcast = podcasts[podcast_name]
     episodes = podcast.episodes
     episodes_count = len(episodes)
@@ -65,7 +80,7 @@ def show_episodes(query, podcasts, podcast_name, current_page):
         listed_results = [InlineQueryResultArticle(
             id = "-1",
             title = "没有更多的节目了 :(",
-            description = "前往查看订阅中的其他播客",
+            description = "前往订阅列表",
             input_message_content = InputTextMessageContent("/manage")
         )]
     else:
@@ -81,8 +96,9 @@ def show_episodes(query, podcasts, podcast_name, current_page):
                 [InlineKeyboardButton("收   听   本   集", callback_data=f"download_episode_{podcast_name}_{(current_page-1) * results_per_page + index}"),
                  InlineKeyboardButton(
                     "返  回  单  集  列  表", 
-                    switch_inline_query_current_chat = query
-                )]
+                    switch_inline_query_current_chat = f"episodes {podcast_name} page {current_page}"
+                 ),
+                 InlineKeyboardButton("查  看  订  阅  列  表", switch_inline_query_current_chat="podcasts page 1")]
             ),
             description = episode.get("subtitle") or podcast_name,
             thumb_url = podcast.logo_url,
@@ -107,7 +123,7 @@ def search_podcast(query):
         thumbnail_full = result['artworkUrl600']
         thumbnail_small = result['artworkUrl60']
 
-        podcast_info = f"[📻️]({thumbnail_full})  `{name}` \n_by_ {host}\n\n订阅：`{feed}`"
+        podcast_info = f"[📻️]({thumbnail_full})  {name} \n_by_ {host}\n\n订阅：`{feed}`"
         keyboard = [
             # 如果不在 机器人主页，则：
             # [InlineKeyboardButton('前  往  B O T', url = f"https://t.me/{manifest.bot_id}")],
@@ -126,3 +142,43 @@ def search_podcast(query):
         )
         listed_results.append(result_item)
         return listed_results
+
+def show_subscription(podcasts, current_page):
+    subscription_count = len(podcasts.keys())
+    results_per_page = constants.MAX_INLINE_QUERY_RESULTS
+    no_more_subscription = subscription_count <= results_per_page * (current_page - 1)
+
+    if no_more_subscription:
+        results = [InlineQueryResultArticle(
+            id = "-1",
+            title = "没有更多的订阅了 :(",
+            description = "前往搜索播客",
+            input_message_content = InputTextMessageContent("/search")
+        )]
+    else:
+        results = [InlineQueryResultArticle(
+            id = index,
+            title = podcast.name,
+            input_message_content = InputTextMessageContent((
+                f"[📻️]({podcast.logo_url})  *{podcast.name}*\n"
+                f"{podcast.host}\n\n"
+                f"{podcast.email}"
+                )),
+            reply_markup = InlineKeyboardMarkup.from_column([
+                InlineKeyboardButton(
+                    "查 看 单 集", 
+                    switch_inline_query_current_chat = f"episodes {podcast.name} page 1"
+                ), InlineKeyboardButton(
+                    "关      于", url = podcast.website)
+            ]),
+            description = podcast.host,
+            thumb_url = podcast.logo_url,
+            thumb_width = 30, 
+            thumb_height = 30 
+        ) for index, podcast in enumerate(
+            list(podcasts.values())[
+                results_per_page * (current_page - 1): 
+                results_per_page * current_page]
+            )
+        ]
+    return results

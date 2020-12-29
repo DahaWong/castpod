@@ -1,5 +1,9 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error
 import re
+from models import Episode
+from config import podcast_vault
+from utils.downloader import local_download
+# import pprint
 
 # Message
 def delete_message(update, context):
@@ -13,6 +17,38 @@ def delete_command_context(update, context):
     context.bot.delete_message(query.message.chat_id, command_message_id)
 
 # Episode
+def download_episode(update, context):
+    query = update.callback_query
+    bot = context.bot
+    fetching_note = bot.send_message(query.from_user.id, "获取节目中，请稍候…")
+    bot.send_chat_action(query.from_user.id, "record_audio")
+    pattern = r'download_episode_(.+)_([0-9]+)'
+    match = re.match(pattern, query.data)
+    podcast_name, index = match[1], int(match[2])
+    podcast = context.bot_data['podcasts'][podcast_name]
+    episode = Episode(podcast_name, podcast.episodes[index])
+
+    # pprint.pp(podcast.episodes[index])
+    promise = context.dispatcher.run_async(
+        bot.send_audio,
+        chat_id = podcast_vault,
+        audio = episode.audio_url,
+        # caption = episode.summary[:1024] or episode.subtitle[:1024],
+        title = episode.title,
+        performer = podcast.host,
+        thumb = podcast.logo_url
+    )
+    if (promise.done):
+        try:
+            audio_message = promise.result()
+            fetching_note.delete()
+            audio_message.forward(query.from_user.id)
+        except error.BadRequest:
+            fetching_note.delete()
+            print(episode.audio_url)
+            # get file size?
+            local_download(episode.audio_url)
+
 def toggle_like_episode(update, context, to:str):
     if (to == 'liked'):
         pin_method = pin_message

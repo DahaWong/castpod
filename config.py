@@ -19,9 +19,6 @@ defaults = Defaults(
 # Dev
 dev_user_id = config['DEV']['USER_ID']
 
-# Cuttly
-cuttly_token = config['CUTTLY']['TOKEN']
-
 # Test(with proxy)
 update_info = {
   'token': bot_token,

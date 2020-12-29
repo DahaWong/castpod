@@ -26,19 +26,16 @@ def save_subscription(update, context):
 
 
 def save_feed(update, context):
-    subscribing_message = update.message.reply_text(f"订阅中…")
-    context.bot.send_chat_action(
-        chat_id = update.message.chat_id, 
-        action = 'typing'
-    )
+    context.bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
+    subscribing_message = update.message.reply_text(f"订阅中，请稍候…")
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']
     url = update['message']['text']
     promise = context.dispatcher.run_async(user.add_feed, url = url)
-
     if promise.done:
         new_podcast = promise.result()  
-        subscribing_message.edit_text(f"成功订阅播客：`{new_podcast.name}`！")
+        subscribing_message.delete()
+        update.message.reply_text(f"成功订阅播客：`{new_podcast.name}`")
         new_podcast.subscribers.add(user.user_id)
         if new_podcast.name not in podcasts.keys():
             podcasts.update({new_podcast.name:new_podcast})

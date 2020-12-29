@@ -6,7 +6,7 @@ subscription_handler = MessageHandler(
     callback.save_subscription
 )
 
-feed_handler = MessageHandler(Filters.entity("url") & Filters.regex(r'https?://'), callback.save_feed)
+feed_handler = MessageHandler(Filters.entity("url") & Filters.regex(r'^https?://'), callback.save_feed)
 
 text_handler = MessageHandler(Filters.regex(r'^退出'), callback.handle_exit)
 

@@ -36,10 +36,6 @@ class User(object):
 
 
 class Podcast(object):
-    """
-    docstring
-    """
-
     def __init__(self, feed_url):
         self.name = "None"
         self.feed_url = feed_url
@@ -63,7 +59,7 @@ class Podcast(object):
             self.host = feed.author_detail.name
             self.website = feed.link
             self.email = feed.author_detail.get('email')
-            self.logo_url = feed.image.href
+            self.logo_url = feed.get('image').get('href')
 
     def update(self):
         last_published_time = self.latest_episode.published_time
@@ -85,9 +81,10 @@ class Episode(object):
         print(f'from:{self.podcast_name}')
         self.audio = episode.enclosures[0]
         self.audio_url = self.audio.href
-        self.audio_size = self.audio.get('length')
+        self.audio_size = self.audio.get('length') or 0
         self.title = episode.title
-        self.subtitle = episode.get('subtitle')
+        self.subtitle = episode.get('subtitle') or ''
+        self.summary = episode.get('summary') or ''
         self.published_time = episode.published_parsed
         self.duration = episode.get('itunes_duration') # string, (hh:)mm:ss
 
@@ -114,3 +111,5 @@ def check(url):
         f'email: {f.author_detail.email}\n'
         # f'length: {e.length}\n'
     )
+
+check('https://riyu.squarespace.com/hibi?format=rss')

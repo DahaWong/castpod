@@ -2,6 +2,9 @@
 */__pycache__/*
 __pycache__/*
 config.ini
+
+# Private:
+
 persistence
 manifest.py 
 public/*
