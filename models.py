@@ -54,7 +54,7 @@ class Podcast(object):
             self.episodes = result['items']
             latest_episode = self.episodes[0]
             self.name = feed.title
-            print(f'podcast:{self.name}')
+            print(self.name)
             self.latest_episode = Episode(self.name, latest_episode)
             self.host = feed.author_detail.name
             self.website = feed.link
@@ -78,7 +78,7 @@ class Episode(object):
 
     def __init__(self, from_podcast:str, episode):
         self.podcast_name = from_podcast
-        print(f'from:{self.podcast_name}')
+        print(self.podcast_name)
         self.audio = episode.enclosures[0]
         self.audio_url = self.audio.href
         self.audio_size = self.audio.get('length') or 0
@@ -97,19 +97,3 @@ class Feed(object):
         self.is_latest = False
         self.is_liked = False
         self.audio_path = f'public/audio/{podcast.name}/'
-
-# for test:
-def check(url):
-    r = feedparser.parse(url)
-    f = r.feed
-    # l = f.entries[0]
-    # e = l.enclosures[0]
-
-    print(
-        f'title: {f.title}\n'
-        f'host: {f.author}\n'
-        f'email: {f.author_detail.email}\n'
-        # f'length: {e.length}\n'
-    )
-
-check('https://riyu.squarespace.com/hibi?format=rss')

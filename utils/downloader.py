@@ -1,5 +1,4 @@
 import requests
-from pprint import pp
 
 def local_download(url, file_name):
     try:
