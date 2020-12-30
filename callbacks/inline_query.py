@@ -101,7 +101,7 @@ def show_episodes(podcasts, podcast_name, current_page):
                  ),
                  InlineKeyboardButton("查  看  订  阅  列  表", switch_inline_query_current_chat="podcasts page 1")]
             ),
-            description = episode.get("subtitle") or podcast_name,
+            description = episode.subtitle or podcast_name,
             thumb_url = podcast.logo_url,
             thumb_width = 30, 
             thumb_height = 30 

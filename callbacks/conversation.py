@@ -106,10 +106,11 @@ def show_feed(update, context):
         feed_name = text
         feed = context.user_data['user'].subscription[feed_name]
         podcast = feed.podcast
+        email_info = f'\n信箱： {podcast.email}' if podcast.email else ""
         podcast_info = (
             f'[📻️]({podcast.logo_url or podcast.website})  *{podcast.name}*'
             f'\n_by_  {podcast.host}'
-            f'\n信箱： {podcast.email}'
+            f'{email_info}'
         )
 
         delete_keyboard = update.message.reply_text(

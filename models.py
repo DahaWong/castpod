@@ -53,7 +53,7 @@ class Podcast(object):
         self.latest_episode = Episode(self.name, latest_episode)
         self.host = feed.author_detail.name
         self.website = feed.link
-        self.email = feed.author_detail.get('email')
+        self.email = feed.author_detail.get('email') or ""
         self.logo_url = feed.get('image').get('href')
 
     def update(self):

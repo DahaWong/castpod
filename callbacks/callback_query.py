@@ -50,7 +50,7 @@ def download_episode(update, context):
             local_download_note = bot.send_message(query.from_user.id, "正在切换至本地线路…")
             file_path = local_download(episode.audio_url)
             local_download_note.delete()
-            bot.send_audio(
+            audio_message = bot.send_audio(
                 chat_id = podcast_vault,
                 audio = file_path,
                 # caption = episode.summary[:1024] or episode.subtitle[:1024],
@@ -58,6 +58,7 @@ def download_episode(update, context):
                 performer = podcast.host,
                 thumb = podcast.logo_url
             )
+            audio_message.forward(query.from_user.id)
 
 def toggle_like_episode(update, context, to:str):
     if (to == 'liked'):

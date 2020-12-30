@@ -1,4 +1,5 @@
 from config import podcast_vault
+from utils.downloader import local_download
 
 def update_podcasts(context):
     podcasts = context.bot_data['podcasts']
