@@ -56,16 +56,14 @@ def download_episode(update, context):
             audio_message = bot.send_audio(
                 chat_id = f'@{podcast_vault}',
                 audio = file_path,
-                caption = f"{podcast.name}",
+                caption = f"{podcast.name}\n\n[返回个人主页](https://t.me/{manifest.bot_id})",
                 title = episode.title,
                 performer = episode.host or podcast.host,
-                thumb = episode.logo_url or podcast.logo_url,
-                reply_markup = InlineKeyboardMarkup.from_button(InlineKeyboardButton('返    回', url=f"https://t.me/{manifest.bot_id}"))
+                thumb = episode.logo_url or podcast.logo_url
             )
             success_note = uploading_note.edit_text("下载成功！")
             success_note.delete()
             forwarded_message = audio_message.forward(query.from_user.id)
-            print(f"https://t.me/{podcast_vault}/{audio_message.message_id}")
             forwarded_message.edit_reply_markup(
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
