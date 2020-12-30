@@ -90,7 +90,8 @@ def show_episodes(podcasts, podcast_name, current_page):
             input_message_content = InputTextMessageContent((
                 f"[📻️]({podcast.logo_url})  *{podcast_name}*\n"
                 f"{episode.title}\n\n"
-                f"{episode.get('subtitle')}"
+                f"{episode.subtitle}"
+                # use Telegraph api to generate summary link!
                 )),
             reply_markup = InlineKeyboardMarkup.from_column(
                 [InlineKeyboardButton("收   听   本   集", callback_data=f"download_episode_{podcast_name}_{(current_page-1) * results_per_page + index}"),
