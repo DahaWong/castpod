@@ -91,7 +91,7 @@ def show_episodes(podcasts, podcast_name, current_page):
             input_message_content = InputTextMessageContent((
                 f"[📻️]({podcast.logo_url})  *{podcast_name}*\n"
                 f"{episode.title}\n\n"
-                f"{episode.get('subtitle')}"
+                f"{episode.get('subtitle') or ''}"
                 # and then use Telegraph api to generate summary link!
                 )),
             reply_markup = InlineKeyboardMarkup.from_column(

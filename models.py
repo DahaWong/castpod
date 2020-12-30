@@ -3,7 +3,7 @@ import feedparser
 import socket
 from urllib.error import URLError
 
-socket.setdefaulttimeout(5)
+socket.setdefaulttimeout(3)
 
 class User(object):
     """
@@ -43,7 +43,8 @@ class Podcast(object):
 
     def parse_feed(self, url):
         result = feedparser.parse(url)
-        if result.status != 200: raise Exception('Feed URL Open Error.')
+        print(result.status)
+        if result.status != 200 or 302: raise Exception('Feed URL Open Error.')
         feed = result.feed
         self.episodes = result['items']
         latest_episode = self.episodes[0]
@@ -83,8 +84,8 @@ class Episode(object):
         self.summary = episode.get('summary') or ''
         self.published_time = episode.published_parsed
         self.duration = episode.get('itunes_duration') # string, (hh:)mm:ss or sec
-        self.logo_url = logo.href if episode.get('image') else ''
-        self.tags = tags[0].get('term') if episode.get('tags') else None
+        self.logo_url = episode.get('image').href if episode.get('image') else ''
+        self.tags = episode.get('tags')[0].get('term') if episode.get('tags') else None
  
 class Feed(object):
     """

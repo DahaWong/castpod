@@ -44,13 +44,13 @@ def download_episode(update, context):
             fetching_note.delete()
             audio_message.forward(query.from_user.id)
         except error.BadRequest:
-            fetching_note.delete()
             print(episode.audio_url)
             # get file size?
-            print("音频大小："+episode.audio_size)
-            local_download_note = bot.send_message(query.from_user.id, "正在切换至本地线路…")
+            print("音频大小："+str(episode.audio_size))
+            local_download_note = fetching_note.edit_text("正在切换至本地线路…")
             file_path = local_download(episode.audio_url)
             uploading_note = local_download_note.edit_text("正在上传节目…")
+            bot.send_chat_action(query.from_user.id, "upload_audio")
             # this is Upload? Need async and error handling:
             audio_message = bot.send_audio(
                 chat_id = podcast_vault,
