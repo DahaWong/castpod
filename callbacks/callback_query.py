@@ -3,6 +3,7 @@ import re
 from models import Episode
 from config import podcast_vault
 from utils.downloader import local_download
+from manifest import manifest
 # import pprint
 
 # Message
@@ -49,19 +50,29 @@ def download_episode(update, context):
             print("音频大小："+str(episode.audio_size))
             local_download_note = fetching_note.edit_text("正在切换至本地线路…")
             file_path = local_download(episode.audio_url)
-            uploading_note = local_download_note.edit_text("正在上传节目…")
+            uploading_note = local_download_note.edit_text("正在获取节目…")
             bot.send_chat_action(query.from_user.id, "upload_audio")
             # this is Upload? Need async and error handling:
             audio_message = bot.send_audio(
                 chat_id = podcast_vault,
                 audio = file_path,
-                caption = podcast.name,
+                caption = f"{podcast.name}",
                 title = episode.title,
                 performer = episode.host or podcast.host,
-                thumb = episode.logo_url or podcast.logo_url
+                thumb = episode.logo_url or podcast.logo_url,
+                reply_markup = InlineKeyboardMarkup.from_button('返 回', url=f"tg://{manifest.bot_id}")
             )
-            uploading_note.delete()
-            audio_message.forward(query.from_user.id)
+            success_note = uploading_note.edit_text("下载成功！")
+            success_note.delete()
+            forwarded_message = audio_message.forward(query.from_user.id)
+            forwarded_message.edit_reply_markup(
+                InlineKeyboardMarkup.from_button(
+                    InlineKeyboardButton(
+                        "评 论 区", 
+                        url=f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}"
+                    )
+                )
+            )
 
 def toggle_like_episode(update, context, to:str):
     if (to == 'liked'):

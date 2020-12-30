@@ -11,7 +11,6 @@ def save_subscription(update, context):
     doc = update['message']['document']
     print(doc)
     doc_name, doc_file = doc['file_name'], context.bot.getFile(doc['file_id'])
-    print(doc_name)
     print(doc_file)
     path = doc_file.download(f"public/subscriptions/{user.user_id}.xml")
     print(path)
