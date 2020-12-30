@@ -43,9 +43,10 @@ def save_subscription(update, context):
     if len(podcasts):
         newline = '\n'
         reply = f"成功订阅 {len(podcasts)} 部播客！" if not len(failed_feeds) else (
-                f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
-                f"\n\n可能损坏的订阅源："
-                f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
+            f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
+            f"\n\n可能损坏的订阅源："
+            f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
+        )
     else:
         reply = "订阅失败。请检查订阅文件以及其中的订阅源是否受损 :("
 
