@@ -17,6 +17,9 @@ defaults = Defaults(parse_mode="MARKDOWN")
 # Dev
 dev_user_id = config['DEV']['USER_ID']
 
+# Server
+webhook_port = int(config['WEBHOOK']['PORT'])
+
 
 # Build
 update_info = {
@@ -26,7 +29,19 @@ update_info = {
    'base_url': bot_api,
    'defaults': defaults
  }
- 
+
+webhook_info = {
+    listen: '127.0.0.1', 
+    port: webhook_port, 
+    url_path: bot_token
+}
+
+webhook_setting = {
+    webhook_url: f'https://webhook.daha.me/{bot_token}',
+    certificate: open('cert.pem', 'rb')
+}
+
+
  
 # Test
 # update_info = {

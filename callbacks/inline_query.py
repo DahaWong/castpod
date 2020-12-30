@@ -147,7 +147,7 @@ def search_podcast(query):
             thumb_width = 60
         )
         listed_results.append(result_item)
-        return listed_results
+    return listed_results
 
 def show_subscription(subscription, current_page):
     subscription_count = len(subscription)
