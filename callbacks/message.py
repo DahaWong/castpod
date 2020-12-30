@@ -9,8 +9,12 @@ def save_subscription(update, context):
     cached_podcasts = context.bot_data['podcasts']
 
     doc = update['message']['document']
+    print(doc)
     doc_name, doc_file = doc['file_name'], context.bot.getFile(doc['file_id'])
+    print(doc_name)
+    print(doc_file)
     path = doc_file.download(f"public/subscriptions/{user.user_id}.xml")
+    print(path)
 
     try:
         with open(path, 'r') as f:
@@ -69,8 +73,8 @@ def save_feed(update, context):
     promise = context.dispatcher.run_async(user.add_feed, url = url)
     if promise.done:
         try:
-            subscribing_message.delete()
             new_podcast = promise.result()  
+            subscribing_message.delete()
             update.message.reply_text(
                 f"成功订阅播客：`{new_podcast.name}`",
                 reply_markup = InlineKeyboardMarkup.from_button(

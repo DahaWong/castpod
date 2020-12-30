@@ -43,8 +43,8 @@ class Podcast(object):
 
     def parse_feed(self, url):
         result = feedparser.parse(url)
-        print(result.status)
-        if result.status != 200 or 302: raise Exception('Feed URL Open Error.')
+        if str(result.status)[0]!= '2' and str(result.status)[0]!= '3':
+            raise Exception('Feed URL Open Error.')
         feed = result.feed
         self.episodes = result['items']
         latest_episode = self.episodes[0]

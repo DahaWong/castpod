@@ -21,10 +21,17 @@ def handle_inline_query(update, context):
         results, switch_to_bot = welcome(users, user_id)
     elif re.match(episodes_query_pattern, query_text):
         match = re.match(episodes_query_pattern, query_text)
-        results = show_episodes(podcasts, podcast_name = match[1], current_page = int(match[2]))
+        results = show_episodes(
+            podcasts, 
+            podcast_name = match[1], 
+            current_page = int(match[2])
+        )
     elif re.match(podcasts_query_pattern, query_text):
         match = re.match(podcasts_query_pattern, query_text)
-        results = show_subscription(podcasts, current_page = int(match[1]))
+        results = show_subscription(
+            user_subscription, 
+            current_page = int(match[1])
+        )
     else:
         results = search_podcast(query_text)
 
@@ -35,8 +42,6 @@ def handle_inline_query(update, context):
 
 def welcome(users, user_id):
     switch_to_bot = {}
-    print(user_id)
-    print(users.keys())
     if user_id not in users.keys():
         listed_results = []
         switch_to_bot = {
@@ -53,7 +58,6 @@ def welcome(users, user_id):
             input_message_content = InputTextMessageContent("点按以搜索播客"),
             reply_markup = InlineKeyboardMarkup(keyboard)
         )]
-    print(listed_results, switch_to_bot)
     return listed_results, switch_to_bot
 
 def subscribe_feed(podcasts, url):
@@ -158,6 +162,7 @@ def show_subscription(subscription, current_page):
             input_message_content = InputTextMessageContent("/search")
         )]
     else:
+        print(subscription.values())
         results = [InlineQueryResultArticle(
             id = index,
             title = feed.podcast.name,
