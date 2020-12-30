@@ -64,6 +64,9 @@ def download_episode(update, context):
             success_note = uploading_note.edit_text("下载成功！")
             success_note.delete()
             forwarded_message = audio_message.forward(query.from_user.id)
+            forwarded_message.edit_caption(
+                caption = f"{podcast.name}"
+            )
             forwarded_message.edit_reply_markup(
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
