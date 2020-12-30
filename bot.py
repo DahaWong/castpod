@@ -8,11 +8,11 @@ updater = Updater(**update_info)
 dispatcher = updater.dispatcher
 
 # Use this method to logout your bot from telegram api cloud:
-updater.bot.log_out()
+#updater.bot.log_out()
 
 # Use these methods before you move your bot to another local server:
-updater.bot.delete_webhook() 
-updater.bot.close()
+#updater.bot.delete_webhook() 
+#updater.bot.close()
 
 
 set_jobs(updater.job_queue)
