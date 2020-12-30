@@ -3,7 +3,7 @@ import feedparser
 import socket
 from urllib.error import URLError
 
-socket.setdefaulttimeout(3)
+socket.setdefaulttimeout(5)
 
 class User(object):
     """

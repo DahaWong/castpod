@@ -11,6 +11,7 @@ def handle_inline_query(update, context):
     user_id = query.from_user.id
     users = context.dispatcher.user_data
     podcasts = context.bot_data['podcasts']
+    user_subscription = context.user_data['user'].subscription
 
     episodes_query_pattern = r'^episodes (.+) page ([0-9]+)'
     podcasts_query_pattern = r'^podcasts page ([0-9]+)'
@@ -90,8 +91,8 @@ def show_episodes(podcasts, podcast_name, current_page):
             input_message_content = InputTextMessageContent((
                 f"[📻️]({podcast.logo_url})  *{podcast_name}*\n"
                 f"{episode.title}\n\n"
-                f"{episode.subtitle}"
-                # use Telegraph api to generate summary link!
+                f"{episode.get('subtitle')}"
+                # and then use Telegraph api to generate summary link!
                 )),
             reply_markup = InlineKeyboardMarkup.from_column(
                 [InlineKeyboardButton("收   听   本   集", callback_data=f"download_episode_{podcast_name}_{(current_page-1) * results_per_page + index}"),
@@ -101,7 +102,7 @@ def show_episodes(podcasts, podcast_name, current_page):
                  ),
                  InlineKeyboardButton("查  看  订  阅  列  表", switch_inline_query_current_chat="podcasts page 1")]
             ),
-            description = episode.subtitle or podcast_name,
+            description = episode.get('subtitle') or podcast_name,
             thumb_url = podcast.logo_url,
             thumb_width = 30, 
             thumb_height = 30 
@@ -144,8 +145,8 @@ def search_podcast(query):
         listed_results.append(result_item)
         return listed_results
 
-def show_subscription(podcasts, current_page):
-    subscription_count = len(podcasts.keys())
+def show_subscription(subscription, current_page):
+    subscription_count = len(subscription)
     results_per_page = constants.MAX_INLINE_QUERY_RESULTS
     no_more_subscription = subscription_count <= results_per_page * (current_page - 1)
 
@@ -159,25 +160,25 @@ def show_subscription(podcasts, current_page):
     else:
         results = [InlineQueryResultArticle(
             id = index,
-            title = podcast.name,
+            title = feed.podcast.name,
             input_message_content = InputTextMessageContent((
-                f"[📻️]({podcast.logo_url})  *{podcast.name}*\n"
-                f"{podcast.host}\n\n"
-                f"{podcast.email}"
+                f"[📻️]({feed.podcast.logo_url})  *{feed.podcast.name}*\n"
+                f"{feed.podcast.host}\n\n"
+                f"{feed.podcast.email}"
                 )),
             reply_markup = InlineKeyboardMarkup.from_column([
                 InlineKeyboardButton(
                     "查 看 单 集", 
-                    switch_inline_query_current_chat = f"episodes {podcast.name} page 1"
+                    switch_inline_query_current_chat = f"episodes {feed.podcast.name} page 1"
                 ), InlineKeyboardButton(
-                    "关      于", url = podcast.website)
+                    "关      于", url = feed.podcast.website)
             ]),
-            description = podcast.host,
-            thumb_url = podcast.logo_url,
+            description = feed.podcast.host,
+            thumb_url = feed.podcast.logo_url,
             thumb_width = 30, 
             thumb_height = 30 
-        ) for index, podcast in enumerate(
-            list(podcasts.values())[
+        ) for index, feed in enumerate(
+            list(subscription.values())[
                 results_per_page * (current_page - 1): 
                 results_per_page * current_page]
             )

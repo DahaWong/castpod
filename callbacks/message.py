@@ -29,21 +29,23 @@ def save_subscription(update, context):
             try:
                 podcast = Podcast(feed['url'])
                 cached_podcasts.update({podcast.name: podcast})
-            except: 
+            except Exception as e: 
+                print(e)
                 failed_feeds.append(feed['url'])
+                continue
         else:
             podcast = cached_podcasts[feed['name']]
         podcasts.append(podcast)
+    print(podcasts)
     user.import_feeds(podcasts)
     
     subscribing_note.delete()
     if len(podcasts):
         newline = '\n'
         reply = f"成功订阅 {len(podcasts)} 部播客！" if not len(failed_feeds) else (
-                f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。可能损坏的订阅源："
-                f"\n\n```"
-                f"\n{newline.join([feed for feed in failed_feeds])}"
-                f"\n```")
+                f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
+                f"\n\n可能损坏的订阅源："
+                f"\n{newline.join([f"`{feed}`" for feed in failed_feeds])}"
     else:
         reply = "订阅失败。请检查订阅文件以及其中的订阅源是否受损 :("
 
