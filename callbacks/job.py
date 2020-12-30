@@ -9,7 +9,7 @@ def update_podcasts(context):
             try:
                 print(latest_episode.audio_size)
                 audio_message = context.bot.send_audio(
-                    chat_id = podcast_vault,
+                    chat_id = f'@{podcast_vault}',
                     audio = latest_episode.url,
                     caption = latest_episode.discription,
                     title = latest_episode.title,
