@@ -15,7 +15,8 @@ def save_subscription(update, context):
     try:
         with open(path, 'r') as f:
             feeds = parse_opml(f)
-    except:
+    except Exception as e:
+        print(e)
         subscribing_note.delete()
         update.message.reply_text("订阅失败 :(\n请检查订阅文件是否格式正确/完好无损")
         return
