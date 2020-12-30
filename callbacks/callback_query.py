@@ -60,13 +60,13 @@ def download_episode(update, context):
                 title = episode.title,
                 performer = episode.host or podcast.host,
                 thumb = episode.logo_url or podcast.logo_url,
-                reply_markup = InlineKeyboardMarkup.from_button(InlineKeyboardButton('返 回', url=f"tg://{manifest.bot_id}"))
+                reply_markup = InlineKeyboardMarkup.from_button(InlineKeyboardButton('返 回', url=f"https://t.me/{manifest.bot_id}"))
             )
             success_note = uploading_note.edit_text("下载成功！")
             success_note.delete()
             forwarded_message = audio_message.forward(query.from_user.id)
             forwarded_message.edit_reply_markup(
-                InlineKeyboardMarkup.from_button(
+                reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
                         "评 论 区", 
                         url=f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}"
