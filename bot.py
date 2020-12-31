@@ -3,7 +3,7 @@ from telegram.ext import Updater
 from handlers.register import register
 from utils.persistence import persistence
 from utils.schedule import set_jobs
- 
+
 updater = Updater(**update_info)
 dispatcher = updater.dispatcher
 
@@ -15,10 +15,10 @@ dispatcher = updater.dispatcher
 # updater.bot.close()
 
 # Webhook:
-updater.start_webhook(**webhook_info)
-updater.bot.set_webhook(**webhook_setting)
+# updater.start_webhook(**webhook_info)
+# updater.bot.set_webhook(**webhook_setting)
 
-set_jobs(updater.job_queue)
+# set_jobs(updater.job_queue)
 
 if not dispatcher.bot_data:
     updater.dispatcher.bot_data.update({"podcasts":{}})
@@ -29,5 +29,5 @@ print(dispatcher.user_data)
 register(updater.dispatcher)
 
 # Polling:
-# updater.start_polling()
-# updater.idle()
+updater.start_polling()
+updater.idle()

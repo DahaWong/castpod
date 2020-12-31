@@ -33,7 +33,7 @@ class User(object):
 
     def encode_feeds(self, subscription) -> str:
         pass
-
+    
 
 class Podcast(object):
     def __init__(self, feed_url):
@@ -66,7 +66,6 @@ class Podcast(object):
             return None
 
 
-
 class Episode(object):
     """
     Episode of a specific podcast.
@@ -87,6 +86,7 @@ class Episode(object):
         self.logo_url = episode.get('image').href if episode.get('image') else ''
         self.tags = episode.get('tags')[0].get('term') if episode.get('tags') else None
  
+
 class Feed(object):
     """
     Feed of each user subscription.

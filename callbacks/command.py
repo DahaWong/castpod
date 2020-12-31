@@ -12,7 +12,10 @@ def start(update, context):
 
     if 'user' not in context.user_data.keys():
         user = User(first_name, user_id)
-        context.user_data.update({"user": user})
+        context.user_data.update({
+            'user': user,
+            'tips':['search', 'help', 'logout','alert'],
+        })
 
     user = context.user_data['user']
     if (not context.args) or (context.args[0] == "login"):
@@ -65,12 +68,19 @@ def about(update, context):
 
 
 def search(update, context):
-    keyboard = [[InlineKeyboardButton('🔍️', switch_inline_query_current_chat = '')]]
+    keyboard = [[InlineKeyboardButton('开    始', switch_inline_query_current_chat = '')]]
 
     message = update.message.reply_text(
-        f'点击下方按钮进入搜索模式',
+        f'🔎️',
         reply_markup = InlineKeyboardMarkup(keyboard)
     )
+
+    Tips(from_command = 'search',
+        text = (f"⦿ 点击「开始」按钮启动搜索模式。"
+            f"\n⦿ 我们更推荐在对话框中输入 `@` 来唤出行内模式；"
+            f"也可以选择发送文件，左划找到本机器人启动。"
+        )
+    ).send(update, context)
 
 def manage(update, context):
     # Pagination!
@@ -106,7 +116,7 @@ def help(update, context):
     ]]
 
     update.message.reply_text(
-        """**Podcasted 使用说明**""",# import constants
+        f"*{manifest.name} 使用说明*",# import constants
         reply_markup = InlineKeyboardMarkup(keyboard)
     )
 
@@ -115,16 +125,39 @@ def export(update, context):
     user = context.user_data['user']
     update.message.reply_document(
         document = user.subscription_path, 
-        filename = f"{user.name} 的 Podcasted 订阅.xml",
+        filename = f"{user.name} 的 {manifest.name} 订阅.xml",
         thumb = "" # pathLib.Path/file-like, jpeg, w,h<320px, thumbnail
     )
 
 
 def logout(update, context):
-    keyboard = [[InlineKeyboardButton("返   回", callback_data = "delete_message"),
-                 InlineKeyboardButton("注   销", callback_data = "delete_account")]]
+    command_message_id = update.message.message_id
+    keyboard = [[InlineKeyboardButton("返   回", callback_data = f"delete_command_context{command_message_id}"),
+                 InlineKeyboardButton("注   销", callback_data = "logout")]]
 
     update.message.reply_text(
-        "您确定要注销账号吗？\n这将清除所有存储在后台的个人数据。",
+        "确认注销账号吗？\n",
         reply_markup = InlineKeyboardMarkup(keyboard)
     )
+
+    Tips('logout', "⦿ 这将清除所有存储在后台的个人数据。").send(update, context)
+
+class Tips(object):
+    def __init__(self, from_command, text):
+        self.command = from_command
+        self.text = text
+    def keyboard(self):
+        return InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton("✓", callback_data=f'close_tips_{self.command}')
+        )
+    def send(self, update, context):
+        if self.command not in context.user_data.get('tips'): 
+            return
+        update.message.reply_text(
+            text = self.text,
+            reply_markup = self.keyboard()
+        )
+
+def check_login(user):
+    if not user:
+        message.reply_text("您尚未登录。/start")

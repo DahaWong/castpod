@@ -102,3 +102,41 @@ def like_episode(update, context):
 
 def unlike_episode(update, context):
     toggle_like_episode(update, context, to="unliked")
+
+# Tips
+
+def close_tips(update, context):
+    query = update.callback_query
+    pattern = r'close_tips_(\w+)'
+    from_command = re.match(pattern, query.data)[1]
+    context.user_data['tips'].remove(from_command)
+    delete_message(update, context)
+    show_tips_alert = context.user_data['tips'].pop('alert')
+    if show_tips_alert:
+        query.answer("阅读完毕，它不会再出现在对话框中～", show_alert = True)
+# Account:
+
+def logout(update, context):
+    user = context.user_data.get('user')
+    message = update.callback_query.message
+    message.edit_text(
+        "注销账号之前，您可能希望导出订阅数据？",
+        reply_markup = InlineKeyboardMarkup.from_row([
+            InlineKeyboardButton("直 接 注 销", callback_data="delete_account"),
+            InlineKeyboardButton("导 出 订 阅", callback_data="export")
+        ])
+    )
+
+def delete_account(update, context):
+    user = context.user_data['user']
+    message = update.callback_query.message
+    deleting_note = message.edit_text("注销中…")
+    if user.subscription.values():
+        for podcast in user.subscription.values().podcast:
+            podcast.subscribers.remove(user.user_id)
+    context.user_data.clear()
+    deleting_note.edit_text(
+        "👋️", 
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton('重 新 开 始', url=f"https://t.me/{manifest.bot_id}?start=login")
+        ))

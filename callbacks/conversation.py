@@ -35,7 +35,7 @@ def toggle_like_podcast(update, context, to:str):
     message = update.callback_query.message
 
     keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast_{podcast.name}"),
-                 InlineKeyboardButton("查 看 单 集", switch_inline_query_current_chat = f"episodes {podcast.name} page 1"),
+                 InlineKeyboardButton("查 看 单 集", switch_inline_query_current_chat = f"podcast {podcast.name}"),
                  InlineKeyboardButton(button_text, callback_data = callback_data)],
                 [InlineKeyboardButton("关      于", url = podcast.website)]
     ]
@@ -88,7 +88,7 @@ def back_to_actions(update, context):
         )
 
     keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast_{podcast.name}"),
-                InlineKeyboardButton("查 看 单 集", switch_inline_query_current_chat = f"episodes {podcast.name} page 1"),
+                InlineKeyboardButton("查 看 单 集", switch_inline_query_current_chat = f"podcast {podcast.name}"),
                 InlineKeyboardButton("喜    欢", callback_data = f"like_podcast_{podcast.name}")],
             [InlineKeyboardButton("关      于", url = podcast.website)]]
 
@@ -121,7 +121,7 @@ def show_feed(update, context):
         delete_keyboard.delete()
 
         keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast_{podcast.name}"),
-                     InlineKeyboardButton("查 看 单 集", switch_inline_query_current_chat = f"episodes {podcast.name} page 1"),
+                     InlineKeyboardButton("查 看 单 集", switch_inline_query_current_chat = f"podcast {podcast.name}"),
                      InlineKeyboardButton("喜    欢", callback_data = f"like_podcast_{podcast.name}")],
                     [InlineKeyboardButton("关      于", url = podcast.website)]]
 
