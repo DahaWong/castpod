@@ -14,6 +14,9 @@ dispatcher = updater.dispatcher
 # updater.bot.delete_webhook() 
 # updater.bot.close()
 
+# Webhook:
+updater.start_webhook(**webhook_info)
+updater.bot.set_webhook(**webhook_setting)
 
 set_jobs(updater.job_queue)
 
@@ -24,10 +27,6 @@ print(dispatcher.bot_data['podcasts'])
 print(dispatcher.user_data)
 
 register(updater.dispatcher)
-
-# Webhook:
-updater.start_webhook(**webhook_info)
-updater.bot.set_webhook(**webhook_setting)
 
 # Polling:
 # updater.start_polling()
