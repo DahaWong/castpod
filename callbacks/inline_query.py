@@ -6,40 +6,41 @@ from models import Podcast
 
 def handle_inline_query(update, context):
     print('in!')
-    query = update.inline_query
-    query_text = query.query
+    # query = update.inline_query
+    # query_text = query.query
 
-    user_id = query.from_user.id
-    users = context.dispatcher.user_data
-    podcasts = context.bot_data['podcasts']
-    user_subscription = context.user_data['user'].subscription
+    # user_id = query.from_user.id
+    # users = context.dispatcher.user_data
+    # podcasts = context.bot_data['podcasts']
+    # user_subscription = context.user_data['user'].subscription
 
-    episodes_query_pattern = r'^episodes (.+) page ([0-9]+)'
-    podcasts_query_pattern = r'^podcasts page ([0-9]+)'
-    switch_to_bot = {}
+    # episodes_query_pattern = r'^episodes (.+) page ([0-9]+)'
+    # podcasts_query_pattern = r'^podcasts page ([0-9]+)'
+    # switch_to_bot = {}
 
-    if not query_text:
-        results, switch_to_bot = welcome(users, user_id)
-    elif re.match(episodes_query_pattern, query_text):
-        match = re.match(episodes_query_pattern, query_text)
-        results = show_episodes(
-            podcasts, 
-            podcast_name = match[1], 
-            current_page = int(match[2])
-        )
-    elif re.match(podcasts_query_pattern, query_text):
-        match = re.match(podcasts_query_pattern, query_text)
-        results = show_subscription(
-            user_subscription, 
-            current_page = int(match[1])
-        )
-    else:
-        results = search_podcast(query_text)
+    # if not query_text:
+    #     print('in')
+    #     results, switch_to_bot = welcome(users, user_id)
+    # elif re.match(episodes_query_pattern, query_text):
+    #     match = re.match(episodes_query_pattern, query_text)
+    #     results = show_episodes(
+    #         podcasts, 
+    #         podcast_name = match[1], 
+    #         current_page = int(match[2])
+    #     )
+    # elif re.match(podcasts_query_pattern, query_text):
+    #     match = re.match(podcasts_query_pattern, query_text)
+    #     results = show_subscription(
+    #         user_subscription, 
+    #         current_page = int(match[1])
+    #     )
+    # else:
+    #     results = search_podcast(query_text)
 
-    query.answer(
-        results,
-        **switch_to_bot
-    )
+    # query.answer(
+    #     results,
+    #     **switch_to_bot
+    # )
 
 def welcome(users, user_id):
     switch_to_bot = {}
