@@ -33,7 +33,8 @@ update_info = {
 webhook_info = {
     "listen": '127.0.0.1', 
     "port": webhook_port, 
-    "url_path": bot_token
+    "url_path": bot_token,
+    "allowed_updates": []
 }
 
 webhook_setting = {
