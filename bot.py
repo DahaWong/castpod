@@ -15,8 +15,8 @@ dispatcher = updater.dispatcher
 # updater.bot.close()
 
 # Webhook:
-# updater.start_webhook(**webhook_info)
-# updater.bot.set_webhook(**webhook_setting)
+updater.start_webhook(**webhook_info)
+updater.bot.set_webhook(**webhook_setting)
 
 set_jobs(updater.job_queue)
 
@@ -29,5 +29,5 @@ print(dispatcher.user_data)
 register(updater.dispatcher)
 
 # Polling:
-updater.start_polling()
-updater.idle()
+# updater.start_polling()
+# updater.idle()
