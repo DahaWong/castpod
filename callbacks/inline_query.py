@@ -5,7 +5,6 @@ import re
 from models import Podcast
 
 def handle_inline_query(update, context):
-    print('in!')
     query = update.inline_query
     query_text = query.query
 
@@ -19,7 +18,6 @@ def handle_inline_query(update, context):
     switch_to_bot = {}
 
     if not query_text:
-        print('in')
         results, switch_to_bot = welcome(users, user_id)
     elif re.match(episodes_query_pattern, query_text):
         match = re.match(episodes_query_pattern, query_text)
