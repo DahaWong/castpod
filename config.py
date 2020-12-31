@@ -37,8 +37,8 @@ webhook_info = {
 }
 
 webhook_setting = {
-    "url": f'https://webhook.daha.me/{bot_token}',
-    "certificate": open('cert.pem', 'rb')
+    "url": f'http://webhook.daha.me/{bot_token}',
+    "drop_pending_updates" = True
 }
  
 # Test
