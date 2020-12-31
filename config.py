@@ -33,14 +33,13 @@ update_info = {
 webhook_info = {
     "listen": '127.0.0.1', 
     "port": webhook_port, 
-    "url_path": bot_token,
-    "allowed_updates": []
+    "url_path": bot_token
 }
 
 webhook_setting = {
     "url": f'http://webhook.daha.me/{bot_token}',
-    "drop_pending_updates" : True,
-    "max_connections": 1000
+    "max_connections": 1000,
+    "allowed_updates": []
 }
  
 # Test
