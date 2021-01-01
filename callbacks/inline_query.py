@@ -3,6 +3,7 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKe
 from manifest import manifest
 import re
 from models import Podcast
+from components import PodcastPage
 from uuid import uuid4
 
 def handle_inline_query(update, context):
@@ -74,10 +75,8 @@ def search_podcast(query, context):
             name = re.sub(r'[_*`]', ' ', result['collectionName'])
             host = re.sub(r'[_*`]', ' ', result['artistName'])
             feed = result['feedUrl']
-
             thumbnail_full = result['artworkUrl600']
             thumbnail_small = result['artworkUrl60']
-            podcast_info = f"*{name}*\n[🎙️]({thumbnail_full})  {host}\n\n订阅源：`{feed}`"
 
             keyboard = [
                 # 如果不在 机器人主页，则：
@@ -88,7 +87,7 @@ def search_podcast(query, context):
             result_item = InlineQueryResultArticle(
                 id = result['collectionId'], 
                 title = name, 
-                input_message_content = InputTextMessageContent(podcast_info), 
+                input_message_content = InputTextMessageContent(feed), 
                 reply_markup= InlineKeyboardMarkup(keyboard),
                 description = host,
                 thumb_url = thumbnail_small,
@@ -116,14 +115,13 @@ def show_episodes(query, context, podcast_name):
         id = index,
         title = episode.title,
         input_message_content = InputTextMessageContent((
-            f"*{podcast.name}*\n"
-            f"[🎙️]({podcast.logo_url})  {podcast.host}\n"
+            f"*{podcast.name}*  [🎙️]({episode.logo_url or podcast.logo_url})  {episode.host or podcast.host}\n\n"
             f"{episode.title}\n\n"
-            f"{episode.get('subtitle') or ''}"
+            f"{episode.subtitle}"
             # and then use Telegraph api to generate summary link!
             )),
         reply_markup = InlineKeyboardMarkup(keyboard),
-        description = episode.get('subtitle') or podcast_name,
+        description = episode.subtitle or podcast_name,
         thumb_url = podcast.logo_url,
         thumb_width = 60, 
         thumb_height = 60 
@@ -139,25 +137,14 @@ def show_subscription(query, context):
     results = [InlineQueryResultArticle(
             id = index,
             title = feed.podcast.name,
-            input_message_content = InputTextMessageContent((
-                f"*{feed.podcast.name}*\n"
-                f"[🎙️]({feed.podcast.logo_url})  {feed.podcast.host}\n\n"
-                f"{feed.podcast.email}"
-                )),
-            reply_markup = InlineKeyboardMarkup.from_column([
-                InlineKeyboardButton(
-                    "查 看 单 集", 
-                    switch_inline_query_current_chat = f"podcast {feed.podcast.name}"
-                ), InlineKeyboardButton(
-                    "关      于", url = feed.podcast.website)
-            ]),
+            input_message_content = InputTextMessageContent(PodcastPage(feed.podcast).text()),
+            reply_markup = InlineKeyboardMarkup(PodcastPage(feed.podcast).keyboard),
             description = feed.podcast.host,
             thumb_url = feed.podcast.logo_url,
-            thumb_width = 30, 
-            thumb_height = 30 
+            thumb_width = 60, 
+            thumb_height = 60 
         ) for index, feed in enumerate(list(subscription.values()))
     ]
-
     query.answer(
         results,
         auto_pagination = True,

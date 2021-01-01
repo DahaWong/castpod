@@ -48,12 +48,11 @@ class Podcast(object):
         if str(result.status)[0]!= '2' and str(result.status)[0]!= '3':
             raise Exception('Feed URL Open Error.')
         feed = result.feed
-        self.episodes = result['items']
+        self.episodes = [Episode(self.name, episode) for episode in result['items']]
         latest_episode = self.episodes[0]
         self.name = feed.get('title')
         if not self.name: raise Exception("Error when parsing feed.")
-        print(self.name)
-        self.latest_episode = Episode(self.name, latest_episode)
+        self.latest_episode = self.episodes[0]
         self.host = feed.author_detail.name
         self.website = feed.link
         self.email = feed.author_detail.get('email') or ""
@@ -72,7 +71,6 @@ class Episode(object):
     """
     Episode of a specific podcast.
     """
-
     def __init__(self, from_podcast:str, episode):
         self.podcast_name = from_podcast
         print(self.podcast_name)
@@ -82,6 +80,7 @@ class Episode(object):
         self.audio_size = self.audio.get('length') or 0
         self.title = episode.get('title') or ''
         self.subtitle = episode.get('subtitle') or ''
+        if self.title == self.subtitle: self.subtitle = ''
         self.summary = episode.get('summary') or ''
         self.published_time = episode.published_parsed
         self.duration = episode.get('itunes_duration') # string, (hh:)mm:ss or sec

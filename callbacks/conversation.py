@@ -1,6 +1,7 @@
 import re
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from models import Episode
+from components import PodcastPage
 
 END = -1
 ACTIONS, SHOW_EPISODES, UNSUBSCRIBE = range(3)
@@ -25,24 +26,17 @@ def toggle_like_podcast(update, context, to:str):
 
     if (to == 'liked'):
         pin_method = pin_message
-        button_text = '  ❤️  '
-        callback_data = f"unlike_podcast_{podcast_name}"
+        kwargs = {
+            'like_text': '❤️',
+            'like_action': "unlike_podcast"            
+        }
     elif (to == 'unliked'):
         pin_method = unpin_message
-        button_text = '喜    欢'
-        callback_data = f"like_podcast_{podcast_name}"
+        kwargs = {}
 
-    message = update.callback_query.message
-
-    keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast_{podcast.name}"),
-                 InlineKeyboardButton("查 看 单 集", switch_inline_query_current_chat = f"podcast {podcast.name}"),
-                 InlineKeyboardButton(button_text, callback_data = callback_data)],
-                [InlineKeyboardButton("关      于", url = podcast.website)]
-    ]
-
-    update.callback_query.edit_message_reply_markup(InlineKeyboardMarkup(keyboard))
+    keyboard = PodcastPage(podcast, **kwargs).keyboard()
+    query.edit_message_reply_markup(InlineKeyboardMarkup(keyboard))
     pin_method(update, context)
-
 
 def like_podcast(update, context):
     toggle_like_podcast(update, context, to="liked")
@@ -81,20 +75,10 @@ def back_to_actions(update, context):
     podcast_name = re.match(pattern, query.data)[2]
     podcast = context.bot_data['podcasts'].get(podcast_name)
 
-    podcast_info = (
-            f'*{podcast.name}*'
-            f'\n[🎙️]({podcast.logo_url})  {podcast.host}'
-            f'\n✉️  {podcast.email}'
-        )
-
-    keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast_{podcast.name}"),
-                InlineKeyboardButton("查 看 单 集", switch_inline_query_current_chat = f"podcast {podcast.name}"),
-                InlineKeyboardButton("喜    欢", callback_data = f"like_podcast_{podcast.name}")],
-            [InlineKeyboardButton("关      于", url = podcast.website)]]
-
-    update.callback_query.edit_message_text(
-        text = podcast_info,
-        reply_markup = InlineKeyboardMarkup(keyboard)
+    page = PodcastPage(podcast)
+    query.edit_message_text(
+        text = page.text(),
+        reply_markup = InlineKeyboardMarkup(page.keyboard())
     )
 
     return ACTIONS
@@ -111,21 +95,10 @@ def show_feed(update, context):
             reply_markup = ReplyKeyboardRemove()
         )
         delete_keyboard.delete()
-        
-        email_info = f'\n✉️  {podcast.email}' if podcast.email else ''
-        podcast_info = (
-            f'*{podcast.name}*'
-            f'\n[🎙️]({podcast.logo_url or podcast.website})  {podcast.host}'
-            f'{email_info}'
-        )
 
-        keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast_{podcast.name}"),
-                     InlineKeyboardButton("分 集 列 表", switch_inline_query_current_chat = f"podcast {podcast.name}"),
-                     InlineKeyboardButton("喜    欢", callback_data = f"like_podcast_{podcast.name}")],
-                    [InlineKeyboardButton("关      于", url = podcast.website)]]
-
+        page = PodcastPage(podcast)
         update.message.reply_text(
-            text = podcast_info,
-            reply_markup = InlineKeyboardMarkup(keyboard)
+            text = page.text(),
+            reply_markup = InlineKeyboardMarkup(page.keyboard())
         )
     return ACTIONS

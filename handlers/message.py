@@ -6,8 +6,7 @@ subscription_handler = MessageHandler(
     callback.save_subscription
 )
 
-feed_handler = MessageHandler(Filters.entity("url") & Filters.regex(r'^https?://'), callback.subscribe_via_add)
-subscribe_handler = MessageHandler(Filters.regex(r'订阅源：'), callback.subscribe_via_search)
-text_handler = MessageHandler(Filters.regex(r'^退出'), callback.handle_exit)
+feed_handler = MessageHandler(Filters.entity("url") & Filters.regex(r'^https?://'), callback.subscribe_feed)
+exit_handler = MessageHandler(Filters.regex(r'^退出'), callback.exit_reply_keyboard)
 
-handlers=[feed_handler, subscription_handler, text_handler, subscribe_handler]
+handlers=[feed_handler, subscription_handler, exit_handler]
