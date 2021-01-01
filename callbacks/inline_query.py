@@ -134,13 +134,12 @@ def show_subscription(query, context):
             id = index,
             title = feed.podcast.name,
             input_message_content = InputTextMessageContent(PodcastPage(feed.podcast).text()),
-            reply_markup = InlineKeyboardMarkup(PodcastPage(feed.podcast).keyboard),
+            reply_markup = InlineKeyboardMarkup(PodcastPage(feed.podcast).keyboard()),
             description = feed.podcast.host,
             thumb_url = feed.podcast.logo_url,
             thumb_width = 60, 
             thumb_height = 60 
-        ) for index, feed in enumerate(list(subscription.values()))
-    ]
+        ) for index, feed in enumerate(list(subscription.values()))]
     query.answer(
         results,
         auto_pagination = True,
