@@ -71,14 +71,14 @@ def search(update, context):
     keyboard = [[InlineKeyboardButton('开    始', switch_inline_query_current_chat = '')]]
 
     message = update.message.reply_text(
-        f'🔎️',
+        '🔎️',
         reply_markup = InlineKeyboardMarkup(keyboard)
     )
 
     Tips(from_command = 'search',
         text = (f"⦿ 点击「开始」按钮启动搜索模式。"
-            f"\n⦿ 我们更推荐在对话框中输入 `@` 来唤出行内模式；"
-            f"也可以选择发送文件，左划找到本机器人启动。"
+            f"\n⦿ 前往 Telegram `设置 → 外观 → 大表情 Emoji` 获得更好的显示效果"
+            f"\n⦿ 推荐通过在对话框中输入 `@` 来唤出行内搜索模式"
         )
     ).send(update, context)
 

@@ -3,16 +3,26 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKe
 from manifest import manifest
 import re
 from models import Podcast
+from uuid import uuid4
 
 def handle_inline_query(update, context):
     query = update.inline_query
-    if not query.query:
-        
+    query_text = query.query
+    podcast_match = re.match('^podcast(.*)', query_text)
+    if not query_text:
+        welcome(query, context)
+    elif not podcast_match:
+        search_podcast(query, context)
+    elif not podcast_match[1]:
+        show_subscription(query, context)
+    else: 
+        podcast = podcast_match[1].lstrip()
+        show_episodes(query, context, podcast)
 
-def welcome(update, context):
-    print('wel')
+def welcome(query, context):
     user_id = query.from_user.id
-    if user_id not in  context.dispatcher.user_data.keys():
+    users = context.dispatcher.user_data.keys()
+    if user_id not in users:
         results = []
         login = {
             "auto_pagination": True,
@@ -21,15 +31,21 @@ def welcome(update, context):
             "cache_time": 0
         }
     else:
-        # trending
-        keyboard = [[InlineKeyboardButton('开    始', switch_inline_query_current_chat = '')]]
+        # trending, sorted by ...
+        user = context.user_data['user']
+        podcasts = context.bot_data['podcasts']
         results = [InlineQueryResultArticle(
-            id='0',
-            title = "欢迎使用播客搜索功能",
-            description = "继续输入关键词以检索播客节目",
-            input_message_content = InputTextMessageContent("🔍️"),
-            reply_markup = InlineKeyboardMarkup(keyboard)
-        )]
+            id = uuid4(),
+            title = podcast.name,
+            description = podcast.host,
+            input_message_content = InputTextMessageContent((
+                f"*{podcast.name}*"
+            )),
+            # reply_markup = InlineKeyboardMarkup(),
+            thumb_url = podcast.logo_url,
+            thumb_width = 60,
+            thumb_height = 60
+        ) for podcast in podcasts.values() if not user.subscription.get(podcast.name)]
         login = {}
 
     query.answer(
@@ -37,52 +53,76 @@ def welcome(update, context):
         **login
     )
 
-def subscribe_feed(update, context):
-    query = update.inline_query
+def search_podcast(query, context):
     query_text = query.query
+    searched_results = search(query_text)
+    if not searched_results:
+        listed_results = [
+            InlineQueryResultArticle(
+                id = '0',
+                title = "没有与此相关的博客呢 :(",
+                description = "换个关键词试试",
+                input_message_content = InputTextMessageContent("🔍️"),
+                reply_markup=InlineKeyboardMarkup.from_button(
+                    InlineKeyboardButton('返 回 搜 索 模 式', switch_inline_query_current_chat=query_text)
+                )
+            )
+        ]
+    else:
+        listed_results = []
+        for result in searched_results:
+            name = re.sub(r'[_*`]', ' ', result['collectionName'])
+            host = re.sub(r'[_*`]', ' ', result['artistName'])
+            feed = result['feedUrl']
 
-    user_id = query.from_user.id
-    users = context.dispatcher.user_data
-    podcasts = context.bot_data['podcasts']
-    user_subscription = context.user_data['user'].subscription
-    podcast = Podcast(url)
-    podcasts.update({podcast.name: podcast})
-    results = []
-    kwargs = {
-        "switch_pm_text": "订阅播客：" + podcast.name,
-        "switch_pm_parameter": podcast.name,
-        "cache_time": 0
-    }
-    return results, kwargs
+            thumbnail_full = result['artworkUrl600']
+            thumbnail_small = result['artworkUrl60']
+            podcast_info = f"*{name}*\n[🎙️]({thumbnail_full})  {host}\n\n订阅源：`{feed}`"
 
-def show_episodes(update, context):
-    query = update.inline_query
-    podcast_name = re.match(r'^podcast (\w+)', query.query)[1]
+            keyboard = [
+                # 如果不在 机器人主页，则：
+                # [InlineKeyboardButton('前  往  B O T', url = f"https://t.me/{manifest.bot_id}")],
+                [InlineKeyboardButton('返    回', switch_inline_query_current_chat = query.query)]
+            ]
+
+            result_item = InlineQueryResultArticle(
+                id = result['collectionId'], 
+                title = name, 
+                input_message_content = InputTextMessageContent(podcast_info), 
+                reply_markup= InlineKeyboardMarkup(keyboard),
+                description = host,
+                thumb_url = thumbnail_small,
+                thumb_height = 60,
+                thumb_width = 60
+            )
+            listed_results.append(result_item)
+
+    query.answer(
+        listed_results,
+        auto_pagination = True,
+    )
+
+def show_episodes(query, context, podcast_name):
     podcasts = context.bot_data['podcasts']
     podcast = podcasts.get(podcast_name)
     episodes = podcast.episodes
-    results_per_page = constants.MAX_INLINE_QUERY_RESULTS
-
+    # if context.user_data['preference'].get('reverse_episodes'): episodes.reverse()
+    keyboard = [
+        [InlineKeyboardButton("收      听", callback_data = f"download_episode_{podcast_name}_")],
+        [InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat="podcast"),
+         InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"podcast {podcast_name}")]
+    ]
     listed_results = [InlineQueryResultArticle(
         id = index,
         title = episode.title,
         input_message_content = InputTextMessageContent((
-            f"[📻️]({podcast.logo_url})  *{podcast_name}*\n"
+            f"*{podcast.name}*\n"
+            f"[🎙️]({podcast.logo_url})  {podcast.host}\n"
             f"{episode.title}\n\n"
             f"{episode.get('subtitle') or ''}"
             # and then use Telegraph api to generate summary link!
             )),
-        reply_markup = InlineKeyboardMarkup.from_row(
-                [InlineKeyboardButton(
-                    "📻️", 
-                    callback_data = f"download_episode_{podcast_name}_"),
-                 InlineKeyboardButton(
-                    "全  部  单  集", 
-                    switch_inline_query_current_chat = f"podcast {podcast_name}"),
-                 InlineKeyboardButton(
-                    "订  阅  列  表", 
-                    switch_inline_query_current_chat="podcast")]
-        ),
+        reply_markup = InlineKeyboardMarkup(keyboard),
         description = episode.get('subtitle') or podcast_name,
         thumb_url = podcast.logo_url,
         thumb_width = 60, 
@@ -94,60 +134,14 @@ def show_episodes(update, context):
         auto_pagination = True
     )
 
-def search_podcast(update, context):
-    query = update.inline_query
-
-    user_id = query.from_user.id
-    users = context.dispatcher.user_data
-    podcasts = context.bot_data['podcasts']
-    user_subscription = context.user_data['user'].subscription
-    searched_results = search(query.query) # 需要缓存搜索结果⚠️？
-    listed_results = []
-
-    if not query.query:
-        print('done')
-
-    for result in searched_results:
-        itunes_id = result['collectionId']
-        name = result['collectionName']
-        feed = result.get('feedUrl')
-        host = result['artistName']
-        thumbnail_full = result['artworkUrl600']
-        thumbnail_small = result['artworkUrl60']
-
-        podcast_info = f"[📻️]({thumbnail_full})  {name} \n_by_ {host}\n\n订阅：`{feed}`"
-        keyboard = [
-            # 如果不在 机器人主页，则：
-            # [InlineKeyboardButton('前  往  B O T', url = f"https://t.me/{manifest.bot_id}")],
-            [InlineKeyboardButton('返    回', switch_inline_query_current_chat = query.query)]
-        ]
-        result_item = InlineQueryResultArticle(
-            id = itunes_id, 
-            title = name, 
-            input_message_content = InputTextMessageContent(podcast_info), 
-            reply_markup= InlineKeyboardMarkup(keyboard),
-            description = host,
-            thumb_url = thumbnail_small,
-            thumb_height = 60,
-            thumb_width = 60
-        )
-        listed_results.append(result_item)
-
-    query.answer(
-        listed_results,
-        auto_pagination = True,
-    )
-
-def show_subscription(update, context):
-    query = update.inline_query
+def show_subscription(query, context):
     subscription = context.user_data['user'].subscription
-
     results = [InlineQueryResultArticle(
             id = index,
             title = feed.podcast.name,
             input_message_content = InputTextMessageContent((
-                f"[📻️]({feed.podcast.logo_url})  *{feed.podcast.name}*\n"
-                f"{feed.podcast.host}\n\n"
+                f"*{feed.podcast.name}*\n"
+                f"[🎙️]({feed.podcast.logo_url})  {feed.podcast.host}\n\n"
                 f"{feed.podcast.email}"
                 )),
             reply_markup = InlineKeyboardMarkup.from_column([

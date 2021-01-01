@@ -48,9 +48,9 @@ def download_episode(update, context):
             print(episode.audio_url)
             # get file size?
             print("音频大小："+str(episode.audio_size))
-            local_download_note = fetching_note.edit_text("正在切换至本地线路…")
+            local_download_note = fetching_note.edit_text("下载中…")
             file_path = local_download(episode.audio_url)
-            uploading_note = local_download_note.edit_text("正在获取节目…")
+            uploading_note = local_download_note.edit_text("正在转发…")
             bot.send_chat_action(query.from_user.id, "upload_audio")
             # this is Upload? Need async and error handling:
             audio_message = bot.send_audio(
@@ -70,7 +70,7 @@ def download_episode(update, context):
             forwarded_message.edit_reply_markup(
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
-                        "评  论  区", 
+                        "评    论", 
                         url=f"https://t.me/{podcast_vault}/{audio_message.message_id}"
                     )
                 )
@@ -111,9 +111,11 @@ def close_tips(update, context):
     from_command = re.match(pattern, query.data)[1]
     context.user_data['tips'].remove(from_command)
     delete_message(update, context)
-    show_tips_alert = context.user_data['tips'].pop('alert')
+    show_tips_alert = 'alert' in context.user_data['tips']
     if show_tips_alert:
         query.answer("阅读完毕，它不会再出现在对话框中～", show_alert = True)
+        context.user_data['tips'].remove('alert')
+
 # Account:
 
 def logout(update, context):

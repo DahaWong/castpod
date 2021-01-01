@@ -59,8 +59,8 @@ def unsubscribe_podcast(update, context):
     update.callback_query.message.edit_text(
         f"确认退订 {podcast_name} ？", 
         reply_markup = InlineKeyboardMarkup.from_row([
-            InlineKeyboardButton("退    订", callback_data="confirm_unsubscribe"), 
-            InlineKeyboardButton("返    回", callback_data=f"back_to_actions_{podcast_name}")]
+            InlineKeyboardButton("返    回", callback_data=f"back_to_actions_{podcast_name}"), 
+            InlineKeyboardButton("退    订", callback_data="confirm_unsubscribe")]
         )
     )
     update.callback_query.answer((
@@ -82,9 +82,9 @@ def back_to_actions(update, context):
     podcast = context.bot_data['podcasts'].get(podcast_name)
 
     podcast_info = (
-            f'[📻️]({podcast.logo_url})  *{podcast.name}*'
-            f'\n_by_  {podcast.host}'
-            f'\n信箱： {podcast.email}'
+            f'*{podcast.name}*'
+            f'\n[🎙️]({podcast.logo_url})  {podcast.host}'
+            f'\n✉️  {podcast.email}'
         )
 
     keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast_{podcast.name}"),
@@ -106,22 +106,21 @@ def show_feed(update, context):
         feed_name = text
         feed = context.user_data['user'].subscription[feed_name]
         podcast = feed.podcast
-        email_info = f'\n信箱： {podcast.email}' if podcast.email else ""
-        podcast_info = (
-            f'[📻️]({podcast.logo_url or podcast.website})  *{podcast.name}*'
-            f'\n_by_  {podcast.host}'
-            f'{email_info}'
-        )
-
         delete_keyboard = update.message.reply_text(
             text = "OK",
             reply_markup = ReplyKeyboardRemove()
         )
-
         delete_keyboard.delete()
+        
+        email_info = f'\n✉️  {podcast.email}' if podcast.email else ''
+        podcast_info = (
+            f'*{podcast.name}*'
+            f'\n[🎙️]({podcast.logo_url or podcast.website})  {podcast.host}'
+            f'{email_info}'
+        )
 
         keyboard = [[InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast_{podcast.name}"),
-                     InlineKeyboardButton("查 看 单 集", switch_inline_query_current_chat = f"podcast {podcast.name}"),
+                     InlineKeyboardButton("分 集 列 表", switch_inline_query_current_chat = f"podcast {podcast.name}"),
                      InlineKeyboardButton("喜    欢", callback_data = f"like_podcast_{podcast.name}")],
                     [InlineKeyboardButton("关      于", url = podcast.website)]]
 

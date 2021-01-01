@@ -2,8 +2,9 @@ from utils.parser import parse_opml
 import feedparser
 import socket
 from urllib.error import URLError
+from uuid import NAMESPACE_URL, uuid5
 
-socket.setdefaulttimeout(2)
+socket.setdefaulttimeout(3)
 
 class User(object):
     """
@@ -38,6 +39,7 @@ class User(object):
 class Podcast(object):
     def __init__(self, feed_url):
         self.feed_url = feed_url
+        # self.id = uuid5(NAMESPACE_URL, feed_url)
         self.parse_feed(feed_url)
         self.subscribers = set()
 
