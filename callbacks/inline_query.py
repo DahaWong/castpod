@@ -84,8 +84,7 @@ def search_podcast(query, context):
             result_item = InlineQueryResultArticle(
                 id = result['collectionId'], 
                 title = name, 
-                input_message_content = InputTextMessageContent(feed), 
-                reply_markup= InlineKeyboardMarkup(keyboard),
+                input_message_content = InputTextMessageContent(feed),
                 description = host,
                 thumb_url = thumbnail_small,
                 thumb_height = 60,
