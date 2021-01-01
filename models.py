@@ -48,10 +48,9 @@ class Podcast(object):
         if str(result.status)[0]!= '2' and str(result.status)[0]!= '3':
             raise Exception('Feed URL Open Error.')
         feed = result.feed
-        self.episodes = [Episode(self.name, episode) for episode in result['items']]
-        latest_episode = self.episodes[0]
         self.name = feed.get('title')
         if not self.name: raise Exception("Error when parsing feed.")
+        self.episodes = [Episode(self.name, episode) for episode in result['items']]
         self.latest_episode = self.episodes[0]
         self.host = feed.author_detail.name
         self.website = feed.link

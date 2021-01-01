@@ -78,11 +78,8 @@ def search_podcast(query, context):
             thumbnail_full = result['artworkUrl600']
             thumbnail_small = result['artworkUrl60']
 
-            keyboard = [
-                # 如果不在 机器人主页，则：
-                # [InlineKeyboardButton('前  往  B O T', url = f"https://t.me/{manifest.bot_id}")],
-                [InlineKeyboardButton('返    回', switch_inline_query_current_chat = query.query)]
-            ]
+            # 如果不在 机器人主页，则：
+            # [InlineKeyboardButton('前  往  B O T', url = f"https://t.me/{manifest.bot_id}")],
 
             result_item = InlineQueryResultArticle(
                 id = result['collectionId'], 
