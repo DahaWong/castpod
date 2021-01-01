@@ -102,8 +102,9 @@ def show_episodes(query, context, podcast_name):
     podcast = podcasts.get(podcast_name)
     episodes = podcast.episodes
     # if context.user_data['preference'].get('reverse_episodes'): episodes.reverse()
-    keyboard = [
-        [InlineKeyboardButton("收      听", callback_data = f"download_episode_{podcast_name}_")],
+    def keyboard(i):
+        return [
+        [InlineKeyboardButton("收      听", callback_data = f"download_episode_{podcast_name}_{i}")],
         [InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat="podcast"),
          InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"podcast {podcast_name}")]
     ]
@@ -116,7 +117,7 @@ def show_episodes(query, context, podcast_name):
             f"{episode.subtitle}"
             # and then use Telegraph api to generate summary link!
             )),
-        reply_markup = InlineKeyboardMarkup(keyboard),
+        reply_markup = InlineKeyboardMarkup(keyboard(index)),
         description = episode.subtitle or podcast_name,
         thumb_url = podcast.logo_url,
         thumb_width = 60, 
