@@ -45,7 +45,6 @@ def start(update, context):
         welcome_message.pin(disable_notification=True)
     else: 
         feed = decode(context.args[0]).decode('utf-8')
-        print(feed)
         cached_podcasts = context.bot_data['podcasts']
         for cached_podcast in cached_podcasts.values():
             if podcast_name == cached_podcast.name:
@@ -57,7 +56,6 @@ def start(update, context):
             # ⚠️ 需要检查是否存在于 podcasts，然后再分别处理：
             podcast = user.add_feed(podcast_feed)
         podcast.subscribers.add(user_id)
-        print(user.subscription)
 
 
 def about(update, context):

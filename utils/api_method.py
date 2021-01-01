@@ -10,9 +10,7 @@ endpoints = {
 def search(keyword:str):
   res = requests.get(f"{root}{endpoints['search_podcast']}{keyword}")
   status = str(res.status_code)
-  if not status.startswith('2'):
-    print(res)
-    return None
+  if not status.startswith('2'): return None
   results = res.json()['results']
   return results 
 
