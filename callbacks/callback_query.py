@@ -27,7 +27,7 @@ def download_episode(update, context):
     match = re.match(pattern, query.data)
     podcast_name, index = match[1], int(match[2])
     podcast = context.bot_data['podcasts'][podcast_name]
-    episode = Episode(podcast_name, podcast.episodes[index])
+    episode = podcast.episodes[index]
 
     # pprint.pp(podcast.episodes[index])
     promise = context.dispatcher.run_async(

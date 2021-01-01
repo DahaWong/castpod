@@ -4,8 +4,6 @@ import socket
 from urllib.error import URLError
 from uuid import NAMESPACE_URL, uuid5
 
-socket.setdefaulttimeout(3)
-
 class User(object):
     """
     docstring
@@ -44,6 +42,7 @@ class Podcast(object):
         self.subscribers = set()
 
     def parse_feed(self, url):
+        socket.setdefaulttimeout(5)
         result = feedparser.parse(url)
         if str(result.status)[0]!= '2' and str(result.status)[0]!= '3':
             raise Exception('Feed URL Open Error.')
