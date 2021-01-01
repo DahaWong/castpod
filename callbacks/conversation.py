@@ -90,12 +90,6 @@ def show_feed(update, context):
         feed_name = text
         feed = context.user_data['user'].subscription[feed_name]
         podcast = feed.podcast
-        delete_keyboard = update.message.reply_text(
-            text = "OK",
-            reply_markup = ReplyKeyboardRemove()
-        )
-        delete_keyboard.delete()
-
         page = PodcastPage(podcast)
         update.message.reply_text(
             text = page.text(),
