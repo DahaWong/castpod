@@ -80,7 +80,7 @@ class Episode(object):
         if self.title == self.subtitle: self.subtitle = ''
         self.summary = episode.get('summary') or ''
         self.published_time = episode.published_parsed
-        self.duration = set_duration(episode.get('itunes_duration'))
+        self.duration = self.set_duration(episode.get('itunes_duration'))
         self.logo_url = episode.get('image').href if episode.get('image') else ''
         self.tags = episode.get('tags')[0].get('term') if episode.get('tags') else None
 
