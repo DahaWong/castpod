@@ -57,15 +57,15 @@ def start(update, context):
             podcast = user.add_feed(podcast_feed)
         podcast.subscribers.add(user_id)
 
-
 def about(update, context):
+    if not check_login(update, context): return
     keyboard = [[InlineKeyboardButton("源    代    码", url = manifest.repo)],
                 [InlineKeyboardButton("工    作    室", url = manifest.author_url)]]
     markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text(f"*{manifest.name}*  `{manifest.version}`\n@dahawong 出品", reply_markup=markup)
 
-
 def search(update, context):
+    if not check_login(update, context): return
     keyboard = [[InlineKeyboardButton('开    始', switch_inline_query_current_chat = '')]]
 
     message = update.message.reply_text(
@@ -81,6 +81,7 @@ def search(update, context):
     ).send(update, context)
 
 def manage(update, context):
+    if not check_login(update, context): return
     # Pagination!
     user = context.user_data['user']
     message_text = '请选择播客'
@@ -95,8 +96,8 @@ def manage(update, context):
         )
     )
 
-
 def settings(update, context):
+    if not check_login(update, context): return
     keyboard = [["播客更新频率", "快捷置顶单集", "单集信息显示"],
                 ["播客搜索范围", "快捷置顶播客", "单集排序方式"],
                 ["退出偏好设置"]]
@@ -106,6 +107,7 @@ def settings(update, context):
     )
 
 def help(update, context):
+    if not check_login(update, context): return
     command_message_id = update.message.message_id
 
     keyboard = [[
@@ -118,8 +120,8 @@ def help(update, context):
         reply_markup = InlineKeyboardMarkup(keyboard)
     )
 
-
 def export(update, context):
+    if not check_login(update, context): return
     user = context.user_data['user']
     update.message.reply_document(
         document = user.subscription_path, 
@@ -127,8 +129,8 @@ def export(update, context):
         thumb = "" # pathLib.Path/file-like, jpeg, w,h<320px, thumbnail
     )
 
-
 def logout(update, context):
+    if not check_login(update, context): return
     command_message_id = update.message.message_id
     keyboard = [[InlineKeyboardButton("返   回", callback_data = f"delete_command_context{command_message_id}"),
                  InlineKeyboardButton("注   销", callback_data = "logout")]]
@@ -156,6 +158,10 @@ class Tips(object):
             reply_markup = self.keyboard()
         )
 
-def check_login(user):
+def check_login(update, context):
+    user = context.user_data.get('user')
     if not user:
-        message.reply_text("您尚未登录。/start")
+        update.message.reply_text("请先登录：/start")
+        return False
+    else:
+        return True

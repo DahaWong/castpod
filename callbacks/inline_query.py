@@ -21,9 +21,7 @@ def handle_inline_query(update, context):
         show_episodes(query, context, podcast)
 
 def welcome(query, context):
-    user_id = query.from_user.id
-    users = context.dispatcher.user_data.keys()
-    if user_id not in users:
+    if not context.user_data.get('user'):
         results = []
         login = {
             "auto_pagination": True,

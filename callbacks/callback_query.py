@@ -109,8 +109,9 @@ def delete_account(update, context):
     message = update.callback_query.message
     deleting_note = message.edit_text("注销中…")
     if user.subscription.values():
-        for podcast in user.subscription.values().podcast:
-            podcast.subscribers.remove(user.user_id)
+        # print(user.subscription.values())
+        for feed in user.subscription.values():
+            feed.podcast.subscribers.remove(user.user_id)
     context.user_data.clear()
     deleting_note.edit_text(
         "👋️", 
