@@ -30,9 +30,9 @@ def download_episode(update, context):
     episode = podcast.episodes[index]
     bot.send_chat_action(query.from_user.id, "upload_audio")
     if episode.audio_size and int(episode.audio_size) < 20000000:
-        audio_message = direct_download(context, fetching_note, episode)
+        audio_message = direct_download(context, fetching_note, episode, podcast)
     else:
-        audio_message = local_download(context, fetching_note, episode)
+        audio_message = local_download(context, fetching_note, episode, podcast)
     forwarded_message = audio_message.forward(query.from_user.id)
     forwarded_message.edit_reply_markup(
         reply_markup=InlineKeyboardMarkup.from_button(
@@ -43,7 +43,7 @@ def download_episode(update, context):
         )
     )
 
-def direct_download(context, fetching_note, episode):
+def direct_download(context, fetching_note, episode, podcast):
     bot = context.bot
     promise = context.dispatcher.run_async(
         bot.send_audio,
@@ -63,7 +63,7 @@ def direct_download(context, fetching_note, episode):
         except error.BadRequest:
             local_download(context, fetching_note, episode)
 
-def local_download(context, fetching_note, episode):
+def local_download(context, fetching_note, episode, podcast):
     bot = context.bot
     local_download_note = fetching_note.edit_text("下载中…")
     file_path = download(episode.audio_url)
