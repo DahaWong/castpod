@@ -39,7 +39,7 @@ def download_episode(update, context):
         performer = episode.host or podcast.host,
         duration = episode.duration,
         thumb = episode.logo_url or podcast.logo_url,
-        timout = 60
+        timeout = 60
     )
     if (promise.done):
         try:
