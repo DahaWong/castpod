@@ -40,7 +40,7 @@ def welcome(query, context):
             title = podcast.name,
             description = podcast.host,
             input_message_content = InputTextMessageContent((
-                f"*{podcast.name}*"
+                f"{podcast.feed_url}"
             )),
             # reply_markup = InlineKeyboardMarkup(),
             thumb_url = podcast.logo_url,
