@@ -20,7 +20,7 @@ def delete_command_context(update, context):
 # Episode
 def download_episode(update, context):
     query = update.callback_query
-    fetching_note = bot.send_message(query.from_user.id, "获取节目中，请稍候…")
+    fetching_note = context.bot.send_message(query.from_user.id, "获取节目中，请稍候…")
     if episode.audio_size and episode.audio_size < 20000000:
         audio_message = direct_download(update, context)
     else:
