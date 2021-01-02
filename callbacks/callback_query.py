@@ -111,7 +111,8 @@ def delete_account(update, context):
     if user.subscription.values():
         # print(user.subscription.values())
         for feed in user.subscription.values():
-            feed.podcast.subscribers.remove(user.user_id)
+            if user.user_id in feed.podcast.subscribers:
+                feed.podcast.subscribers.remove(user.user_id)
     context.user_data.clear()
     deleting_note.edit_text(
         "👋️", 
