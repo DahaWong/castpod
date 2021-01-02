@@ -84,7 +84,7 @@ def back_to_actions(update, context):
     return ACTIONS
 
 def show_feed(update, context):
-    text = update.message.text
+    text = update['message']['text']
     user = context.user_data['user']
     if text in user.subscription.keys():
         feed_name = text
