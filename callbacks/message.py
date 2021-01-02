@@ -5,12 +5,11 @@ import re
 from components import PodcastPage
 
 def save_subscription(update, context):
-    context.bot.send_chat_action(update.message.chat_id, "typing")
-    subscribing_note = update.message.reply_text("订阅中，请稍等片刻…")
+    parsing_note = update.message.reply_text("正在解析订阅文件…")
     user = context.user_data['user']
     cached_podcasts = context.bot_data['podcasts']
 
-    doc = update['message']['document']
+    doc = update.message['document']
     doc_name, doc_file = doc['file_name'], context.bot.getFile(doc['file_id'])
     path = doc_file.download(f"public/subscriptions/{user.user_id}.xml")
 
@@ -19,14 +18,14 @@ def save_subscription(update, context):
             feeds = parse_opml(f)
     except Exception as e:
         print(e)
-        subscribing_note.delete()
+        parsing_note.delete()
         update.message.reply_text("订阅失败 :(\n请检查订阅文件是否格式正确/完好无损")
         return
-
+    feeds_count = len(feeds)
+    subscribing_note = parsing_note.edit_text(f"订阅中 (0/{feeds_count})")
     podcasts = []
     failed_feeds = []
-    feeds_count = len(feeds)
-
+    subscribed_count = 0
     for i, feed in enumerate(feeds):
         if feed['name'] not in cached_podcasts.keys():
             try:
@@ -38,10 +37,11 @@ def save_subscription(update, context):
                 continue
         else:
             podcast = cached_podcasts[feed['name']]
+        subscribed_count += 1
+        subscribing_note = subscribing_note.edit_text(f"订阅中 ({subscribed_count}/{feeds_count})")
         podcasts.append(podcast)
     user.import_feeds(podcasts)
-    
-    subscribing_note.delete()
+
     if len(podcasts):
         newline = '\n'
         reply = f"成功订阅 {feeds_count} 部播客！" if not len(failed_feeds) else (
@@ -52,7 +52,7 @@ def save_subscription(update, context):
     else:
         reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
-    update.message.reply_text(
+    subscribing_note.edit_text(
         reply, 
         reply_markup = InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
