@@ -85,15 +85,16 @@ def manage(update, context):
     # Pagination!
     user = context.user_data['user']
     message_text = '请选择播客'
-
-    column_buttons = [podcast_name for podcast_name in user.subscription.keys()]
-    column_buttons.append('退出播客管理')
+    podcast_names = user.subscription.keys()
+    rows_count = len(podcast_names)// 3 + bool(len(podcast_names)%3)
+    def row(i):
+        row = [name for index, name in enumerate(podcast_names) if index // 3 == i]
+        return row
     message = update.message.reply_text(
         text = message_text,
-        reply_markup = ReplyKeyboardMarkup.from_column(
-            column_buttons, 
-            resize_keyboard = True
-        )
+        reply_markup = ReplyKeyboardMarkup(
+            [row(i) for i in range(rows_count)]+[['退出播客管理']], 
+            resize_keyboard = True)
     )
 
 def settings(update, context):
