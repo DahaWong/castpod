@@ -59,9 +59,10 @@ def direct_download(context, fetching_note, episode, podcast):
         try:
             audio_message = promise.result()
             fetching_note.delete()
+            return audio_message
 
         except error.BadRequest:
-            local_download(context, fetching_note, episode)
+            return local_download(context, fetching_note, episode)
 
 def local_download(context, fetching_note, episode, podcast):
     bot = context.bot
