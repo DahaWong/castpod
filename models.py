@@ -73,7 +73,7 @@ class Episode(object):
         self.podcast_name = from_podcast
         print(episode)
         self.host = episode.get('author') or ''
-        self.audio = episode.enclosures[0]
+        self.audio = self.set_audio(episode.get('enclosures'))
         self.audio_url = self.audio.href
         self.audio_size = self.audio.get('length') or 0
         self.title = episode.get('title') or ''
@@ -98,6 +98,12 @@ class Episode(object):
         else:
             return 0
         return duration_in_sec
+
+    def set_audio(self, enclosure):
+        if not enclosure:
+            return enclosure[0]
+        else:
+            return None
 
 class Feed(object):
     """
