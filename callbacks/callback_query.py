@@ -37,7 +37,9 @@ def download_episode(update, context):
         caption = podcast.name,
         title = episode.title,
         performer = episode.host or podcast.host,
-        thumb = episode.logo_url or podcast.logo_url
+        duration = episode.duration,
+        thumb = episode.logo_url or podcast.logo_url,
+        timout = 60
     )
     if (promise.done):
         try:
@@ -52,14 +54,16 @@ def download_episode(update, context):
             file_path = local_download(episode.audio_url)
             uploading_note = local_download_note.edit_text("正在转发…")
             bot.send_chat_action(query.from_user.id, "upload_audio")
-            # this is Upload? Need async and error handling:
+            print('duration' + episode.duration)
             audio_message = bot.send_audio(
                 chat_id = f'@{podcast_vault}',
                 audio = file_path,
                 caption = f"{podcast.name}\n\n[返回个人主页](https://t.me/{manifest.bot_id})",
                 title = episode.title,
                 performer = episode.host or podcast.host,
-                thumb = episode.logo_url or podcast.logo_url
+                duration = episode.duration
+                thumb = episode.logo_url or podcast.logo_url,
+                timeout = 60
             )
             success_note = uploading_note.edit_text("下载成功！")
             success_note.delete()

@@ -120,10 +120,10 @@ def show_episodes(query, context, podcast_name):
         reply_markup = InlineKeyboardMarkup(keyboard(index)),
         description = episode.subtitle or podcast_name,
         thumb_url = podcast.logo_url,
-        thumb_width = 60, 
-        thumb_height = 60 
+        thumb_width = 40, 
+        thumb_height = 40
     ) for index, episode in enumerate(episodes)]
-        
+
     query.answer(
         listed_results,
         auto_pagination = True

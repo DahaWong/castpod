@@ -80,10 +80,23 @@ class Episode(object):
         if self.title == self.subtitle: self.subtitle = ''
         self.summary = episode.get('summary') or ''
         self.published_time = episode.published_parsed
-        self.duration = episode.get('itunes_duration') # string, (hh:)mm:ss or sec
+        self.duration = set_duration(episode.get('itunes_duration'))
         self.logo_url = episode.get('image').href if episode.get('image') else ''
         self.tags = episode.get('tags')[0].get('term') if episode.get('tags') else None
- 
+
+    def set_duration(self, duration:str) -> int:
+        if ':' in duration:
+            time = duration.split(':')
+            if len(time) == 3:
+                hour, minute, sec = int(time[0]), int(time[1]), int(time[2])
+            elif len(time) == 2:
+                hour, minute, sec = 0, int(time[0]), int(time[1])
+            duration_in_sec = hour * 3600 + minute * 60 + sec
+        elif duration:
+            duration_in_sec = int(duration)
+        else:
+            return 0
+        return duration_in_sec
 
 class Feed(object):
     """
