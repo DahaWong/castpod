@@ -71,8 +71,8 @@ class Episode(object):
     """
     def __init__(self, from_podcast:str, episode):
         self.podcast_name = from_podcast
+        print(episode)
         self.host = episode.get('author') or ''
-        print(episode.enclosures)
         self.audio = episode.enclosures[0]
         self.audio_url = self.audio.href
         self.audio_size = self.audio.get('length') or 0
