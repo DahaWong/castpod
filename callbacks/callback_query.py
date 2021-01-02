@@ -19,8 +19,15 @@ def delete_command_context(update, context):
 
 # Episode
 def download_episode(update, context):
+    bot = context.bot
     query = update.callback_query
-    fetching_note = context.bot.send_message(query.from_user.id, "获取节目中，请稍候…")
+    fetching_note = bot.send_message(query.from_user.id, "获取节目中，请稍候…")
+    bot.send_chat_action(query.from_user.id, "record_audio")
+    pattern = r'download_episode_(.+)_([0-9]+)'
+    match = re.match(pattern, query.data)
+    podcast_name, index = match[1], int(match[2])
+    podcast = context.bot_data['podcasts'][podcast_name]
+    episode = podcast.episodes[index]
     if episode.audio_size and episode.audio_size < 20000000:
         audio_message = direct_download(update, context)
     else:
@@ -37,12 +44,6 @@ def download_episode(update, context):
 
 def direct_download(update, context):
     bot = context.bot
-    bot.send_chat_action(query.from_user.id, "record_audio")
-    pattern = r'download_episode_(.+)_([0-9]+)'
-    match = re.match(pattern, query.data)
-    podcast_name, index = match[1], int(match[2])
-    podcast = context.bot_data['podcasts'][podcast_name]
-    episode = podcast.episodes[index]
     promise = context.dispatcher.run_async(
         bot.send_audio,
         chat_id = f'@{podcast_vault}',
