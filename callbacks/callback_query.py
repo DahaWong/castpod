@@ -2,7 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error
 import re
 from models import Episode
 from config import podcast_vault
-from utils.downloader import local_download
+from utils.downloader import local_download as download
 from manifest import manifest
 # import pprint
 
@@ -20,8 +20,23 @@ def delete_command_context(update, context):
 # Episode
 def download_episode(update, context):
     query = update.callback_query
-    bot = context.bot
     fetching_note = bot.send_message(query.from_user.id, "获取节目中，请稍候…")
+    if episode.audio_size and episode.audio_size < 20000000:
+        audio_message = direct_download(update, context)
+    else:
+        audio_message = local_download(update, context, fetching_note)
+    forwarded_message = audio_message.forward(query.from_user.id)
+    forwarded_message.edit_reply_markup(
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton(
+                "评    论", 
+                url=f"https://t.me/{podcast_vault}/{audio_message.message_id}"
+            )
+        )
+    )
+
+def direct_download(update, context):
+    bot = context.bot
     bot.send_chat_action(query.from_user.id, "record_audio")
     pattern = r'download_episode_(.+)_([0-9]+)'
     match = re.match(pattern, query.data)
@@ -32,51 +47,39 @@ def download_episode(update, context):
         bot.send_audio,
         chat_id = f'@{podcast_vault}',
         audio = episode.audio_url,
-        caption = podcast.name,
+        caption = f"#{podcast.name}",
         title = episode.title,
         performer = episode.host or podcast.host,
         duration = episode.duration,
-        thumb = episode.logo_url or podcast.logo_url,
-        timeout = 60
+        thumb = episode.logo_url or podcast.logo_url
     )
     if (promise.done):
         try:
             audio_message = promise.result()
             fetching_note.delete()
-            audio_message.forward(query.from_user.id)
+
         except error.BadRequest:
-            print(episode.audio_url)
-            # get file size?
-            print("音频大小："+str(episode.audio_size))
-            local_download_note = fetching_note.edit_text("下载中…")
-            file_path = local_download(episode.audio_url)
-            uploading_note = local_download_note.edit_text("正在转发…")
-            bot.send_chat_action(query.from_user.id, "upload_audio")
-            print('duration' + str(episode.duration))
-            audio_message = bot.send_audio(
-                chat_id = f'@{podcast_vault}',
-                audio = file_path,
-                caption = f"{podcast.name}\n\n[返回个人主页](https://t.me/{manifest.bot_id})",
-                title = episode.title,
-                performer = episode.host or podcast.host,
-                duration = episode.duration,
-                thumb = episode.logo_url or podcast.logo_url,
-                timeout = 60
-            )
-            success_note = uploading_note.edit_text("下载成功！")
-            success_note.delete()
-            forwarded_message = audio_message.forward(query.from_user.id)
-            forwarded_message.edit_caption(
-                caption = f"{podcast.name}"
-            )
-            forwarded_message.edit_reply_markup(
-                reply_markup=InlineKeyboardMarkup.from_button(
-                    InlineKeyboardButton(
-                        "评    论", 
-                        url=f"https://t.me/{podcast_vault}/{audio_message.message_id}"
-                    )
-                )
-            )
+            local_download(update, context)
+
+def local_download(update, context, fetching_note):
+    bot = context.bot
+    local_download_note = fetching_note.edit_text("下载中…")
+    file_path = download(episode.audio_url)
+    uploading_note = local_download_note.edit_text("正在发送…")
+    bot.send_chat_action(query.from_user.id, "upload_audio")
+    audio_message = bot.send_audio(
+        chat_id = f'@{podcast_vault}',
+        audio = file_path,
+        caption = f"#{podcast.name}",
+        title = episode.title,
+        performer = episode.host or podcast.host,
+        duration = episode.duration,
+        thumb = episode.logo_url or podcast.logo_url,
+        timeout = 300
+    )
+    success_note = uploading_note.edit_text("下载成功！")
+    success_note.delete()
+    return audio_message
 
 # Tips
 
