@@ -33,7 +33,6 @@ class User(object):
     def encode_feeds(self, subscription) -> str:
         pass
     
-
 class Podcast(object):
     def __init__(self, feed_url):
         self.feed_url = feed_url
@@ -64,7 +63,6 @@ class Podcast(object):
         else: 
             return None
 
-
 class Episode(object):
     """
     Episode of a specific podcast.
@@ -73,8 +71,9 @@ class Episode(object):
         self.podcast_name = from_podcast
         self.host = episode.get('author') or ''
         self.audio = self.set_audio(episode.enclosures)
-        self.audio_url = self.audio.href
-        self.audio_size = self.audio.get('length') or 0
+        if self.audio:
+            self.audio_url = self.audio.href
+            self.audio_size = self.audio.get('length') or 0
         self.title = episode.get('title') or ''
         self.subtitle = episode.get('subtitle') or ''
         if self.title == self.subtitle: self.subtitle = ''
@@ -85,17 +84,18 @@ class Episode(object):
         self.tags = episode.get('tags')[0].get('term') if episode.get('tags') else None
 
     def set_duration(self, duration:str) -> int:
-        if ':' in duration:
-            time = duration.split(':')
-            if len(time) == 3:
-                hour, minute, sec = int(time[0]), int(time[1]), int(time[2])
-            elif len(time) == 2:
-                hour, minute, sec = 0, int(time[0]), int(time[1])
-            duration_in_sec = hour * 3600 + minute * 60 + sec
-        elif duration:
-            duration_in_sec = int(duration)
+        if duration:
+            if ':' in duration:
+                time = duration.split(':')
+                if len(time) == 3:
+                    hour, minute, sec = int(time[0]), int(time[1]), int(time[2])
+                elif len(time) == 2:
+                    hour, minute, sec = 0, int(time[0]), int(time[1])
+                duration_in_sec = hour * 3600 + minute * 60 + sec
+            else:
+                duration_in_sec = int(duration)
         else:
-            return 0
+            duration_in_sec = 0
         return duration_in_sec
 
     def set_audio(self, enclosure):

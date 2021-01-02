@@ -91,8 +91,8 @@ def manage(update, context):
         text = message_text,
         reply_markup = ReplyKeyboardMarkup.from_column(
             column_buttons, 
-            resize_keyboard = True, 
-            one_time_keyboard = True)
+            resize_keyboard = True
+        )
     )
 
 
@@ -102,7 +102,7 @@ def settings(update, context):
                 ["退出偏好设置"]]
     message = update.message.reply_text(
         f'请选择需调整的偏好设置',
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     )
 
 def help(update, context):
