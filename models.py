@@ -1,6 +1,7 @@
 from utils.parser import parse_opml
 import feedparser
 import socket
+import datetime
 from urllib.error import URLError
 from uuid import NAMESPACE_URL, uuid5
 
@@ -41,7 +42,7 @@ class Podcast(object):
         self.subscribers = set()
 
     def parse_feed(self, url):
-        socket.setdefaulttimeout(5)
+        socket.setdefaulttimeout(3)
         result = feedparser.parse(url)
         if str(result.status)[0]!= '2' and str(result.status)[0]!= '3':
             raise Exception('Feed URL Open Error.')
@@ -91,15 +92,22 @@ class Episode(object):
             if ':' in duration:
                 time = duration.split(':')
                 if len(time) == 3:
-                    hour, minute, sec = int(time[0]), int(time[1]), int(time[2])
+                    duration_timedelta = datetime.timedelta(
+                        hours=int(time[0]), 
+                        minutes=int(time[1]), 
+                        seconds=int(time[2])
+                    )
                 elif len(time) == 2:
-                    hour, minute, sec = 0, int(time[0]), int(time[1])
-                duration_in_sec = hour * 3600 + minute * 60 + sec
+                    duration_timedelta = datetime.timedelta(
+                        hours=0, 
+                        minutes=int(time[0]), 
+                        seconds=int(time[1])
+                    )
             else:
-                duration_in_sec = int(duration)
+                duration_timedelta = datetime.timedelta(seconds=int(duration))
         else:
-            duration_in_sec = 0
-        return duration_in_sec
+            duration_timedelta = datetime.timedelta(seconds=0)
+        return duration_timedelta
 
     def set_audio(self, enclosure):
         if enclosure:

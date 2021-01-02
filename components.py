@@ -21,6 +21,3 @@ class PodcastPage(object):
              InlineKeyboardButton(self.like_text, callback_data = f"{self.like_action}_{self.podcast.name}")],
             [InlineKeyboardButton("分  集  列  表", switch_inline_query_current_chat = f"podcast {self.podcast.name}")]
         ]
-
-class EpisodePage(object):
-    pass

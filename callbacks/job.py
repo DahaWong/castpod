@@ -14,7 +14,7 @@ def update_podcasts(context):
                     caption = latest_episode.discription,
                     title = latest_episode.title,
                     performer = podcast.host,
-                    duration = latest_episode.duration,
+                    duration = latest_episode.duration.seconds,
                     thumb = podcast.logo,
                     timeout = 60
                 )

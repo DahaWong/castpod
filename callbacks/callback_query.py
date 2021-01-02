@@ -52,7 +52,7 @@ def direct_download(context, fetching_note, episode, podcast):
         caption = f"#{podcast.name}",
         title = episode.title,
         performer = episode.host or podcast.host,
-        duration = episode.duration,
+        duration = episode.duration.seconds,
         thumb = episode.logo_url or podcast.logo_url
     )
     if (promise.done):
@@ -75,7 +75,7 @@ def local_download(context, fetching_note, episode, podcast):
         caption = f"#{podcast.name}",
         title = episode.title,
         performer = episode.host or podcast.host,
-        duration = episode.duration,
+        duration = episode.duration.seconds,
         thumb = episode.logo_url or podcast.logo_url,
         timeout = 300
     )

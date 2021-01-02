@@ -2,6 +2,7 @@ from utils.api_method import search
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup, constants
 from manifest import manifest
 import re
+import datetime
 from models import Podcast
 from components import PodcastPage
 from uuid import uuid4
@@ -110,9 +111,13 @@ def show_episodes(query, context, podcast_name):
         id = index,
         title = episode.title,
         input_message_content = InputTextMessageContent((
-            f"*{podcast.name}*  [🎙️]({episode.logo_url or podcast.logo_url})  {episode.host or podcast.host}\n\n"
-            f"{episode.title}\n\n"
-            f"{episode.subtitle}"
+            f"*{podcast.name}*  [🎙️]({episode.logo_url or podcast.logo_url}) {episode.host or podcast.host}"
+            f"\n{episode.title}\n\n"
+            f"本期时长："
+            f"{episode.duration.seconds//3600}h "
+            f"{(episode.duration.seconds//60)%60}m "
+            f"{episode.duration.seconds%60}s"
+            f"\n\n{episode.subtitle}"
             # and then use Telegraph api to generate summary link!
             )),
         reply_markup = InlineKeyboardMarkup(keyboard(index)),
