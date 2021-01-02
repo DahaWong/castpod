@@ -61,7 +61,7 @@ def download_episode(update, context):
                 caption = f"{podcast.name}\n\n[返回个人主页](https://t.me/{manifest.bot_id})",
                 title = episode.title,
                 performer = episode.host or podcast.host,
-                duration = episode.duration
+                duration = episode.duration,
                 thumb = episode.logo_url or podcast.logo_url,
                 timeout = 60
             )
