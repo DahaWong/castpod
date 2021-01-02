@@ -7,5 +7,3 @@ def local_download(url):
     file_path = f'public/audio/audio-temp.mp3'
     f = open(file_path, 'wb').write(res.content)
     return file_path
-
-# local_download()

@@ -28,8 +28,6 @@ def download_episode(update, context):
     podcast_name, index = match[1], int(match[2])
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[index]
-
-    # pprint.pp(podcast.episodes[index])
     promise = context.dispatcher.run_async(
         bot.send_audio,
         chat_id = f'@{podcast_vault}',
@@ -54,7 +52,7 @@ def download_episode(update, context):
             file_path = local_download(episode.audio_url)
             uploading_note = local_download_note.edit_text("正在转发…")
             bot.send_chat_action(query.from_user.id, "upload_audio")
-            print('duration' + episode.duration)
+            print('duration' + str(episode.duration))
             audio_message = bot.send_audio(
                 chat_id = f'@{podcast_vault}',
                 audio = file_path,
