@@ -1,10 +1,10 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error, ReplyKeyboardRemove
+from base64 import urlsafe_b64encode as encode
 from models import Episode
 from config import podcast_vault
 from utils.downloader import local_download as download
 from manifest import manifest
 import re
-# import pprint
 
 # Message
 def delete_message(update, context):
@@ -69,12 +69,14 @@ def local_download(context, fetching_note, episode, podcast):
     local_download_note = fetching_note.edit_text("下载中…")
     file_path = download(episode.audio_url)
     uploading_note = local_download_note.edit_text("正在发送…")
+    encoded_podcast_name = encode(podcast.name)
+    print(encoded_podcast_name)
     audio_message = bot.send_audio(
         chat_id = f'@{podcast_vault}',
         audio = file_path,
         caption = (
             # f"#{podcast.name.replace(' ', '')}\n\n"
-            f"<a href='https://t.me/{manifest.bot_id}?start={podcast.name}'>订阅此播客</a>"
+            f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅此播客</a>"
         ),
         # caption = f"#{podcast.name.replace(' ', '')}\n\n[订阅此播客]('https://t.me/{manifest.bot_id}?start={podcast.name}')",
         title = episode.title,

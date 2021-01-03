@@ -45,9 +45,9 @@ def start(update, context):
         
         welcome_message.pin(disable_notification=True)
     else: 
-        # feed = decode(context.args[0]).decode('utf-8')
         print('in!')
-        podcast_name = context.args[0]
+        podcast_name = decode(context.args[0]).decode('utf-8')
+        print(podcast_name)
         podcast = context.bot_data['podcasts'][podcast_name]
         user.subscription.update({podcast_name: Feed(podcast)})
         podcast.subscribers.add(user_id)
