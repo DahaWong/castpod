@@ -7,7 +7,7 @@ def update_podcasts(context):
         latest_episode = podcast.update()
         if latest_episode:
             try:
-                print(latest_episode.audio_size)
+                # print(latest_episode.audio_size)
                 audio_message = context.bot.send_audio(
                     chat_id = f'@{podcast_vault}',
                     audio = latest_episode.url,
@@ -19,7 +19,7 @@ def update_podcasts(context):
                     timeout = 60
                 )
             except:
-                print('File is too big.')
+                # print('File is too big.')
                 local_download()
 
             # 用 setter:

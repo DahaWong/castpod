@@ -113,7 +113,7 @@ def show_episodes(query, context, podcast_name):
         input_message_content = InputTextMessageContent((
             f"*{podcast.name}*  [🎙️]({episode.logo_url or podcast.logo_url}) {episode.host or podcast.host}"
             f"\n{episode.title}\n\n"
-            f"本期时长："
+            f"🕙️  "
             f"{episode.duration.seconds//3600}h "
             f"{(episode.duration.seconds//60)%60}m "
             f"{episode.duration.seconds%60}s"

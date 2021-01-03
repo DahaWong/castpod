@@ -119,6 +119,7 @@ def delete_account(update, context):
             if user.user_id in feed.podcast.subscribers:
                 feed.podcast.subscribers.remove(user.user_id)
     context.user_data.clear()
+    update.callback_query.
     deleting_note.edit_text(
         "👋️", 
         reply_markup=InlineKeyboardMarkup.from_button(

@@ -17,8 +17,8 @@ dispatcher = updater.dispatcher
 if not dispatcher.bot_data:
     updater.dispatcher.bot_data.update({"podcasts":{}})
 
-print(dispatcher.bot_data['podcasts'])
-print(dispatcher.user_data)
+# print(dispatcher.bot_data['podcasts'])
+# print(dispatcher.user_data)
 
 register(updater.dispatcher)
 
