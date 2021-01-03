@@ -69,7 +69,7 @@ def local_download(context, fetching_note, episode, podcast):
     local_download_note = fetching_note.edit_text("下载中…")
     file_path = download(episode.audio_url)
     uploading_note = local_download_note.edit_text("正在发送…")
-    encoded_podcast_name = encode(bytes(podcast.name, 'utf-8'))
+    encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
     print(encoded_podcast_name)
     audio_message = bot.send_audio(
         chat_id = f'@{podcast_vault}',
