@@ -16,6 +16,3 @@ def parse_opml(f):
         _, name, url = podcast.attrs.values()
         feeds.append({"name":name, "url":url})
     return feeds
-
-with open('public/subscriptions/429646222.xml', 'r') as f:
-    parse_opml(f)
