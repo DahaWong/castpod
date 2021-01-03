@@ -42,7 +42,7 @@ class Podcast(object):
         self.subscribers = set()
 
     def parse_feed(self, url):
-        socket.setdefaulttimeout(3)
+        socket.setdefaulttimeout(4)
         result = feedparser.parse(url)
         if str(result.status)[0]!= '2' and str(result.status)[0]!= '3':
             raise Exception('Feed URL Open Error.')
