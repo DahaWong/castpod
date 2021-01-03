@@ -11,7 +11,7 @@ def handle_inline_query(update, context):
     query = update.inline_query
     query_text = query.query
     search_match = re.match('^search(.*)', query_text)
-    results, kwargs = [], {"auto_pagination": True}
+    results, kwargs = [], {"auto_pagination": True, "cache_time": 60}
     if not query_text:
         results, kwargs = welcome(query, context)
     elif search_match:
@@ -39,6 +39,7 @@ def welcome(query, context):
 
 def search_podcast(query, keyword, context):
     searched_results = search(keyword)
+    listed_results = []
     if not searched_results:
         listed_results = [
             InlineQueryResultArticle(
@@ -47,12 +48,11 @@ def search_podcast(query, keyword, context):
                 description = "换个关键词试试",
                 input_message_content = InputTextMessageContent("🔍️"),
                 reply_markup=InlineKeyboardMarkup.from_button(
-                    InlineKeyboardButton('返 回 搜 索 模 式', switch_inline_query_current_chat=query_text)
+                    InlineKeyboardButton('返 回 搜 索', switch_inline_query_current_chat=keyword)
                 )
             )
         ]
     else:
-        listed_results = []
         for result in searched_results:
             name = re.sub(r'[_*`]', ' ', result['collectionName'])
             host = re.sub(r'[_*`]', ' ', result['artistName'])
@@ -76,36 +76,56 @@ def search_podcast(query, keyword, context):
     return listed_results
 
 def show_episodes(query, context):
-    podcast_name = query.query
+    keyword = query.query
     podcasts = context.bot_data['podcasts']
-    podcast = podcasts.get(podcast_name)
-    episodes = podcast.episodes
-    # if context.user_data['preference'].get('reverse_episodes'): episodes.reverse()
-    def keyboard(i):
-        return [
-        [InlineKeyboardButton("收      听", callback_data = f"download_episode_{podcast_name}_{i}")],
-        [InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
-         InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast_name}")]
-    ]
-    listed_results = [InlineQueryResultArticle(
-        id = index,
-        title = episode.title,
-        input_message_content = InputTextMessageContent((
-            f"*{podcast.name}*  [🎙️]({episode.logo_url or podcast.logo_url}) {episode.host or podcast.host}"
-            f"\n{episode.title}\n\n"
-            f"🕙️  "
-            f"{episode.duration.seconds//3600}h "
-            f"{(episode.duration.seconds//60)%60}m "
-            f"{episode.duration.seconds%60}s"
-            f"\n\n{episode.subtitle}"
-            # and then use Telegraph api to generate summary link!
-            )),
-        reply_markup = InlineKeyboardMarkup(keyboard(index)),
-        description = f"{episode.duration or podcast_name}\n{episode.subtitle}",
-        thumb_url = podcast.logo_url, # episode logo always too big
-        thumb_width = 60, 
-        thumb_height = 60
-    ) for index, episode in enumerate(episodes)]
+    results = []
+    listed_results = []
+    for podcast in podcasts.values():
+        if podcast.name == keyword:
+            results.append(podcast)
+            break
+        elif keyword in podcast.name:
+            results.append(podcast)
+    if len(results) == 1:
+        podcast = results[0]
+        episodes = podcast.episodes
+        # if context.user_data['preference'].get('reverse_episodes'): episodes.reverse()
+        def keyboard(i):
+            return [
+            [InlineKeyboardButton("收      听", callback_data = f"download_episode_{podcast.name}_{i}")],
+            [InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
+            InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")]
+        ]
+        listed_results = [InlineQueryResultArticle(
+            id = index,
+            title = episode.title,
+            input_message_content = InputTextMessageContent((
+                f"*{podcast.name}*  [🎙️]({episode.logo_url or podcast.logo_url}) {episode.host or podcast.host}"
+                f"\n{episode.title}\n\n"
+                f"🕙️  "
+                f"{episode.duration.seconds//3600}h "
+                f"{(episode.duration.seconds//60)%60}m "
+                f"{episode.duration.seconds%60}s"
+                f"\n\n{episode.subtitle}"
+                # and then use Telegraph api to generate summary link!
+                )),
+            reply_markup = InlineKeyboardMarkup(keyboard(index)),
+            description = f"{episode.duration or podcast.name}\n{episode.subtitle}",
+            thumb_url = podcast.logo_url, # episode logo always too big
+            thumb_width = 60, 
+            thumb_height = 60
+        ) for index, episode in enumerate(episodes)]
+    elif len(results) > 1:
+        listed_results = [InlineQueryResultArticle(
+            id = index,
+            title = podcast.name,
+            input_message_content = InputTextMessageContent(PodcastPage(podcast).text()),
+            reply_markup = InlineKeyboardMarkup(PodcastPage(podcast).keyboard()),
+            description = podcast.host,
+            thumb_url = podcast.logo_url,
+            thumb_width = 60, 
+            thumb_height = 60 
+        ) for index, podcast in enumerate(results)]
     return listed_results
 
 def show_subscription(query, context):
@@ -119,12 +139,8 @@ def show_subscription(query, context):
             thumb_url = feed.podcast.logo_url,
             thumb_width = 60, 
             thumb_height = 60 
-        ) for index, feed in enumerate(list(subscription.values()))]
-    query.answer(
-        results,
-        auto_pagination = True,
-    )
-
+        ) for index, feed in enumerate(subscription.values())]
+    return results
 def show_trending(context):
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']
