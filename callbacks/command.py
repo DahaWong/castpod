@@ -67,7 +67,7 @@ def about(update, context):
 
 def search(update, context):
     if not check_login(update, context): return
-    keyboard = [[InlineKeyboardButton('开    始', switch_inline_query_current_chat = '')]]
+    keyboard = [[InlineKeyboardButton('开    始', switch_inline_query_current_chat = 'search ')]]
 
     message = update.message.reply_text(
         '🔎️',

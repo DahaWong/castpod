@@ -19,7 +19,8 @@ class PodcastPage(object):
             [InlineKeyboardButton("退    订", callback_data = f"unsubscribe_podcast_{self.podcast.name}"),
              InlineKeyboardButton("关    于", url = self.podcast.website),
              InlineKeyboardButton(self.like_text, callback_data = f"{self.like_action}_{self.podcast.name}")],
-            [InlineKeyboardButton("分  集  列  表", switch_inline_query_current_chat = f"podcast {self.podcast.name}")]
+            [InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat = f""),
+             InlineKeyboardButton("分  集  列  表", switch_inline_query_current_chat = f"{self.podcast.name}")]
         ]
 
 class ManagePage(object):

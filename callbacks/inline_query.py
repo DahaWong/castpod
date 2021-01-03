@@ -10,52 +10,35 @@ from uuid import uuid4
 def handle_inline_query(update, context):
     query = update.inline_query
     query_text = query.query
-    podcast_match = re.match('^podcast(.*)', query_text)
+    search_match = re.match('^search(.*)', query_text)
+    results, kwargs = [], {"auto_pagination": True}
     if not query_text:
-        welcome(query, context)
-    elif not podcast_match:
-        search_podcast(query, context)
-    elif not podcast_match[1]:
-        show_subscription(query, context)
-    else: 
-        podcast = podcast_match[1].lstrip()
-        show_episodes(query, context, podcast)
+        results, kwargs = welcome(query, context)
+    elif search_match:
+        keyword = search_match[1].lstrip()
+        results = search_podcast(query, keyword, context) if keyword else show_trending(context)
+    else:
+        results = show_episodes(query, context)
+    query.answer(
+        results,
+        **kwargs
+    )
 
 def welcome(query, context):
     if not context.user_data.get('user'):
         results = []
-        login = {
-            "auto_pagination": True,
+        kwargs = {
             "switch_pm_text": "登 录",
             "switch_pm_parameter": "login",
             "cache_time": 0
         }
     else:
-        # trending, sorted by ...
-        user = context.user_data['user']
-        podcasts = context.bot_data['podcasts']
-        results = [InlineQueryResultArticle(
-            id = uuid4(),
-            title = podcast.name,
-            description = podcast.host,
-            input_message_content = InputTextMessageContent((
-                f"{podcast.feed_url}"
-            )),
-            # reply_markup = InlineKeyboardMarkup(),
-            thumb_url = podcast.logo_url,
-            thumb_width = 60,
-            thumb_height = 60
-        ) for podcast in podcasts.values() if not user.subscription.get(podcast.name)]
-        login = {}
+        results = show_subscription(query, context)
+        kwargs = {}
+    return results, kwargs
 
-    query.answer(
-        results,
-        **login
-    )
-
-def search_podcast(query, context):
-    query_text = query.query
-    searched_results = search(query_text)
+def search_podcast(query, keyword, context):
+    searched_results = search(keyword)
     if not searched_results:
         listed_results = [
             InlineQueryResultArticle(
@@ -90,13 +73,10 @@ def search_podcast(query, context):
                 thumb_width = 60
             )
             listed_results.append(result_item)
+    return listed_results
 
-    query.answer(
-        listed_results,
-        auto_pagination = True,
-    )
-
-def show_episodes(query, context, podcast_name):
+def show_episodes(query, context):
+    podcast_name = query.query
     podcasts = context.bot_data['podcasts']
     podcast = podcasts.get(podcast_name)
     episodes = podcast.episodes
@@ -104,8 +84,8 @@ def show_episodes(query, context, podcast_name):
     def keyboard(i):
         return [
         [InlineKeyboardButton("收      听", callback_data = f"download_episode_{podcast_name}_{i}")],
-        [InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat="podcast"),
-         InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"podcast {podcast_name}")]
+        [InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
+         InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast_name}")]
     ]
     listed_results = [InlineQueryResultArticle(
         id = index,
@@ -122,15 +102,11 @@ def show_episodes(query, context, podcast_name):
             )),
         reply_markup = InlineKeyboardMarkup(keyboard(index)),
         description = f"{episode.duration or podcast_name}\n{episode.subtitle}",
-        thumb_url = episode.logo_url or podcast.logo_url,
+        thumb_url = podcast.logo_url, # episode logo always too big
         thumb_width = 60, 
         thumb_height = 60
     ) for index, episode in enumerate(episodes)]
-
-    query.answer(
-        listed_results,
-        auto_pagination = True
-    )
+    return listed_results
 
 def show_subscription(query, context):
     subscription = context.user_data['user'].subscription
@@ -148,3 +124,20 @@ def show_subscription(query, context):
         results,
         auto_pagination = True,
     )
+
+def show_trending(context):
+    user = context.user_data['user']
+    podcasts = context.bot_data['podcasts']
+    results = [InlineQueryResultArticle(
+        id = uuid4(),
+        title = podcast.name,
+        description = podcast.host,
+        input_message_content = InputTextMessageContent((
+            f"{podcast.feed_url}"
+        )),
+        # reply_markup = InlineKeyboardMarkup(),
+        thumb_url = podcast.logo_url,
+        thumb_width = 60,
+        thumb_height = 60
+    ) for podcast in podcasts.values() if not user.subscription.get(podcast.name)]
+    return results

@@ -105,5 +105,5 @@ def show_feed(update, context):
             text = page.text(),
             reply_markup = InlineKeyboardMarkup(page.keyboard())
         )
-    update.message.delete()
+        update.message.delete()
     return ACTIONS
