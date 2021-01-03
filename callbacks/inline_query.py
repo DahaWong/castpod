@@ -11,14 +11,16 @@ def handle_inline_query(update, context):
     query = update.inline_query
     query_text = query.query
     search_match = re.match('^search(.*)', query_text)
-    results, kwargs = [], {"auto_pagination": True, "cache_time": 60}
+    results, kwargs = [], {"auto_pagination": True, "cache_time": 150}
     if not query_text:
         results, kwargs = welcome(query, context)
     elif search_match:
         keyword = search_match[1].lstrip()
         results = search_podcast(query, keyword, context) if keyword else show_trending(context)
+        kwargs.update({"cache_time": 600})
     else:
         results = show_episodes(query, context)
+        kwargs.update({"cache_time": 600})
     query.answer(
         results,
         **kwargs
