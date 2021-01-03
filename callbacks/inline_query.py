@@ -121,8 +121,8 @@ def show_episodes(query, context, podcast_name):
             # and then use Telegraph api to generate summary link!
             )),
         reply_markup = InlineKeyboardMarkup(keyboard(index)),
-        description = episode.subtitle or podcast_name,
-        thumb_url = podcast.logo_url,
+        description = f"{episode.duration or podcast_name}\n{episode.subtitle}",
+        thumb_url = episode.logo_url or podcast.logo_url,
         thumb_width = 60, 
         thumb_height = 60
     ) for index, episode in enumerate(episodes)]

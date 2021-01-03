@@ -82,20 +82,21 @@ def search(update, context):
 
 def manage(update, context):
     if not check_login(update, context): return
-    # Pagination!
     user = context.user_data['user']
-    message_text = '请选择播客'
     podcast_names = user.subscription.keys()
-    rows_count = len(podcast_names)// 3 + bool(len(podcast_names)%3)
+    podcasts_count = len(podcast_names)
+    rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
     def row(i):
         row = [name for index, name in enumerate(podcast_names) if index // 3 == i]
         return row
-    message = update.message.reply_text(
-        text = message_text,
+    reply_message = update.message.reply_text(
+        text = '请选择播客',
         reply_markup = ReplyKeyboardMarkup(
             [row(i) for i in range(rows_count)]+[['退出播客管理']], 
             resize_keyboard = True)
     )
+    reply_message.delete()
+    update.message.delete()
 
 def settings(update, context):
     if not check_login(update, context): return
