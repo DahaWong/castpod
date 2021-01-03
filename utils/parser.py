@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 def parse_opml(f):
     feeds = []
-    soup = BeautifulSoup(f, 'lxml', exclude_encodings=['unicode', 'utf-8'])
+    soup = BeautifulSoup(f, 'lxml', exclude_encodings=['unicode'])
     print(soup.original_encoding)
     print(soup)
     for podcast in soup.find_all(type="rss"):
