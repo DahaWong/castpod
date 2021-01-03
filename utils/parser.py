@@ -1,11 +1,11 @@
 import feedparser
 from bs4 import BeautifulSoup
 
-import sys
-defaultencoding = 'utf-8'
-if sys.getdefaultencoding() != defaultencoding:
-    reload(sys)
-    sys.setdefaultencoding(defaultencoding)
+# import sys
+# defaultencoding = 'utf-8'
+# if sys.getdefaultencoding() != defaultencoding:
+#     reload(sys)
+#     sys.setdefaultencoding(defaultencoding)
 
 def parse_opml(f):
     feeds = []
