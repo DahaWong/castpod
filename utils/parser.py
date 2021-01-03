@@ -3,11 +3,8 @@ from bs4 import BeautifulSoup
 
 def parse_opml(f):
     feeds = []
-    soup = BeautifulSoup(f, 'xml')
-    print('1')
+    soup = BeautifulSoup(f, 'xml', from_encoding = 'utf-8')
     for podcast in soup.find_all(type="rss"):
-        print('2')
         _, name, url = podcast.attrs.values()
-        print('3')
         feeds.append({"name":name, "url":url})
     return feeds
