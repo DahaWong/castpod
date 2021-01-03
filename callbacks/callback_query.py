@@ -74,7 +74,7 @@ def local_download(context, fetching_note, episode, podcast):
         audio = file_path,
         caption = (
             # f"#{podcast.name.replace(' ', '')}\n\n"
-            f"[订阅此播客]('https://t.me/{manifest.bot_id}?start={podcast.name}')"
+            f"<a href='https://t.me/{manifest.bot_id}?start={podcast.name}'>订阅此播客</a>"
         ),
         # caption = f"#{podcast.name.replace(' ', '')}\n\n[订阅此播客]('https://t.me/{manifest.bot_id}?start={podcast.name}')",
         title = episode.title,
@@ -82,7 +82,7 @@ def local_download(context, fetching_note, episode, podcast):
         duration = episode.duration.seconds,
         thumb = episode.logo_url or podcast.logo_url,
         timeout = 300,
-        caption_entities = ['text_link']
+        parse_mode = 'html'
     )
     success_note = uploading_note.edit_text("下载成功！")
     success_note.delete()
