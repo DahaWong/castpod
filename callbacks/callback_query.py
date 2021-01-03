@@ -72,7 +72,10 @@ def local_download(context, fetching_note, episode, podcast):
     audio_message = bot.send_audio(
         chat_id = f'@{podcast_vault}',
         audio = file_path,
-        caption = f"#{podcast.name.replace(' ', '')}\n\n[订阅此播客]('https://t.me/{manifest.bot_id}')",
+        caption = (
+            f"#{podcast.name.replace(' ', '')}\n\n"
+            f"[订阅此播客]('https://www.baidu.com')"
+        ),
         # caption = f"#{podcast.name.replace(' ', '')}\n\n[订阅此播客]('https://t.me/{manifest.bot_id}?start={podcast.name}')",
         title = episode.title,
         performer = f"{podcast.name} - {episode.host or podcast.host}",
