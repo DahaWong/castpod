@@ -1,7 +1,7 @@
 import re
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, ReplyKeyboardMarkup
 from models import Episode
-from components import PodcastPage
+from components import PodcastPage, ManagePage
 
 END = -1
 ACTIONS, SHOW_EPISODES, UNSUBSCRIBE = range(3)
@@ -65,8 +65,18 @@ def unsubscribe_podcast(update, context):
 
 def confirm_unsubscribe(update, context):
     podcast_name = re.match(r'确认退订 (.+) ？', update.callback_query.message.text)[1]
-    context.user_data['user'].subscription.pop(podcast_name)
-    update.callback_query.message.edit_text(f'已退订`{podcast_name}`')
+    user_subscription = context.user_data['user'].subscription
+    user_subscription.pop(podcast_name)
+    update.callback_query.message.delete()
+    manage_page = ManagePage(
+        podcast_names = user_subscription.keys(), 
+        text = f'已退订 `{podcast_name}` ！'
+    )
+    context.bot.send_message(
+        update.callback_query.from_user.id, 
+        manage_page.text,
+        reply_markup = ReplyKeyboardMarkup(manage_page.keyboard(), resize_keyboard = True)
+        )
     return END
 
 def back_to_actions(update, context):

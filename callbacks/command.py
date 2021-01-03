@@ -3,6 +3,7 @@ from utils.persistence import persistence
 from base64 import urlsafe_b64decode as decode
 from manifest import manifest
 from models import User, Feed
+from components import ManagePage
 import re
 
 def start(update, context):
@@ -84,18 +85,11 @@ def manage(update, context):
     if not check_login(update, context): return
     user = context.user_data['user']
     podcast_names = user.subscription.keys()
-    podcasts_count = len(podcast_names)
-    rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
-    def row(i):
-        row = [name for index, name in enumerate(podcast_names) if index // 3 == i]
-        return row
+    page = ManagePage(podcast_names)
     reply_message = update.message.reply_text(
-        text = '请选择播客',
-        reply_markup = ReplyKeyboardMarkup(
-            [row(i) for i in range(rows_count)]+[['退出播客管理']], 
-            resize_keyboard = True)
+        text = page.text,
+        reply_markup = ReplyKeyboardMarkup(page.keyboard(), resize_keyboard = True)
     )
-    reply_message.delete()
     update.message.delete()
 
 def settings(update, context):

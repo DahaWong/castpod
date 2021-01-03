@@ -1,8 +1,8 @@
 from utils.parser import parse_opml
 from models import Podcast
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, ReplyKeyboardMarkup
 import re
-from components import PodcastPage
+from components import PodcastPage, ManagePage
 
 def save_subscription(update, context):
     parsing_note = update.message.reply_text("正在解析订阅文件…")
@@ -72,14 +72,30 @@ def subscribe_feed(update, context):
     if promise.done:
         try:
             new_podcast = promise.result()
-            success_note = subscribing_message.edit_text("订阅成功！")
-            update.message.delete()
-            page = PodcastPage(new_podcast)
-            success_note.edit_text(page.text(), reply_markup=InlineKeyboardMarkup(page.keyboard()))
+            manage_page = ManagePage(
+                podcast_names = user.subscription.keys(), 
+                text = f"`{new_podcast.name}` 订阅成功！"
+            )
+            subscribing_message.delete()
+            message = update.message
+            message.reply_text(
+                text = manage_page.text, 
+                reply_markup=ReplyKeyboardMarkup(
+                    manage_page.keyboard(), 
+                    resize_keyboard=True
+                )
+            )
+            podcast_page = PodcastPage(new_podcast)
+            message.reply_text(
+                text = podcast_page.text(), 
+                reply_markup=InlineKeyboardMarkup(podcast_page.keyboard())
+            )
+            message.delete()
             new_podcast.subscribers.add(user.user_id)
             if new_podcast.name not in podcasts.keys():
                 podcasts.update({new_podcast.name:new_podcast})
-        except:
+        except Exception as e:
+            print(e)
             subscribing_message.edit_text("订阅失败。可能是因为订阅源损坏 :(")
 
 def exit_reply_keyboard(update, context):

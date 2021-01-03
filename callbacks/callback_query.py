@@ -1,9 +1,9 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error
-import re
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error, ReplyKeyboardRemove
 from models import Episode
 from config import podcast_vault
 from utils.downloader import local_download as download
 from manifest import manifest
+import re
 # import pprint
 
 # Message
@@ -114,14 +114,17 @@ def delete_account(update, context):
     message = update.callback_query.message
     deleting_note = message.edit_text("注销中…")
     if user.subscription.values():
-        # print(user.subscription.values())
         for feed in user.subscription.values():
             if user.user_id in feed.podcast.subscribers:
                 feed.podcast.subscribers.remove(user.user_id)
     context.user_data.clear()
-    # update.callback_query.
-    deleting_note.edit_text(
-        "👋️", 
+    deleting_note.delete()
+    success_note = context.bot.send_message(
+        chat_id = user.user_id, 
+        text = '您的账号已注销～', 
+        reply_markup = ReplyKeyboardRemove())
+    context.bot.send_message(
+        chat_id = user.user_id, text = "👋️",
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton('重 新 开 始', url=f"https://t.me/{manifest.bot_id}?start=login")
-        ))
+    ))
