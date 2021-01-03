@@ -70,12 +70,12 @@ def confirm_unsubscribe(update, context):
     update.callback_query.message.delete()
     manage_page = ManagePage(
         podcast_names = user_subscription.keys(), 
-        text = f'已退订 `{podcast_name}` ！'
+        text = f'已退订 `{podcast_name}`'
     )
     context.bot.send_message(
         update.callback_query.from_user.id, 
         manage_page.text,
-        reply_markup = ReplyKeyboardMarkup(manage_page.keyboard(), resize_keyboard = True)
+        reply_markup = ReplyKeyboardMarkup(manage_page.keyboard(), resize_keyboard = True, one_time_keyboard=True)
         )
     return END
 

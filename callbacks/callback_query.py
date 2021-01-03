@@ -51,7 +51,7 @@ def direct_download(context, fetching_note, episode, podcast):
         audio = episode.audio_url,
         caption = f"#{podcast.name}",
         title = episode.title,
-        performer = episode.host or podcast.host,
+        performer = f"{podcast.name} - {episode.host or podcast.host}",
         duration = episode.duration.seconds,
         thumb = episode.logo_url or podcast.logo_url
     )
@@ -72,9 +72,9 @@ def local_download(context, fetching_note, episode, podcast):
     audio_message = bot.send_audio(
         chat_id = f'@{podcast_vault}',
         audio = file_path,
-        caption = f"#{podcast.name}",
+        caption = f"#{podcast.name}\n\n[订阅此播客]('https://t.me/{manifest.bot_id}?start={podcast.name}')",
         title = episode.title,
-        performer = episode.host or podcast.host,
+        performer = f"{podcast.name} - {episode.host or podcast.host}",
         duration = episode.duration.seconds,
         thumb = episode.logo_url or podcast.logo_url,
         timeout = 300

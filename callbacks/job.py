@@ -7,15 +7,14 @@ def update_podcasts(context):
         latest_episode = podcast.update()
         if latest_episode:
             try:
-                # print(latest_episode.audio_size)
                 audio_message = context.bot.send_audio(
                     chat_id = f'@{podcast_vault}',
                     audio = latest_episode.url,
                     caption = latest_episode.discription,
                     title = latest_episode.title,
-                    performer = podcast.host,
+                    performer = f"{podcast.name} - {episode.host or podcast.host}",
                     duration = latest_episode.duration.seconds,
-                    thumb = podcast.logo,
+                    thumb = podcast.logo_url,
                     timeout = 60
                 )
             except:

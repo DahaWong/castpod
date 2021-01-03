@@ -82,7 +82,8 @@ def subscribe_feed(update, context):
                 text = manage_page.text, 
                 reply_markup=ReplyKeyboardMarkup(
                     manage_page.keyboard(), 
-                    resize_keyboard=True
+                    resize_keyboard=True,
+                    one_time_keyboard=True
                 )
             )
             podcast_page = PodcastPage(new_podcast)

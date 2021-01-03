@@ -45,17 +45,11 @@ def start(update, context):
         
         welcome_message.pin(disable_notification=True)
     else: 
-        feed = decode(context.args[0]).decode('utf-8')
-        cached_podcasts = context.bot_data['podcasts']
-        for cached_podcast in cached_podcasts.values():
-            if podcast_name == cached_podcast.name:
-                podcast = cached_podcast
-                # 这里应该用 setter:
-                user.subscription.update({podcast.name: Feed(podcast)})
-                break
-        else: # not found, add new podcast
-            # ⚠️ 需要检查是否存在于 podcasts，然后再分别处理：
-            podcast = user.add_feed(podcast_feed)
+        # feed = decode(context.args[0]).decode('utf-8')
+        print('in!')
+        podcast_name = context.args[0]
+        podcast = context.bot_data['podcasts'][podcast_name]
+        user.subscription.update({podcast_name: Feed(podcast)})
         podcast.subscribers.add(user_id)
 
 def about(update, context):
@@ -88,7 +82,7 @@ def manage(update, context):
     page = ManagePage(podcast_names)
     reply_message = update.message.reply_text(
         text = page.text,
-        reply_markup = ReplyKeyboardMarkup(page.keyboard(), resize_keyboard = True)
+        reply_markup = ReplyKeyboardMarkup(page.keyboard(), resize_keyboard = True, one_time_keyboard=True)
     )
     update.message.delete()
 

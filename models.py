@@ -78,7 +78,7 @@ class Episode(object):
         else:
             self.audio_url = ""
             self.audio_size = 0
-        self.title = episode.get('title') or ''
+        self.title = self.set_title(episode.get('title'))
         self.subtitle = episode.get('subtitle') or ''
         if self.title == self.subtitle: self.subtitle = ''
         self.summary = episode.get('summary') or ''
@@ -115,6 +115,10 @@ class Episode(object):
         else:
             return None
 
+    def set_title(self, title):
+        if not title: return ''
+        return title.lstrip(self.podcast_name)
+        
 class Feed(object):
     """
     Feed of each user subscription.

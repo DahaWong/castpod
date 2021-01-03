@@ -35,4 +35,4 @@ class ManagePage(object):
     def keyboard(self):
         podcasts_count = len(self.podcast_names)
         rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
-        return [self.row(i) for i in range(rows_count)]+[['退出播客管理']]
+        return [self.row(i) for i in range(rows_count)]+[['退出管理面板']]
