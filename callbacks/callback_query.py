@@ -81,7 +81,8 @@ def local_download(context, fetching_note, episode, podcast):
         performer = f"{podcast.name} - {episode.host or podcast.host}",
         duration = episode.duration.seconds,
         thumb = episode.logo_url or podcast.logo_url,
-        timeout = 300
+        timeout = 300,
+        caption_entities = ['text_link']
     )
     success_note = uploading_note.edit_text("下载成功！")
     success_note.delete()
