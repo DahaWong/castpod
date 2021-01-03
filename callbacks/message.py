@@ -57,7 +57,7 @@ def save_subscription(update, context):
         reply_markup = InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
                 "查 看 订 阅 列 表", 
-                switch_inline_query_current_chat="podcast"
+                switch_inline_query_current_chat=""
             )
         )
     )

@@ -34,7 +34,7 @@ def start(update, context):
 
         keyboard = [[InlineKeyboardButton(
             '搜 索 播 客', 
-            switch_inline_query_current_chat = ""
+            switch_inline_query_current_chat = "search "
             )
         ]]
 

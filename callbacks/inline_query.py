@@ -50,7 +50,7 @@ def search_podcast(query, keyword, context):
                 description = "换个关键词试试",
                 input_message_content = InputTextMessageContent("🔍️"),
                 reply_markup=InlineKeyboardMarkup.from_button(
-                    InlineKeyboardButton('返 回 搜 索', switch_inline_query_current_chat=keyword)
+                    InlineKeyboardButton('返 回 搜 索', switch_inline_query_current_chat=f"search {keyword}")
                 )
             )
         ]
