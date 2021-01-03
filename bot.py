@@ -4,7 +4,6 @@ from handlers.register import register
 from utils.persistence import persistence
 from utils.schedule import set_jobs
 import sys
-reload(sys)
 sys.setdefaultencoding('utf-8')
 
 updater = Updater(**update_info)
