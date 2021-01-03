@@ -102,7 +102,7 @@ def show_episodes(query, context):
             id = index,
             title = episode.title,
             input_message_content = InputTextMessageContent((
-                f"*{podcast.name}*  [🎙️]({episode.logo_url or podcast.logo_url}) {(episode.host if episode.host!= episode.name else '') or (podcast.host if podcast.host!= podcast.name else '')}"
+                f"*{podcast.name}*  [🎙️]({episode.logo_url or podcast.logo_url}) {(episode.host if episode.host!= podcast.name else '') or (podcast.host if podcast.host!= podcast.name else '')}"
                 f"\n{episode.title}\n\n"
                 f"🕙️  "
                 f"{episode.duration.seconds//3600}h "
