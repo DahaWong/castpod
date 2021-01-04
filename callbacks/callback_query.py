@@ -67,12 +67,11 @@ def direct_download(context, fetching_note, episode, podcast):
 def local_download(context, fetching_note, episode, podcast):
     bot = context.bot
     chat_id = context.user_data['user'].user_id
-    print(chat_id)
     fetching_note.delete()
     try:
         file_path, message_id = download(episode.audio_url, chat_id)
         uploading_note = context.bot.edit_message_text("正在发送…", chat_id, message_id)
-        context.bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
+        # context.bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
         encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
         podcast_name_tag = '#'+ re.sub(r'[\W]+', '_', podcast.name)
         audio_message = bot.send_audio(
