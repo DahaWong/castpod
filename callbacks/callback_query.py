@@ -73,13 +73,14 @@ def local_download(context, fetching_note, episode, podcast):
         uploading_note = context.bot.edit_message_text(chat_id, message_id, "正在发送…")
         # bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
         encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
+        podcast_name_tag = '#'+ re.sub(r'[\W]+', '_', podcast.name)
         audio_message = bot.send_audio(
             chat_id = f'@{podcast_vault}',
             audio = file_path,
             caption = (
-                # f"<bold>{podcast.name}</bold>"
+                f"<b>{podcast.name}</b>"
                 f"\n<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
-                f"\n\n #{re.sub(r'[\W]+', '_', podcast.name)}"
+                f"\n\n {podcast_name_tag}"
             ),
             title = episode.title,
             performer = f"{episode.host or podcast.host}",
