@@ -28,6 +28,7 @@ def download_episode(update, context):
     podcast_name, index = match[1], int(match[2])
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[index]
+    print(episode)
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
     downloading_note = fetching_note.edit_text("下载中…")
     bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
@@ -59,6 +60,7 @@ def download_episode(update, context):
         # uploading_note.edit_text('{podcast.name} {episode.title} 下载失败\n\n请[联系开发者](https://t.me/dahawong)以获得帮助')
 
 def direct_download(podcast, episode, context):
+    print(episode)
     print(episode.audio_size)
     if int(episode.audio_size) >= 20000000 or not episode.audio_size:
         audio_file = download(episode.audio_url, context)
