@@ -29,7 +29,7 @@ def download_episode(update, context):
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[index]
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
-    downloading_note = fetching_note.edit_text("下载中, 请稍候…")
+    downloading_note = fetching_note.edit_text("下载中…")
     bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     run_async = context.dispatcher.run_async
     audio_file = episode.audio_url
@@ -38,7 +38,7 @@ def download_episode(update, context):
             promise = run_async(download, url=episode.audio_url, context=context)
             if promise.done: audio_file = promise.result()
         tagged_podcast_name = '#'+ re.sub(r'[\W]+', '', podcast.name)
-        uploading_note = downloading_note.edit_text("正在上传…")
+        uploading_note = downloading_note.edit_text("正在上传，请稍候…")
         audio_promise = run_async(bot.send_audio,
             chat_id = f'@{podcast_vault}',
             audio = audio_file,
@@ -54,9 +54,14 @@ def download_episode(update, context):
             timeout = 300,
             parse_mode = 'html'
         )
-        if audio_promise.done: 
-            audio_message = audio_promise.result()
+        if audio_promise.done: audio_message = audio_promise.result()
+    except Exception as e:
+        print(e)
+    finally:
         uploading_note.delete()
+        if not audio_message: 
+            print('Fail!')
+            return
         forwarded_message = audio_message.forward(query.from_user.id)
         forwarded_message.edit_caption(
             caption = (
@@ -70,8 +75,6 @@ def download_episode(update, context):
                 )
             )
         )
-    except Exception as e:
-        print(e)
 
 # Tips
 
