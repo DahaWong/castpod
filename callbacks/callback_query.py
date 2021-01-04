@@ -53,7 +53,7 @@ def download_episode(update, context):
             timeout = 300,
             parse_mode = 'html'
         )
-        if audio_message_promise.done: 
+        if audio_promise.done: 
             audio_message = audio_promise.result()
         downloading_note.delete()
         forwarded_message = audio_message.forward(query.from_user.id)
