@@ -33,31 +33,14 @@ def download_episode(update, context):
     bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     run_async = context.dispatcher.run_async
     try:
-        if episode.file_id:
-            audio_file = episode.file_id
-        elif int(episode.audio_size) >= 20000000 or not episode.audio_size:
-            audio_file = download(episode.audio_url, context)
-        else:   
-            audio_file = episode.audio_url
-        tagged_podcast_name = '#'+ re.sub(r'[\W]+', '', podcast.name)
-        uploading_note = downloading_note.edit_text("正在上传，请稍候…")
-        audio_message = bot.send_audio(
-            chat_id = f'@{podcast_vault}',
-            audio = audio_file,
-            caption = (
-                f"<b>{podcast.name}</b>   "
-                f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
-                f"\n\n {tagged_podcast_name}"
-            ),
-            title = episode.title,
-            performer = f"{podcast.name} - {episode.host or podcast.host}",
-            duration = episode.duration.seconds,
-            thumb = episode.logo_url or podcast.logo_url,
-            timeout = 600,
-            parse_mode = 'html'
-        )
-        uploading_note.delete()
-        forwarded_message = audio_message.forward(query.from_user.id)
+        if episode.message_id:
+            forwarded_message = context.bot.forward_message(
+                chat_id = query.message.chat_id,
+                from_chat_id = f"@{podcast_vault}",
+                message_id = episode.message_id
+            )
+        else:
+            forwarded_message = direct_download(podcast, episode, context)
         forwarded_message.edit_caption(
             caption = (
                 f"*{podcast.name.replace(' ', '')}*"
@@ -66,15 +49,39 @@ def download_episode(update, context):
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
                     text = "评    论", 
-                    url = f"https://t.me/{podcast_vault}/{audio_message.message_id}"
+                    url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}"
                 )
             )
         )
-        if not episode.file_id: episode.file_id = forwarded_message.audio.file_id
+        if not episode.message_id: episode.message_id = audio_message.message_id
     except Exception as e:
         print(e)
         # uploading_note.edit_text('{podcast.name} {episode.title} 下载失败\n\n请[联系开发者](https://t.me/dahawong)以获得帮助')
 
+def direct_download(podcast, episode, context):
+    if int(episode.audio_size) >= 20000000 or not episode.audio_size:
+        audio_file = download(episode.audio_url, context)
+    else:   
+        audio_file = episode.audio_url
+    tagged_podcast_name = '#'+ re.sub(r'[\W]+', '', podcast.name)
+    uploading_note = downloading_note.edit_text("正在上传，请稍候…")
+    audio_message = context.bot.send_audio(
+        chat_id = f'@{podcast_vault}',
+        audio = audio_file,
+        caption = (
+            f"<b>{podcast.name}</b>   "
+            f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
+            f"\n\n {tagged_podcast_name}"
+        ),
+        title = episode.title,
+        performer = f"{podcast.name} - {episode.host or podcast.host}",
+        duration = episode.duration.seconds,
+        thumb = episode.logo_url or podcast.logo_url,
+        timeout = 1800,
+        parse_mode = 'html'
+    )
+    uploading_note.delete()
+    forwarded_message = audio_message.forward(query.from_user.id)
 # Tips
 
 def close_tips(update, context):
