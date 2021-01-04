@@ -69,25 +69,25 @@ def local_download(context, fetching_note, episode, podcast):
     local_download_note = fetching_note.edit_text("下载中…")
     try:
         file_path = download(episode.audio_url, context.user_data['user'].user_id)
+        uploading_note = local_download_note.edit_text("正在发送…")
+        # bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
+        encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
+        audio_message = bot.send_audio(
+            chat_id = f'@{podcast_vault}',
+            audio = file_path,
+            caption = (
+                f"#{podcast.name.replace(' ', '')}\n\n"
+                f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅此播客</a>"
+            ),
+            title = episode.title,
+            performer = f"{podcast.name} - {episode.host or podcast.host}",
+            duration = episode.duration.seconds,
+            thumb = episode.logo_url or podcast.logo_url,
+            timeout = 300,
+            parse_mode = 'html'
+        )
     except Exception as e:
         print(e)
-    uploading_note = local_download_note.edit_text("正在发送…")
-    # bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
-    encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
-    audio_message = bot.send_audio(
-        chat_id = f'@{podcast_vault}',
-        audio = file_path,
-        caption = (
-            f"#{podcast.name.replace(' ', '')}\n\n"
-            f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅此播客</a>"
-        ),
-        title = episode.title,
-        performer = f"{podcast.name} - {episode.host or podcast.host}",
-        duration = episode.duration.seconds,
-        thumb = episode.logo_url or podcast.logo_url,
-        timeout = 300,
-        parse_mode = 'html'
-    )
     success_note = uploading_note.edit_text("下载成功！")
     success_note.delete()
     return audio_message
