@@ -21,7 +21,7 @@ def delete_command_context(update, context):
 def download_episode(update, context):
     bot = context.bot
     query = update.callback_query
-    fetching_note = bot.send_message(query.from_user.id, "获取节目中，请稍候…")
+    fetching_note = bot.send_message(query.from_user.id, "获取节目中…")
     bot.send_chat_action(query.from_user.id, ChatAction.RECORD_AUDIO)
     pattern = r'download_episode_(.+)_([0-9]+)'
     match = re.match(pattern, query.data)
@@ -74,14 +74,14 @@ def local_download(context, fetching_note, episode, podcast):
     bot = context.bot
     try:
         file_path = download(episode.audio_url, context)
-        uploading_note = fetching_note.edit_text("正在上传…")
+        uploading_note = fetching_note.edit_text("正在上传, 请稍候…")
         encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
         tagged_podcast_name = '#'+ re.sub(r'[\W]+', '_', podcast.name)
         audio_message = bot.send_audio(
             chat_id = f'@{podcast_vault}',
             audio = file_path,
             caption = (
-                f"<b>\{podcast.name}</b>   "
+                f"<b>{podcast.name}</b>   "
                 f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
                 f"\n\n {tagged_podcast_name}"
             ),
