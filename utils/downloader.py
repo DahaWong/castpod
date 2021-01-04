@@ -6,7 +6,8 @@ def local_download(url, chat_id):
     res = requests.get(url, allow_redirects=True, stream=True)
     total_size_in_bytes= int(response.headers.get('content-length', 0))
     print(total_size_in_bytes)
-    if res.status_code != 200: raise Exception("Error when downloading file.")
+    if res.status_code != 200: 
+        raise Exception("Error when downloading file.")
     progress_bar = tqdm(
         total = total_size_in_bytes, 
         unit='it', 
