@@ -1,5 +1,6 @@
 from tqdm.contrib.telegram import tqdm, tqdm_telegram
-import requests, config.bot_token as token
+from config import bot_token
+import requests
 
 def local_download(url, chat_id):
     res = requests.get(url, allow_redirects=True, stream=True)
@@ -10,7 +11,7 @@ def local_download(url, chat_id):
         total = total_size_in_bytes, 
         unit='it', 
         unit_scale=True,
-        token = token,
+        token = bot_token,
         chat = chat_id
         )
     print(progress_bar)
