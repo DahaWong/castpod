@@ -32,6 +32,7 @@ def download_episode(update, context):
     run_async = context.dispatcher.run_async
     try:
         if episode.message_id:
+            fetching_note.delete()
             forwarded_message = context.bot.forward_message(
                 chat_id = context.user_data['user'].user_id,
                 from_chat_id = f"@{podcast_vault}",
