@@ -4,7 +4,7 @@ import requests
 
 def local_download(url, chat_id):
     res = requests.get(url, allow_redirects=True, stream=True)
-    total_size_in_bytes= int(response.headers.get('content-length', 0))
+    total_size_in_bytes= int(res.headers.get('content-length', 0))
     print(total_size_in_bytes)
     if res.status_code != 200: 
         raise Exception("Error when downloading file.")
@@ -18,7 +18,7 @@ def local_download(url, chat_id):
     print(progress_bar)
     file_path = f'public/audio/audio-temp.mp3'
     with open(file_path, 'wb') as f:
-        for data in response.iter_content(block_size):
+        for data in res.iter_content(block_size):
             progress_bar.update(len(data))
             file.write(data)
     return file_path
