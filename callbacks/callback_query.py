@@ -28,10 +28,12 @@ def download_episode(update, context):
     podcast_name, index = match[1], int(match[2])
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[index]
+    bot.send_chat_action(query.from_user.id, ChatAction.RECORD_AUDIO)
     if episode.audio_size and int(episode.audio_size) < 20000000:
         audio_message = direct_download(context, fetching_note, episode, podcast)
     else:
         audio_message = local_download(context, fetching_note, episode, podcast)
+    bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     forwarded_message = audio_message.forward(query.from_user.id)
     forwarded_message.edit_reply_markup(
         reply_markup=InlineKeyboardMarkup.from_button(
@@ -66,10 +68,9 @@ def direct_download(context, fetching_note, episode, podcast):
 
 def local_download(context, fetching_note, episode, podcast):
     bot = context.bot
-    fetching_note.delete()
     try:
         file_path = download(episode.audio_url, context)
-        # context.bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
+        fetching_note.edit_text("正在上传…")
         encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
         tagged_podcast_name = '#'+ re.sub(r'[\W]+', '_', podcast.name)
         audio_message = bot.send_audio(

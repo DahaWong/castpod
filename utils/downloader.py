@@ -19,7 +19,8 @@ def local_download(url, context):
         for data in res.iter_content(block_size):
             progress_bar.update(len(data))
             f.write(data)
-        context.bot.delete_message(chat_id, progress_bar.tgio.message_id)
+        message_id = progress_bar.tgio.message_id
+    context.bot.delete_message(chat_id, message_id)
     progress_bar.close()
     if total != 0 and progress_bar.n != total:
         raise Exception("ERROR, something went wrong with progress bar.")
