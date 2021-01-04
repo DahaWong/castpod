@@ -86,11 +86,11 @@ def local_download(context, fetching_note, episode, podcast):
             timeout = 300,
             parse_mode = 'html'
         )
+        success_note = uploading_note.edit_text("下载成功！")
+        success_note.delete()
+        return audio_message
     except Exception as e:
         print(e)
-    success_note = uploading_note.edit_text("下载成功！")
-    success_note.delete()
-    return audio_message
 
 # Tips
 

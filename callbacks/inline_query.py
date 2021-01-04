@@ -46,7 +46,7 @@ def search_podcast(query, keyword, context):
         listed_results = [
             InlineQueryResultArticle(
                 id = '0',
-                title = "没有与此相关的博客呢 :(",
+                title = "没有与此相关的播客呢 :(",
                 description = "换个关键词试试",
                 input_message_content = InputTextMessageContent("🔍️"),
                 reply_markup=InlineKeyboardMarkup.from_button(
