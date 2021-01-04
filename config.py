@@ -12,7 +12,11 @@ bot_token = config['BOT']['TOKEN']
 proxy = config['BOT']['PROXY']
 bot_api = config['BOT']['API']
 podcast_vault = config['BOT']['PODCAST_VAULT']
-defaults = Defaults(parse_mode="MARKDOWN", disable_notification=True)
+defaults = Defaults(
+    parse_mode="MARKDOWN", 
+    disable_notification=True, 
+    run_async=True
+)
 
 # Dev
 dev_user_id = config['DEV']['USER_ID']

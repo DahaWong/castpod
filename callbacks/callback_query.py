@@ -28,72 +28,46 @@ def download_episode(update, context):
     podcast_name, index = match[1], int(match[2])
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[index]
-    bot.send_chat_action(query.from_user.id, ChatAction.RECORD_AUDIO)
-    if episode.audio_size and int(episode.audio_size) < 20000000:
-        audio_message = direct_download(context, fetching_note, episode, podcast)
-    else:
-        audio_message = local_download(context, fetching_note, episode, podcast)
-    forwarded_message = audio_message.forward(query.from_user.id)
-    tagged_podcast_name = '#'+ re.sub(r'[\W]+', '_', podcast.name)
-    forwarded_message.edit_caption(
-        caption = (
-            f"*{podcast.name}*"
-            f"\n\n {tagged_podcast_name}"
-        ),
-        reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton(
-                "评    论", 
-                url=f"https://t.me/{podcast_vault}/{audio_message.message_id}"
-            )
-        )
-    )
-
-def direct_download(context, fetching_note, episode, podcast): 
-    bot = context.bot
-    # bot.send_chat_action(query.from_user.id, ChatAction.RECORD_AUDIO)
-    promise = context.dispatcher.run_async(
-        bot.send_audio,
-        chat_id = f'@{podcast_vault}',
-        audio = episode.audio_url,
-        caption = f"#{podcast.name}",
-        title = episode.title,
-        performer = f"{podcast.name} - {episode.host or podcast.host}",
-        duration = episode.duration.seconds,
-        thumb = episode.logo_url or podcast.logo_url
-    )
-    if (promise.done):
-        try:
-            audio_message = promise.result()
-            fetching_note.delete()
-            return audio_message
-
-        except error.BadRequest:
-            return local_download(context, fetching_note, episode)
-
-def local_download(context, fetching_note, episode, podcast):
-    bot = context.bot
+    downloading_note = fetching_note.edit_text("正在下载, 请稍候…")
+    bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
+    run_async = context.dispatcher.run_async
+    audio_file = episode.audio_url
     try:
-        file_path = download(episode.audio_url, context)
-        uploading_note = fetching_note.edit_text("正在上传, 请稍候…")
-        encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
-        tagged_podcast_name = '#'+ re.sub(r'[\W]+', '_', podcast.name)
-        audio_message = bot.send_audio(
+        if episode.audio_size >= 20000000 or not episode.audio_size:
+            promise = run_async(download, url=episode.audio_url, context=context)
+            if promise.done: audio_file = promise.result()
+        tagged_podcast_name = '#'+ re.sub(r'[\W]+', '', podcast.name)
+        audio_promise = run_async(bot.send_audio,
             chat_id = f'@{podcast_vault}',
-            audio = file_path,
+            audio = audio_file,
             caption = (
                 f"<b>{podcast.name}</b>   "
                 f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
                 f"\n\n {tagged_podcast_name}"
             ),
             title = episode.title,
-            performer = f"{episode.host or podcast.host}",
+            performer = f"{podcast.name} - {episode.host or podcast.host}",
             duration = episode.duration.seconds,
             thumb = episode.logo_url or podcast.logo_url,
             timeout = 300,
             parse_mode = 'html'
         )
-        uploading_note.delete()
-        return audio_message
+        if audio_message_promise.done: 
+            audio_message = audio_promise.result()
+        downloading_note.delete()
+        forwarded_message = audio_message.forward(query.from_user.id)
+        forwarded_message.edit_caption(
+            caption = (
+                f"*{podcast.name.replace(' ', '')}*"
+                f"\n\n {tagged_podcast_name}"
+            ),
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    text = "评    论", 
+                    url = f"https://t.me/{podcast_vault}/{audio_message.message_id}"
+                )
+            )
+        )
     except Exception as e:
         print(e)
 

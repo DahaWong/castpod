@@ -82,12 +82,14 @@ def show_episodes(query, context):
     podcasts = context.bot_data['podcasts']
     results = []
     listed_results = []
+    results = []
     for podcast in podcasts.values():
         if podcast.name == keyword:
             results.append(podcast)
             break
-        elif keyword in podcast.name:
-            results.append(podcast)
+    
+    if not results: results = [podcast for podcast in podcasts.values() if keyword.lower() in podcast.name.lower()]
+
     if len(results) == 1:
         podcast = results[0]
         episodes = podcast.episodes
