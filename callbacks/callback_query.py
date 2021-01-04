@@ -33,7 +33,7 @@ def download_episode(update, context):
     try:
         if episode.message_id:
             forwarded_message = context.bot.forward_message(
-                chat_id = query.message.chat_id,
+                chat_id = context.user_data['user'].user_id,
                 from_chat_id = f"@{podcast_vault}",
                 message_id = episode.message_id
             )
