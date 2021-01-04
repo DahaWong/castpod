@@ -72,7 +72,7 @@ def local_download(context, fetching_note, episode, podcast):
     try:
         file_path, message_id = download(episode.audio_url, chat_id)
         uploading_note = context.bot.edit_message_text("正在发送…", chat_id, message_id)
-        # bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
+        context.bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
         encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
         podcast_name_tag = '#'+ re.sub(r'[\W]+', '_', podcast.name)
         audio_message = bot.send_audio(
@@ -90,8 +90,6 @@ def local_download(context, fetching_note, episode, podcast):
             timeout = 300,
             parse_mode = 'html'
         )
-        success_note = uploading_note.edit_text("下载成功！")
-        success_note.delete()
         return audio_message
     except Exception as e:
         print(e)
