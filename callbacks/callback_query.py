@@ -33,7 +33,7 @@ def download_episode(update, context):
     bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     run_async = context.dispatcher.run_async
     try:
-        if audio_file:
+        if episode.file_id:
             audio_file = episode.file_id
         elif int(episode.audio_size) >= 20000000 or not episode.audio_size:
             audio_file = download(episode.audio_url, context)
