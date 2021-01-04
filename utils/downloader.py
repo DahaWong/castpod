@@ -14,8 +14,8 @@ def local_download(url, chat_id):
         unit_scale=True,
         token = bot_token,
         chat_id = chat_id,
-        bar_format= '{percentage:3.0f}%  {bar:8} {post_fix}',
-        postfix= '\n{remaining_s}秒后下载完成'
+        bar_format= '{percentage:3.0f}%  {bar:8}',
+        # postfix= '\n{remaining_s}秒后下载完成'
     )
     with open('public/audio/audio-temp.mp3', 'wb') as f:
         for data in res.iter_content(block_size):
