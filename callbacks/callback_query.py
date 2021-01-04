@@ -69,7 +69,7 @@ def local_download(context, fetching_note, episode, podcast):
     chat_id = context.user_data['user'].user_id
     fetching_note.delete()
     try:
-        file_path, message_id = download(episode.audio_url, chat_id)
+        file_path = download(episode.audio_url, context)
         # context.bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
         encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
         tagged_podcast_name = '#'+ re.sub(r'[\W]+', '_', podcast.name)
