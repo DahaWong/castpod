@@ -32,14 +32,16 @@ def download_episode(update, context):
     downloading_note = fetching_note.edit_text("下载中…")
     bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     run_async = context.dispatcher.run_async
-    audio_file = episode.audio_url
     try:
-        if int(episode.audio_size) >= 20000000 or not episode.audio_size:
-            promise = run_async(download, url=episode.audio_url, context=context)
-            if promise.done: audio_file = promise.result()
+        if audio_file:
+            audio_file = episode.file_id
+        elif int(episode.audio_size) >= 20000000 or not episode.audio_size:
+            audio_file = download(episode.audio_url, context)
+        else:   
+            audio_file = episode.audio_url
         tagged_podcast_name = '#'+ re.sub(r'[\W]+', '', podcast.name)
         uploading_note = downloading_note.edit_text("正在上传，请稍候…")
-        audio_promise = run_async(bot.send_audio,
+        audio_message = bot.send_audio(
             chat_id = f'@{podcast_vault}',
             audio = audio_file,
             caption = (
@@ -51,17 +53,10 @@ def download_episode(update, context):
             performer = f"{podcast.name} - {episode.host or podcast.host}",
             duration = episode.duration.seconds,
             thumb = episode.logo_url or podcast.logo_url,
-            timeout = 300,
+            timeout = 600,
             parse_mode = 'html'
         )
-        if audio_promise.done: audio_message = audio_promise.result()
-    except Exception as e:
-        print(e)
-    finally:
         uploading_note.delete()
-        if not audio_message: 
-            print('Fail!')
-            return
         forwarded_message = audio_message.forward(query.from_user.id)
         forwarded_message.edit_caption(
             caption = (
@@ -75,6 +70,10 @@ def download_episode(update, context):
                 )
             )
         )
+        if not episode.file_id: episode.file_id = forwarded_message.audio.file_id
+    except Exception as e:
+        print(e)
+        uploading_note.edit_text('{podcast.name} {episode.title} 下载失败\n\n请[联系开发者](https://t.me/dahawong)以获得帮助')
 
 # Tips
 

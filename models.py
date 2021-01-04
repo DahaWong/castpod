@@ -86,6 +86,7 @@ class Episode(object):
         self.duration = self.set_duration(episode.get('itunes_duration'))
         self.logo_url = episode.get('image').href if episode.get('image') else ''
         self.tags = episode.get('tags')[0].get('term') if episode.get('tags') else None
+        self.file_id = None
 
     def set_duration(self, duration:str) -> int:
         if duration:
