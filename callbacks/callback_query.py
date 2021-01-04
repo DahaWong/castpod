@@ -41,7 +41,7 @@ def download_episode(update, context):
                 message_id = episode.message_id
             )
         else:
-            forwarded_message = direct_download(podcast, episode, context)
+            forwarded_message = direct_download(podcast, episode, downloading_note, context)
         forwarded_message.edit_caption(
             caption = (
                 f"*{podcast.name.replace(' ', '')}*"
@@ -59,7 +59,7 @@ def download_episode(update, context):
         print(e)
         # uploading_note.edit_text('{podcast.name} {episode.title} 下载失败\n\n请[联系开发者](https://t.me/dahawong)以获得帮助')
 
-def direct_download(podcast, episode, context):
+def direct_download(podcast, episode, downloading_note, context):
     print(episode)
     print(episode.audio_size)
     if int(episode.audio_size) >= 20000000 or not episode.audio_size:
