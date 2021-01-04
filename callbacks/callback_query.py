@@ -37,7 +37,7 @@ def download_episode(update, context):
     tagged_podcast_name = '#'+ re.sub(r'[\W]+', '_', podcast.name)
     forwarded_message.edit_caption(
         caption = (
-            f"<b>{podcast.name}</b> "
+            f"*{podcast.name}*"
             f"\n\n {tagged_podcast_name}"
         ),
         reply_markup=InlineKeyboardMarkup.from_button(
@@ -81,7 +81,7 @@ def local_download(context, fetching_note, episode, podcast):
             chat_id = f'@{podcast_vault}',
             audio = file_path,
             caption = (
-                f"<b>{podcast.name}</b> "
+                f"<b>\{podcast.name}</b>   "
                 f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
                 f"\n\n {tagged_podcast_name}"
             ),
