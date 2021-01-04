@@ -59,6 +59,7 @@ def download_episode(update, context):
         # uploading_note.edit_text('{podcast.name} {episode.title} 下载失败\n\n请[联系开发者](https://t.me/dahawong)以获得帮助')
 
 def direct_download(podcast, episode, context):
+    print(episode.audio_size)
     if int(episode.audio_size) >= 20000000 or not episode.audio_size:
         audio_file = download(episode.audio_url, context)
     else:   
