@@ -35,8 +35,8 @@ def download_episode(update, context):
         audio_message = local_download(context, fetching_note, episode, podcast)
     forwarded_message = audio_message.forward(query.from_user.id)
     tagged_podcast_name = '#'+ re.sub(r'[\W]+', '_', podcast.name)
-    forwarded_message.edit_text(
-        text = (
+    forwarded_message.edit_caption(
+        caption = (
             f"<b>{podcast.name}</b> "
             f"\n\n {tagged_podcast_name}"
         ),
