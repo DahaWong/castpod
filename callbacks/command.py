@@ -3,7 +3,7 @@ from utils.persistence import persistence
 from base64 import urlsafe_b64decode as decode
 from manifest import manifest
 from models import User, Feed
-from components import ManagePage
+from components import ManagePage, PodcastPage
 import re
 
 def start(update, context):
@@ -45,12 +45,17 @@ def start(update, context):
         
         welcome_message.pin(disable_notification=True)
     else: 
-        print('in!')
         podcast_name = decode(context.args[0]).decode('utf-8')
-        print(podcast_name)
         podcast = context.bot_data['podcasts'][podcast_name]
+        subscribing_note = update.message.reply_text("订阅中…")
+        # 完全一样的订阅逻辑，简化之：
         user.subscription.update({podcast_name: Feed(podcast)})
         podcast.subscribers.add(user_id)
+        page = PodcastPage(podcast)
+        subscribing_note.edit_text(
+            text = page.text(),
+            reply_markup = InlineKeyboardMarkup(page.keyboard())
+        )
 
 def about(update, context):
     if not check_login(update, context): return

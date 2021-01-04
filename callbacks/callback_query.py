@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error, ReplyKeyboardRemove
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error, ReplyKeyboardRemove, ChatAction
 from base64 import urlsafe_b64encode as encode
 from models import Episode
 from config import podcast_vault
@@ -22,13 +22,12 @@ def download_episode(update, context):
     bot = context.bot
     query = update.callback_query
     fetching_note = bot.send_message(query.from_user.id, "获取节目中，请稍候…")
-    bot.send_chat_action(query.from_user.id, "record_audio")
+    bot.send_chat_action(query.from_user.id, ChatAction.RECORD_AUDIO)
     pattern = r'download_episode_(.+)_([0-9]+)'
     match = re.match(pattern, query.data)
     podcast_name, index = match[1], int(match[2])
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[index]
-    bot.send_chat_action(query.from_user.id, "upload_audio")
     if episode.audio_size and int(episode.audio_size) < 20000000:
         audio_message = direct_download(context, fetching_note, episode, podcast)
     else:
@@ -43,8 +42,9 @@ def download_episode(update, context):
         )
     )
 
-def direct_download(context, fetching_note, episode, podcast):
+def direct_download(context, fetching_note, episode, podcast): 
     bot = context.bot
+    bot.send_chat_action(query.from_user.id, ChatAction.RECORD_AUDIO)
     promise = context.dispatcher.run_async(
         bot.send_audio,
         chat_id = f'@{podcast_vault}',
@@ -67,18 +67,20 @@ def direct_download(context, fetching_note, episode, podcast):
 def local_download(context, fetching_note, episode, podcast):
     bot = context.bot
     local_download_note = fetching_note.edit_text("下载中…")
-    file_path = download(episode.audio_url)
+    try:
+        file_path = download(episode.audio_url, context.user_data['user'].user_id)
+    except Exception as e:
+        print(e)
     uploading_note = local_download_note.edit_text("正在发送…")
+    bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
-    print(encoded_podcast_name)
     audio_message = bot.send_audio(
         chat_id = f'@{podcast_vault}',
         audio = file_path,
         caption = (
-            # f"#{podcast.name.replace(' ', '')}\n\n"
+            f"#{podcast.name.replace(' ', '')}\n\n"
             f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅此播客</a>"
         ),
-        # caption = f"#{podcast.name.replace(' ', '')}\n\n[订阅此播客]('https://t.me/{manifest.bot_id}?start={podcast.name}')",
         title = episode.title,
         performer = f"{podcast.name} - {episode.host or podcast.host}",
         duration = episode.duration.seconds,
