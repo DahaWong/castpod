@@ -74,7 +74,7 @@ class Episode(object):
         self.audio = self.set_audio(episode.enclosures)
         if self.audio:
             self.audio_url = self.audio.href
-            self.audio_size = self.audio.get('length') or 0
+            self.audio_size = self.audio.get('length')
         else:
             self.audio_url = ""
             self.audio_size = 0
