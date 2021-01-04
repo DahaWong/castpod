@@ -14,12 +14,12 @@ def local_download(url, chat_id):
         chat_id = chat_id,
         bar_format= '{percentage:3.0f}%  {bar:8}'
     )
-    message_id = progress_bar.tgio.message_id
     with open('public/audio/audio-temp.mp3', 'wb') as f:
         for data in res.iter_content(block_size):
             progress_bar.update(len(data))
             f.write(data)
+    message_id = progress_bar.tgio.message_id
     progress_bar.close()
     if total != 0 and progress_bar.n != total:
         raise Exception("ERROR, something went wrong with progress bar.")
-    return 'public/audio/audio-temp.mp3', message_id
+    return ('public/audio/audio-temp.mp3', message_id)
