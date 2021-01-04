@@ -28,6 +28,7 @@ def download_episode(update, context):
     podcast_name, index = match[1], int(match[2])
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[index]
+    encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
     downloading_note = fetching_note.edit_text("正在下载, 请稍候…")
     bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     run_async = context.dispatcher.run_async
