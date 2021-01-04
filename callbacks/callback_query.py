@@ -44,7 +44,7 @@ def download_episode(update, context):
 
 def direct_download(context, fetching_note, episode, podcast): 
     bot = context.bot
-    bot.send_chat_action(query.from_user.id, ChatAction.RECORD_AUDIO)
+    # bot.send_chat_action(query.from_user.id, ChatAction.RECORD_AUDIO)
     promise = context.dispatcher.run_async(
         bot.send_audio,
         chat_id = f'@{podcast_vault}',
@@ -72,7 +72,7 @@ def local_download(context, fetching_note, episode, podcast):
     except Exception as e:
         print(e)
     uploading_note = local_download_note.edit_text("正在发送…")
-    bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
+    # bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
     audio_message = bot.send_audio(
         chat_id = f'@{podcast_vault}',
