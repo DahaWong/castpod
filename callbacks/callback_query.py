@@ -66,7 +66,6 @@ def direct_download(context, fetching_note, episode, podcast):
 
 def local_download(context, fetching_note, episode, podcast):
     bot = context.bot
-    chat_id = context.user_data['user'].user_id
     fetching_note.delete()
     try:
         file_path = download(episode.audio_url, context)

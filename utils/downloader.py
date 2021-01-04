@@ -3,7 +3,7 @@ from config import bot_token
 import requests
 
 def local_download(url, context):
-    chat_id = context.user_data('user').user_id
+    chat_id = context.user_data['user'].user_id
     res = requests.get(url, allow_redirects=True, stream=True)
     total = int(res.headers.get('content-length', 0))
     block_size = 1024 #1 Kibibyte
