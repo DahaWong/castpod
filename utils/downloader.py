@@ -12,9 +12,10 @@ def local_download(url, chat_id):
         unit='iB', 
         unit_scale=True,
         token = bot_token,
-        chat_id = chat_id
+        chat_id = chat_id,
+        leave = False
     )
-    progress_bar.set_description_str('下载中…')
+    progress_bar.set_description_str('正在下载\n')
     progress_bar.set_postfix_str('')
     with open('public/audio/audio-temp.mp3', 'wb') as f:
         for data in res.iter_content(block_size):
