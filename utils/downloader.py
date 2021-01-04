@@ -23,7 +23,6 @@ def local_download(url, chat_id):
             f.write(data)
         progress_bar.set_postfix('')
         progress_bar.set_description('下载完毕！')
-        progress_bar.disable=True
     progress_bar.close()
     if total != 0 and progress_bar.n != total:
         raise Exception("ERROR, something went wrong with progress bar.")
