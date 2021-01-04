@@ -8,7 +8,7 @@ def local_download(url, chat_id):
     block_size = 1024 #1 Kibibyte
     if res.status_code != 200: raise Exception("Error when downloading file.")
     progress_bar = tqdm(
-        desc= "正在下载节目…"
+        desc= "正在下载节目…",
         total = total, 
         unit='iB', 
         unit_scale=True,
