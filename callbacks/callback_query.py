@@ -81,7 +81,7 @@ def direct_download(podcast, episode, fetching_note, context):
         parse_mode = 'html'
     )
     uploading_note.delete()
-    forwarded_message = audio_message.forward(query.from_user.id)
+    forwarded_message = audio_message.forward(context.user_data['user'].user_id)
 # Tips
 
 def close_tips(update, context):
