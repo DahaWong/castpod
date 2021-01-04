@@ -51,7 +51,6 @@ def download_episode(update, context):
                 )
             )
         )
-        if not episode.message_id: episode.message_id = audio_message.message_id
     except Exception as e:
         print(e)
         # uploading_note.edit_text('{podcast.name} {episode.title} 下载失败\n\n请[联系开发者](https://t.me/dahawong)以获得帮助')
@@ -82,6 +81,7 @@ def direct_download(podcast, episode, fetching_note, context):
     )
     uploading_note.delete()
     forwarded_message = audio_message.forward(context.user_data['user'].user_id)
+    episode.message_id = audio_message.message_id
 # Tips
 
 def close_tips(update, context):
