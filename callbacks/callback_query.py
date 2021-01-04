@@ -77,7 +77,7 @@ def local_download(context, fetching_note, episode, podcast):
             chat_id = f'@{podcast_vault}',
             audio = file_path,
             caption = (
-                f"<b>{podcast.name}</b>"
+                # f"<bold>{podcast.name}</bold>"
                 f"\n<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
                 f"\n\n #{re.sub(r'[\W]+', '_', podcast.name)}"
             ),
