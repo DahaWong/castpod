@@ -32,6 +32,7 @@ def download_episode(update, context):
     downloading_note = fetching_note.edit_text("下载中…")
     bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     run_async = context.dispatcher.run_async
+    uploading_note = None
     try:
         if audio_file:
             audio_file = episode.file_id
