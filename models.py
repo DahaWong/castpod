@@ -118,7 +118,7 @@ class Episode(object):
     def set_title(self, title):
         if not title: return ''
         return title.lstrip(self.podcast_name)
-        
+
 class Feed(object):
     """
     Feed of each user subscription.

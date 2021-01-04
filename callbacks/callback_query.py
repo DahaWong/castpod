@@ -33,7 +33,7 @@ def download_episode(update, context):
     run_async = context.dispatcher.run_async
     audio_file = episode.audio_url
     try:
-        if episode.audio_size >= 20000000 or not episode.audio_size:
+        if int(episode.audio_size) >= 20000000 or not episode.audio_size:
             promise = run_async(download, url=episode.audio_url, context=context)
             if promise.done: audio_file = promise.result()
         tagged_podcast_name = '#'+ re.sub(r'[\W]+', '', podcast.name)
