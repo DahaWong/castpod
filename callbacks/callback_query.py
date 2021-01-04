@@ -32,7 +32,6 @@ def download_episode(update, context):
     downloading_note = fetching_note.edit_text("下载中…")
     bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     run_async = context.dispatcher.run_async
-    uploading_note = None
     try:
         if audio_file:
             audio_file = episode.file_id
@@ -74,7 +73,7 @@ def download_episode(update, context):
         if not episode.file_id: episode.file_id = forwarded_message.audio.file_id
     except Exception as e:
         print(e)
-        uploading_note.edit_text('{podcast.name} {episode.title} 下载失败\n\n请[联系开发者](https://t.me/dahawong)以获得帮助')
+        # uploading_note.edit_text('{podcast.name} {episode.title} 下载失败\n\n请[联系开发者](https://t.me/dahawong)以获得帮助')
 
 # Tips
 
