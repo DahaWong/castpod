@@ -2,7 +2,8 @@ from tqdm.contrib.telegram import tqdm
 from config import bot_token
 import requests
 
-def local_download(url, chat_id):
+def local_download(url, context):
+    chat_id = context.user_data('user').user_id
     res = requests.get(url, allow_redirects=True, stream=True)
     total = int(res.headers.get('content-length', 0))
     block_size = 1024 #1 Kibibyte
@@ -19,7 +20,7 @@ def local_download(url, chat_id):
             for data in res.iter_content(block_size):
                 progress_bar.update(len(data))
                 f.write(data)
-        message_id = progress_bar.tgio.message_id
+        context.bot.delete_message(chat_id, progress_bar.tgio.message_id)
     if total != 0 and progress_bar.n != total:
         raise Exception("ERROR, something went wrong with progress bar.")
-    return ('public/audio/audio-temp.mp3', message_id)
+    return 'public/audio/audio-temp.mp3'

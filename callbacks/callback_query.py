@@ -70,17 +70,16 @@ def local_download(context, fetching_note, episode, podcast):
     fetching_note.delete()
     try:
         file_path, message_id = download(episode.audio_url, chat_id)
-        uploading_note = context.bot.edit_message_text("正在发送…", chat_id, message_id)
         # context.bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
         encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
-        podcast_name_tag = '#'+ re.sub(r'[\W]+', '_', podcast.name)
+        tagged_podcast_name = '#'+ re.sub(r'[\W]+', '_', podcast.name)
         audio_message = bot.send_audio(
             chat_id = f'@{podcast_vault}',
             audio = file_path,
             caption = (
                 f"<b>{podcast.name}</b>"
                 f"\n<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
-                f"\n\n {podcast_name_tag}"
+                f"\n\n {tagged_podcast_name}"
             ),
             title = episode.title,
             performer = f"{episode.host or podcast.host}",
