@@ -33,9 +33,12 @@ def download_episode(update, context):
         audio_message = direct_download(context, fetching_note, episode, podcast)
     else:
         audio_message = local_download(context, fetching_note, episode, podcast)
-    bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
     forwarded_message = audio_message.forward(query.from_user.id)
-    forwarded_message.edit_reply_markup(
+    forwarded_message.edit_text(
+        text = (
+            f"<b>{podcast.name}</b> "
+            f"\n\n {tagged_podcast_name}"
+        ),
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
                 "评    论", 
@@ -70,15 +73,15 @@ def local_download(context, fetching_note, episode, podcast):
     bot = context.bot
     try:
         file_path = download(episode.audio_url, context)
-        fetching_note.edit_text("正在上传…")
+        uploading_note = fetching_note.edit_text("正在上传…")
         encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
         tagged_podcast_name = '#'+ re.sub(r'[\W]+', '_', podcast.name)
         audio_message = bot.send_audio(
             chat_id = f'@{podcast_vault}',
             audio = file_path,
             caption = (
-                f"<b>{podcast.name}</b>"
-                f"\n<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
+                f"<b>{podcast.name}</b> "
+                f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
                 f"\n\n {tagged_podcast_name}"
             ),
             title = episode.title,
@@ -88,6 +91,7 @@ def local_download(context, fetching_note, episode, podcast):
             timeout = 300,
             parse_mode = 'html'
         )
+        uploading_note.delete()
         return audio_message
     except Exception as e:
         print(e)
