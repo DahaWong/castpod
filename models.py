@@ -68,6 +68,7 @@ class Podcast(object):
         episodes = []
         for episode in results:
             episodes.append(Episode(self.name, episode, self.logo_url))
+        return episodes
 
 class Episode(object):
     """
