@@ -29,7 +29,6 @@ def download_episode(update, context):
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[index]
     bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
-    run_async = context.dispatcher.run_async
     tagged_podcast_name = '#'+ re.sub(r'[\W]+', '', podcast.name)
     try:
         if episode.message_id:
