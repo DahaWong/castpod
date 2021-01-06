@@ -158,7 +158,7 @@ class Episode(object):
                 html_content=self.shownotes,
                 author_name = self.host
             )
-            time.sleep(0.5)
+            time.sleep(0.3)
             print(f"https://telegra.ph/{res['path']}")
             return f"https://telegra.ph/{res['path']}"
         except Exception as e:
