@@ -1,6 +1,5 @@
 from utils.parser import parse_opml
-import feedparser
-import socket, datetime, re
+import socket, datetime, re, time, feedparser
 from urllib.error import URLError
 from uuid import NAMESPACE_URL, uuid5
 from telegraph import Telegraph
@@ -158,6 +157,7 @@ class Episode(object):
                 html_content=self.shownotes,
                 author_name = self.host
             )
+            time.sleep(0.5)
             print(f"https://telegra.ph/{res['path']}")
             return f"https://telegra.ph/{res['path']}"
         except Exception as e:
