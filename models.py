@@ -67,7 +67,7 @@ class Podcast(object):
 
     def set_episodes(self, results):
         episodes = []
-        for episode in result['items']:
+        for episode in results:
             episodes.append(Episode(self.name, episode, self.logo_url))
 
 class Episode(object):
