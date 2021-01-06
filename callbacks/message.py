@@ -25,51 +25,40 @@ def save_subscription(update, context):
     subscribing_note = parsing_note.edit_text(f"订阅中 (0/{feeds_count})")
     podcasts = []
     failed_feeds = []
-    subscribed_count = 0
     for i, feed in enumerate(feeds):
         if feed['name'] not in cached_podcasts.keys():
             try:
-                promise = context.dispatcher.run_async(Podcast, feed_url=feed['url'])
-                podcast = promise.result()
-                if podcast:
-                    subscribed_count += 1
-                    subscribing_note = subscribing_note.edit_text(f"订阅中 ({subscribed_count}/{feeds_count})")
-                    cached_podcasts.update({podcast.name: podcast})
-                    podcasts.append(podcast)
-                else:
-                    failed_feeds.append(feed['url'])
-                    raise Exception(f"Error when adding feed {feed['url']}")
+                podcast = Podcast(feed['url'])
+                cached_podcasts.update({podcast.name: podcast})
             except Exception as e: 
                 print(e)
                 failed_feeds.append(feed['url'])
                 continue
         else:
             podcast = cached_podcasts[feed['name']]
-            podcasts.append(podcast)
+        podcasts.append(podcast)
+        subscribing_note = subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{feeds_count})")
 
-    while len(podcasts) != len(failed_feeds) + subscribed_count:
-        pass
+    if len(podcasts):
+        user.import_feeds(podcasts)
+        newline = '\n'
+        reply = f"成功订阅 {feeds_count} 部播客！" if not len(failed_feeds) else (
+            f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
+            f"\n\n可能损坏的订阅源："
+            f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
+        )
     else:
-        if len(podcasts):
-            user.import_feeds(podcasts)
-            newline = '\n'
-            reply = f"成功订阅 {feeds_count} 部播客！" if not len(failed_feeds) else (
-                f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
-                f"\n\n可能损坏的订阅源："
-                f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
-            )
-        else:
-                reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
+            reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
-        subscribing_note.edit_text(
-            reply, 
-            reply_markup = InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton(
-                    "查 看 订 阅 列 表", 
-                    switch_inline_query_current_chat=""
-                )
+    subscribing_note.edit_text(
+        reply, 
+        reply_markup = InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton(
+                "查 看 订 阅 列 表", 
+                switch_inline_query_current_chat=""
             )
         )
+    )
 
 def subscribe_feed(update, context):
     context.bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
