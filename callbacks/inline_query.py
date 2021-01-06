@@ -1,9 +1,7 @@
 from utils.api_method import search
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup, constants
 from manifest import manifest
-import re
-import datetime
-from models import Podcast
+import re, datetime
 from components import PodcastPage
 from uuid import uuid4
 
@@ -80,56 +78,34 @@ def search_podcast(query, keyword, context):
 def show_episodes(query, context):
     keyword = query.query
     podcasts = context.bot_data['podcasts']
-    results = []
     listed_results = []
-    results = []
-    for podcast in podcasts.values():
-        if podcast.name == keyword:
-            results.append(podcast)
-            break
-    
-    if not results: results = [podcast for podcast in podcasts.values() if keyword.lower() in podcast.name.lower()]
-
-    if len(results) == 1:
-        podcast = results[0]
-        episodes = podcast.episodes
-        # if context.user_data['preference'].get('reverse_episodes'): episodes.reverse()
-        def keyboard(i):
-            return [
-            [InlineKeyboardButton("收      听", callback_data = f"download_episode_{podcast.name}_{i}")],
-            [InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
-            InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")]
-        ]
-        listed_results = [InlineQueryResultArticle(
-            id = index,
-            title = episode.title,
-            input_message_content = InputTextMessageContent((
-                f"*{podcast.name}*  [🎙️]({episode.logo_url or podcast.logo_url}) {(episode.host if episode.host!= podcast.name else '') or (podcast.host if podcast.host!= podcast.name else '')}"
-                f"\n{episode.title}\n\n"
-                f"🕙️  "
-                f"{episode.duration.seconds//3600}h "
-                f"{(episode.duration.seconds//60)%60}m "
-                f"{episode.duration.seconds%60}s"
-                f"\n\n{episode.subtitle}"
-                # and then use Telegraph api to generate summary link!
-                )),
-            reply_markup = InlineKeyboardMarkup(keyboard(index)),
-            description = f"{episode.duration or podcast.name}\n{episode.subtitle}",
-            thumb_url = podcast.logo_url, # episode logo always too big
-            thumb_width = 60, 
-            thumb_height = 60
-        ) for index, episode in enumerate(episodes)]
-    elif len(results) > 1:
-        listed_results = [InlineQueryResultArticle(
-            id = index,
-            title = podcast.name,
-            input_message_content = InputTextMessageContent(PodcastPage(podcast).text()),
-            reply_markup = InlineKeyboardMarkup(PodcastPage(podcast).keyboard()),
-            description = podcast.host,
-            thumb_url = podcast.logo_url,
-            thumb_width = 60, 
-            thumb_height = 60 
-        ) for index, podcast in enumerate(results)]
+    podcast = podcasts.get(keyword)
+    # if not podcast: ..
+    episodes = podcast.episodes
+    # if context.user_data['preference'].get('reverse_episodes'): episodes.reverse()
+    def keyboard(i):
+        return [
+        [InlineKeyboardButton("收      听", callback_data = f"download_episode_{podcast.name}_{i}")],
+        [InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
+        InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")]
+    ]
+    listed_results = [InlineQueryResultArticle(
+        id = index,
+        title = episode.title,
+        input_message_content = InputTextMessageContent((
+            f"[🎙️]({episode.shownotes_url}) *{podcast.name}*"
+            f"  |  "
+            f"{(episode.host if episode.host!= podcast.name else '') or (podcast.host if podcast.host!= podcast.name else '')}"
+            f"\n{episode.duration.seconds//3600}h " 
+            f"{(episode.duration.seconds//60)%60}m "
+            f"{episode.duration.seconds%60}s"
+        )),
+        reply_markup = InlineKeyboardMarkup(keyboard(index)),
+        description = f"{episode.duration or podcast.name}\n{episode.subtitle}",
+        thumb_url = podcast.logo_url,
+        thumb_width = 60, 
+        thumb_height = 60
+    ) for index, episode in enumerate(episodes)]
     return listed_results
 
 def show_subscription(query, context):

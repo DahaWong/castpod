@@ -1,4 +1,3 @@
-import feedparser
 from bs4 import BeautifulSoup
 def parse_opml(f):
     feeds = []

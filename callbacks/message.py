@@ -29,7 +29,7 @@ def save_subscription(update, context):
     for i, feed in enumerate(feeds):
         if feed['name'] not in cached_podcasts.keys():
             try:
-                podcast = Podcast(feed['url'])
+                podcast = context.dispatcher.run_async(Podcast, feed_url=feed['url']).result()
                 cached_podcasts.update({podcast.name: podcast})
             except Exception as e: 
                 print(e)
@@ -66,6 +66,7 @@ def subscribe_feed(update, context):
     context.bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
     feed = update['message']['text']
     subscribing_message = update.message.reply_text(f"订阅中，请稍候…")
+        
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']
     promise = context.dispatcher.run_async(user.add_feed, url = feed)
