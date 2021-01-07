@@ -77,7 +77,7 @@ def direct_download(podcast, episode, fetching_note, context):
         title = episode.title,
         performer = f"{podcast.name} - {episode.host or podcast.host}",
         duration = episode.duration.seconds,
-        thumb = podcast.thumbnail,
+        thumb = podcast.logo,
         timeout = 1800,
         parse_mode = 'html'
     )

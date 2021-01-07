@@ -51,7 +51,6 @@ class Podcast(object):
         if not self.name: raise Exception("Error when parsing feed.")
         self.logo_url = feed.get('image').get('href')
         self.download_logo()
-        print(self.thumbnail)
         self.episodes = self.set_episodes(result['items'])
         self.latest_episode = self.episodes[0]
         self.host = feed.author_detail.name
