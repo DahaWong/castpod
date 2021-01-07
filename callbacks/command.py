@@ -21,21 +21,13 @@ def start(update, context):
     user = context.user_data['user']
     if (not context.args) or (context.args[0] == "login"):
         welcome_text = (
-            f'欢迎使用 {manifest.name}。                                              '
+            f'欢迎使用 {manifest.name}！                                            '
             f'\n\n您可以发送 OPML 文件或 RSS 链接以*导入播客订阅*。\n'
-            f'\n\n以下是全部的操作指令，在对话框输入 `/` 即可随时唤出'
-            f'\n\n/search：搜索播客'
-            f'\n/manage：管理订阅'
-            f'\n/about：幕后信息'
-            f'\n/help：使用说明'
-            f'\n\n/export：导出订阅'
-            f'\n/logout：退出登录'
         )
 
-        keyboard = [[InlineKeyboardButton(
-            '搜 索 播 客', 
-            switch_inline_query_current_chat = "search "
-            )
+        keyboard = [[
+            InlineKeyboardButton('🔎️', switch_inline_query_current_chat = "search "),
+            InlineKeyboardButton('订   阅   列   表', switch_inline_query_current_chat = "")
         ]]
 
         welcome_message = message.reply_text(
