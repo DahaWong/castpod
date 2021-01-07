@@ -82,11 +82,15 @@ class Podcast(object):
                 f.write(block)
         self.logo = infile
         outfile = os.path.splitext(infile)[0] + ".thumbnail.jpg"
-        with Image.open(infile) as im:
-            im.thumbnail(size=(320, 320))
-            im.save(outfile, "JPEG")
-        self.thumbnail = outfile
-
+        try:
+            with Image.open(infile) as im:
+                im.thumbnail(size=(320, 320))
+                im.save(outfile, "JPEG")
+            self.thumbnail = outfile
+        except Exception as e:
+            print(e)
+            self.thumbnail = ''
+            
 class Episode(object):
     """
     Episode of a specific podcast.
