@@ -1,5 +1,5 @@
 from utils.parser import parse_opml
-import socket, datetime, re, time, feedparser
+import socket, datetime, re, time, feedparser, requests, os
 from urllib.error import URLError
 from uuid import NAMESPACE_URL, uuid5
 from telegraph import Telegraph
@@ -21,7 +21,7 @@ class User(object):
     def import_feeds(self, podcasts):
         self.subscription.update({podcast.name: Feed(podcast) for podcast in podcasts})
 
-    def add_feed(self, podcast:Podcast):
+    def add_feed(self, podcast):
         self.subscription.update({podcast.name: Feed(podcast)})
         # self.update_subscription_file()
         return self.subscription
@@ -51,6 +51,7 @@ class Podcast(object):
         if not self.name: raise Exception("Error when parsing feed.")
         self.logo_url = feed.get('image').get('href')
         self.download_logo()
+        print(self.thumbnail)
         self.episodes = self.set_episodes(result['items'])
         self.latest_episode = self.episodes[0]
         self.host = feed.author_detail.name
@@ -72,24 +73,20 @@ class Podcast(object):
         return episodes
 
     def download_logo(self):
-        infile = 'public/logos/{self.name}.jpg'
+        infile = f'public/logos/{self.name}.jpg'
         with open(infile, 'wb') as f:
             response = requests.get(self.logo_url, allow_redirects=True, stream=True)
             if not response.ok: 
                 raise Exception("URL Open Error: can't get this logo.")
             for block in response.iter_content(1024):
                 if not block: break
-            f.write(block)
+                f.write(block)
         self.logo = infile
-        outfile = os.path.splitext(infile)[0] + ".thumbnail"
-            try:
-                with Image.open(infile) as im:
-                    im.thumbnail(320)
-                    im.save(outfile, "JPEG")
-            except OSError:
-                print("Cannot create thumbnail for", infile
+        outfile = os.path.splitext(infile)[0] + ".thumbnail.jpg"
+        with Image.open(infile) as im:
+            im.thumbnail(size=(320, 320))
+            im.save(outfile, "JPEG")
         self.thumbnail = outfile
-
 
 class Episode(object):
     """
