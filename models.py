@@ -110,7 +110,7 @@ class Episode(object):
         self.content = episode.get('content')
         self.summary = episode.get('summary') or ''
         self.shownotes = self.set_shownotes()
-        # self.shownotes_url = self.set_shownotes_url() # 只在收听的时候开始生成
+        self.shownotes_url = ''
         self.published_time = episode.published_parsed
         self.tags = episode.get('tags')[0].get('term') if episode.get('tags') else None
         self.message_id = None
@@ -160,9 +160,10 @@ class Episode(object):
         # print(html_content)
         return html_content
     
-    def set_shownotes_url(self):
-        telegraph = Telegraph()
+    def get_shownotes_url(self):
+        if self.shownotes_url: return self.shownotes_url
 
+        telegraph = Telegraph()
         telegraph.create_account(
             short_name = manifest.name,
             author_name = manifest.name,
@@ -175,8 +176,8 @@ class Episode(object):
                 html_content=self.shownotes,
                 author_name = self.host
             )
-            time.sleep(0.3)
-            print(f"https://telegra.ph/{res['path']}")
+            time.sleep(0.2)
+            self.shownotes_url = f"https://telegra.ph/{res['path']}"
             return f"https://telegra.ph/{res['path']}"
         except Exception as e:
             print(e)
