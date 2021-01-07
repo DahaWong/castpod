@@ -2,3 +2,4 @@ python-telegram-bot
 bs4
 feedparser
 tqdm
+Pillow

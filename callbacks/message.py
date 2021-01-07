@@ -72,41 +72,41 @@ def save_subscription(update, context):
 
 def subscribe_feed(update, context):
     context.bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
-    feed = update['message']['text']
+    feed_url = update['message']['text']
     subscribing_message = update.message.reply_text(f"订阅中，请稍候…")
         
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']
-    promise = context.dispatcher.run_async(user.add_feed, url = feed)
-    if promise.done:
-        try:
-            new_podcast = promise.result()
-            manage_page = ManagePage(
-                podcast_names = user.subscription.keys(), 
-                text = f"`{new_podcast.name}` 订阅成功！"
+
+    promise = context.dispatcher.run_async(user.add_feed, podcast = podcast)
+    try:
+        new_podcast = promise.result()
+        manage_page = ManagePage(
+            podcast_names = user.subscription.keys(), 
+            text = f"`{new_podcast.name}` 订阅成功！"
+        )
+        subscribing_message.delete()
+        message = update.message
+        message.reply_text(
+            text = manage_page.text, 
+            reply_markup=ReplyKeyboardMarkup(
+                manage_page.keyboard(), 
+                resize_keyboard=True,
+                one_time_keyboard=True
             )
-            subscribing_message.delete()
-            message = update.message
-            message.reply_text(
-                text = manage_page.text, 
-                reply_markup=ReplyKeyboardMarkup(
-                    manage_page.keyboard(), 
-                    resize_keyboard=True,
-                    one_time_keyboard=True
-                )
-            )
-            podcast_page = PodcastPage(new_podcast)
-            message.reply_text(
-                text = podcast_page.text(), 
-                reply_markup=InlineKeyboardMarkup(podcast_page.keyboard())
-            )
-            message.delete()
-            new_podcast.subscribers.add(user.user_id)
-            if new_podcast.name not in podcasts.keys():
-                podcasts.update({new_podcast.name:new_podcast})
-        except Exception as e:
-            print(e)
-            subscribing_message.edit_text("订阅失败。可能是因为订阅源损坏 :(")
+        )
+        podcast_page = PodcastPage(new_podcast)
+        message.reply_text(
+            text = podcast_page.text(), 
+            reply_markup=InlineKeyboardMarkup(podcast_page.keyboard())
+        )
+        message.delete()
+        new_podcast.subscribers.add(user.user_id)
+        if new_podcast.name not in podcasts.keys():
+            podcasts.update({new_podcast.name:new_podcast})
+    except Exception as e:
+        print(e)
+        subscribing_message.edit_text("订阅失败。可能是因为订阅源损坏 :(")
 
 def exit_reply_keyboard(update, context):
     message = update.message

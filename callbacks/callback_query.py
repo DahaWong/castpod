@@ -6,6 +6,7 @@ from utils.downloader import local_download as download
 from manifest import manifest
 import re
 
+
 # Message
 def delete_message(update, context):
     update.callback_query.delete_message()

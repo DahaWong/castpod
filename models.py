@@ -4,6 +4,8 @@ from urllib.error import URLError
 from uuid import NAMESPACE_URL, uuid5
 from telegraph import Telegraph
 from manifest import manifest
+from PIL import Image
+
 
 class User(object):
     """
@@ -15,16 +17,14 @@ class User(object):
         self.subscription = {}
         self.subscription_path = "public/subscriptions/{self.user_id}.xml"
 
+    # 没必要：
     def import_feeds(self, podcasts):
-        self.subscription = {podcast.name: Feed(podcast) for podcast in podcasts}
+        self.subscription.update({podcast.name: Feed(podcast) for podcast in podcasts})
 
-    def add_feed(self, url:str):
-        new_podcast = Podcast(url)
-        # 这里应该用 setter
-        # 与此同时，更新 podcast 中的订阅者
-        self.subscription.update({new_podcast.name: Feed(new_podcast)})
+    def add_feed(self, podcast:Podcast):
+        self.subscription.update({podcast.name: Feed(podcast)})
         # self.update_subscription_file()
-        return new_podcast
+        return self.subscription
 
     def update_subscription_file(self):
         feeds_as_opml = encode_feeds(self.subscription)
@@ -42,7 +42,7 @@ class Podcast(object):
         self.subscribers = set()
 
     def parse_feed(self, url):
-        socket.setdefaulttimeout(5)
+        socket.setdefaulttimeout(3)
         result = feedparser.parse(url)
         if str(result.status)[0]!= '2' and str(result.status)[0]!= '3':
             raise Exception(f'Feed URL Open Error. {result.status}')
@@ -50,6 +50,7 @@ class Podcast(object):
         self.name = feed.get('title')
         if not self.name: raise Exception("Error when parsing feed.")
         self.logo_url = feed.get('image').get('href')
+        self.download_logo()
         self.episodes = self.set_episodes(result['items'])
         self.latest_episode = self.episodes[0]
         self.host = feed.author_detail.name
@@ -69,6 +70,26 @@ class Podcast(object):
         for episode in results:
             episodes.append(Episode(self.name, episode, self.logo_url))
         return episodes
+
+    def download_logo(self):
+        infile = 'public/logos/{self.name}.jpg'
+        with open(infile, 'wb') as f:
+            response = requests.get(self.logo_url, allow_redirects=True, stream=True)
+            if not response.ok: 
+                raise Exception("URL Open Error: can't get this logo.")
+            for block in response.iter_content(1024):
+                if not block: break
+            f.write(block)
+        self.logo = infile
+        outfile = os.path.splitext(infile)[0] + ".thumbnail"
+            try:
+                with Image.open(infile) as im:
+                    im.thumbnail(320)
+                    im.save(outfile, "JPEG")
+            except OSError:
+                print("Cannot create thumbnail for", infile
+        self.thumbnail = outfile
+
 
 class Episode(object):
     """
@@ -93,7 +114,7 @@ class Episode(object):
         self.content = episode.get('content')
         self.summary = episode.get('summary') or ''
         self.shownotes = self.set_shownotes()
-        self.shownotes_url = self.set_shownotes_url()
+        # self.shownotes_url = self.set_shownotes_url() # 只在收听的时候开始生成
         self.published_time = episode.published_parsed
         self.tags = episode.get('tags')[0].get('term') if episode.get('tags') else None
         self.message_id = None
