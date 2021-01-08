@@ -58,7 +58,7 @@ def about(update, context):
         text=(
             f"*{manifest.name}*  "
             f"`{manifest.version}`"
-            f"\nby [Daha]"
+            f"\nby [Daha](https://t.me/{manifest.author_id})"
         ), 
         reply_markup=markup
     )
