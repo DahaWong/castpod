@@ -4,7 +4,7 @@ from base64 import urlsafe_b64decode as decode
 from manifest import manifest
 from models import User, Feed
 from components import ManagePage, PodcastPage
-import re
+import re, os
 
 def start(update, context):
     message = update.message
@@ -117,10 +117,13 @@ def help(update, context):
 def export(update, context):
     if not check_login(update, context): return
     user = context.user_data['user']
+    if not os.path.exists(self.subscription_path):
+        update.message.reply_text('您的订阅列表还是空的，请先订阅再导出～')
+        return
     update.message.reply_document(
         document = user.subscription_path, 
         filename = f"{user.name} 的 {manifest.name} 订阅.xml",
-        thumb = "" # pathLib.Path/file-like, jpeg, w,h<320px, thumbnail
+        # thumb = ""
     )
 
 def logout(update, context):

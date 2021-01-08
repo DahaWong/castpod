@@ -15,7 +15,7 @@ class User(object):
         self.name = name
         self.user_id = user_id
         self.subscription = {}
-        self.subscription_path = "public/subscriptions/{self.user_id}.xml"
+        self.subscription_path = f"public/subscriptions/{self.user_id}.xml"
 
     def import_feeds(self, podcasts):
         for podcast in podcasts:
@@ -32,23 +32,23 @@ class User(object):
         if not os.path.exists(self.subscription_path):
             head = (
                 "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
-                "   <opml version='1.0'>\n"
-                "     <head>\n"
-                "       <title>Pocket Casts Feeds</title>\n"
-                "     </head>\n"
-                "     <body>\n"
-                "       <outline text='feeds'>\n"
+                "\t<opml version='1.0'>\n"
+                "\t\t<head>\n"
+                "\t\t\t<title>{manifest.name} 订阅源</title>\n"
+                "\t\t</head>\n"
+                "\t\t<body>\n"
+                "\t\t\t<outline text='feeds'>\n"
             )
             tail = (
-                "       </outline>\n"
-                "     </body>\n"
-                "  </opml>\n"
+                "\t\t\t</outline>\n"
+                "\t\t</body>\n"
+                "\t</opml>\n"
             )
             opml = head + body + tail
             with open(self.subscription_path,'x') as subscription:
                 subscription.write(opml)
         else:
-            with open(self.subscription_path,'w+') as subscription:
+            with open(self.subscription_path,'r+') as subscription:
                 lines = subscription.readlines()
                 pos = 0
                 for i, line in enumerate(lines):
@@ -57,12 +57,13 @@ class User(object):
                         break
                 lines.insert(pos, body)
                 subscription.writelines(lines)
+
     @staticmethod
     def encode_feeds(subscription) -> str:
         s = ''
         for podcast_name, feed in subscription.items():
             feed_url = feed.podcast.feed_url
-            s += f'<outline type="rss" text="{podcast_name}" xmlUrl="{feed_url}" />\n'
+            s += f'\t\t\t\t<outline type="rss" text="{podcast_name}" xmlUrl="{feed_url}"/>\n'
         return s
     
 class Podcast(object):
