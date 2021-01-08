@@ -51,10 +51,10 @@ def start(update, context):
 
 def about(update, context):
     if not check_login(update, context): return
-    keyboard = [[InlineKeyboardButton("源    代    码", url = manifest.repo)],
-                [InlineKeyboardButton("工    作    室", url = manifest.author_url)]]
+    keyboard = [[InlineKeyboardButton("源     代     码", url = manifest.repo),
+                InlineKeyboardButton("工     作     室", url = manifest.author_url)]]
     markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text(f"*{manifest.name}*  `{manifest.version}`\n@dahawong 出品", reply_markup=markup)
+    update.message.reply_text(f"*{manifest.name}*  `{manifest.version}`\n[Daha](https://t.me/{manifest.author_id}) 出品", reply_markup=markup)
 
 def search(update, context):
     if not check_login(update, context): return
