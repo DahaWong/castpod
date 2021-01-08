@@ -54,7 +54,14 @@ def about(update, context):
     keyboard = [[InlineKeyboardButton("源     代     码", url = manifest.repo),
                 InlineKeyboardButton("工     作     室", url = manifest.author_url)]]
     markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text(f"*{manifest.name}*  `{manifest.version}`\n[Daha](https://t.me/{manifest.author_id}) 出品", reply_markup=markup)
+    update.message.reply_text(
+        text=(
+            f"*{manifest.name}*  "
+            f"`{manifest.version}`"
+            f"\nby [Daha]"
+        ), 
+        reply_markup=markup
+    )
 
 def search(update, context):
     if not check_login(update, context): return
