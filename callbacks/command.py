@@ -117,7 +117,7 @@ def help(update, context):
 def export(update, context):
     if not check_login(update, context): return
     user = context.user_data['user']
-    if not os.path.exists(self.subscription_path):
+    if not os.path.exists(user.subscription_path):
         update.message.reply_text('您的订阅列表还是空的，请先订阅再导出～')
         return
     update.message.reply_document(
