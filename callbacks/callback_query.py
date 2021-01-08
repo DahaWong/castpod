@@ -83,7 +83,7 @@ def direct_download(podcast, episode, fetching_note, context):
     )
     audio_message.edit_media(InputMediaAudio(
         media = audio_message.audio.file_id,
-        thumb = podcast.thumb
+        thumb = podcast.thumbnail
     ))
     uploading_note.delete()
     forwarded_message = audio_message.forward(context.user_data['user'].user_id)
