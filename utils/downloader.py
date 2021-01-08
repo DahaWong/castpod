@@ -5,7 +5,6 @@ import requests
 def local_download(url, context):
     chat_id = context.user_data['user'].user_id
     res = requests.get(url, allow_redirects=True, stream=True)
-    print(res.headers.get('content-length', 0))
     total = int(res.headers.get('content-length', 0))
     block_size = 1024 #1 Kibibyte
     if res.status_code != 200: raise Exception("Error when downloading file.")
