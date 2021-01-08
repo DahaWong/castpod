@@ -158,9 +158,9 @@ def direct_download(podcast, episode, fetching_note, context):
         chat_id = f'@{podcast_vault}',
         audio = audio_file,
         caption = (
-            f"<b>{podcast.name}</b>   "
-            f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
-            f"\n<a href={episode.get_shownotes_url()}>相关链接</a>"
+            f"*{podcast.name}*   "
+            f"[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
+            f"\n[相关链接]({episode.get_shownotes_url()})"
             f"\n\n {generate_tag(podcast.name)}"
             f"{' '.join([generate_tag(tag['term']) for tag in podcast.tags if podcast.tags])}"
         ),
@@ -168,8 +168,7 @@ def direct_download(podcast, episode, fetching_note, context):
         performer = f"{podcast.name} | {episode.host or podcast.host}",
         duration = episode.duration.seconds,
         thumb = podcast.thumbnail or podcast.logo or podcast.logo_url,
-        timeout = 1800,
-        parse_mode = 'html'
+        timeout = 1800
     )
     uploading_note.delete()
     forwarded_message = audio_message.forward(context.user_data['user'].user_id)
