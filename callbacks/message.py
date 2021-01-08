@@ -136,9 +136,9 @@ def download_episode(update, context):
         update.message.delete()
         forwarded_message.edit_caption(
             caption = (
-                f"*{podcast.name.replace(' ', '')}*"
+                f"[🎙️]({episode.get_shownotes_url()}) *{podcast.name.replace(' ', '')}*"
                 f"\n\n {tagged_podcast_name} "
-                f"{' '.join(['#'+tag['term'] for tag in podcast.tags if podcast.tags])}"
+                f"{' '.join(['#' + re.sub(r'\W', '', tag['term']) for tag in podcast.tags if podcast.tags])}"
             ),
             reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),

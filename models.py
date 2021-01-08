@@ -124,7 +124,6 @@ class Episode(object):
         self.shownotes = self.set_shownotes()
         self.shownotes_url = ''
         self.published_time = episode.published_parsed
-        self.tags = episode.get('tags')[0].get('term') if episode.get('tags') else None
         self.message_id = None
 
     def set_duration(self, duration:str) -> int:
