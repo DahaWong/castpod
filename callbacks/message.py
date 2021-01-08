@@ -131,9 +131,7 @@ def download_episode(update, context):
             )
         else:
             forwarded_message = direct_download(podcast, episode, fetching_note, context)
-        update.message.edit_text(
-            f"[🎙️]({episode.get_shownotes_url()}) *{podcast.name}* #{len(podcast.episodes) - index}"
-        )
+        update.message.delete()
         forwarded_message.edit_caption(
             caption = (
                 f"*{podcast.name.replace(' ', '')}* [相关链接]({episode.get_shownotes_url()})"

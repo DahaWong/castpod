@@ -84,12 +84,17 @@ def show_episodes(query, context):
     episodes = podcast.episodes
     episodes_count = len(episodes)
     # if context.user_data['preference'].get('reverse_episodes'): episodes.reverse()
+    keyboard = [[
+            InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
+            InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")
+    ]]
     listed_results = [InlineQueryResultArticle(
         id = index,
         title = episode.title,
-        input_message_content = InputTextMessageContent(
+        input_message_content = InputTextMessageContent((
             f"[🎙️]({podcast.logo_url}) *{podcast.name}* #{episodes_count - index}"
-        ),
+        )),
+        reply_markup = InlineKeyboardMarkup(keyboard),
         description = f"{episode.duration or podcast.name}\n{episode.subtitle}",
         thumb_url = podcast.logo_url,
         thumb_width = 60, 
