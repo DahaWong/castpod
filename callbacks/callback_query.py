@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error, ReplyKeyboardRemove, ChatAction
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error, ReplyKeyboardRemove, ChatAction, InputMediaAudio
 from base64 import urlsafe_b64encode as encode
 from models import Episode
 from config import podcast_vault
@@ -81,6 +81,10 @@ def direct_download(podcast, episode, fetching_note, context):
         timeout = 1800,
         parse_mode = 'html'
     )
+    audio_message.edit_media(InputMediaAudio(
+        media = audio_message.audio.file_id,
+        thumb = podcast.thumb
+    ))
     uploading_note.delete()
     forwarded_message = audio_message.forward(context.user_data['user'].user_id)
     episode.message_id = audio_message.message_id

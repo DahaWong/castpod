@@ -26,7 +26,7 @@ def start(update, context):
         )
 
         keyboard = [[
-            InlineKeyboardButton('🔎️', switch_inline_query_current_chat = "search "),
+            InlineKeyboardButton('搜   索   播   客', switch_inline_query_current_chat = "search "),
             InlineKeyboardButton('订   阅   列   表', switch_inline_query_current_chat = "")
         ]]
 
@@ -58,7 +58,7 @@ def about(update, context):
 
 def search(update, context):
     if not check_login(update, context): return
-    keyboard = [[InlineKeyboardButton('开    始', switch_inline_query_current_chat = 'search ')]]
+    keyboard = [[InlineKeyboardButton('搜   索   播   客', switch_inline_query_current_chat = 'search ')]]
 
     message = update.message.reply_text(
         '🔎️',
@@ -66,7 +66,7 @@ def search(update, context):
     )
 
     Tips(from_command = 'search',
-        text = (f"⦿ 点击「开始」按钮启动搜索模式。"
+        text = (f"⦿ 点击「搜索播客」按钮启动搜索模式。"
             f"\n⦿ 前往 Telegram `设置 → 外观 → 大表情 Emoji` 获得更好的显示效果"
             f"\n⦿ 推荐通过在对话框中输入 `@` 来唤出行内搜索模式"
         )
@@ -150,5 +150,4 @@ def check_login(update, context):
     if not user:
         update.message.reply_text("请先登录：/start")
         return False
-    else:
-        return True
+    return True
