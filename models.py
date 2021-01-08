@@ -167,6 +167,7 @@ class Episode(object):
         html_content = html_content.replace('h2', 'h3')
         html_content = re.sub(r'<div.*?>', '', html_content).replace('</div>', '')
         html_content = re.sub(r'<span.*>', '', html_content).replace('</span>', '')
+        html_content = html_content.replace('cite>', "i>")
         html_content = html_content.replace('’', "'")
         # print(html_content)
         return html_content

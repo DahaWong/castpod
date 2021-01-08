@@ -132,20 +132,22 @@ def download_episode(update, context):
             )
         else:
             forwarded_message = direct_download(podcast, episode, fetching_note, context)
-        update.message.delete()
+        update.message.edit_text(
+            f"[🎙️]({podcast.get_shownotes_url()}) *{podcast.name}* #{episodes_count - index}"
+        )
         forwarded_message.edit_caption(
             caption = (
-                f"[🎙️]({episode.get_shownotes_url()}) *{podcast.name.replace(' ', '')}*"
+                f"*{podcast.name.replace(' ', '')}* [相关链接]({episode.get_shownotes_url()})"
                 f"\n\n{generate_tag(podcast.name)} "
                 f"{' '.join([generate_tag(tag['term']) for tag in podcast.tags if podcast.tags])}"
             ),
             reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton(
+                    text = "评    论    区", 
+                    url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
+                ], [
                     InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
                     InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")
-                ], [
-                    InlineKeyboardButton(
-                    text = "评   论   区", 
-                    url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
                 ]]
             )
         )
