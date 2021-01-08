@@ -49,7 +49,7 @@ class Podcast(object):
         feed = result.feed
         self.name = feed.get('title')
         if not self.name: raise Exception("Error when parsing feed.")
-        self.tags = feed.get('tags'] or []
+        self.tags = feed.get('tags') or []
         self.logo_url = feed.get('image').get('href')
         self.download_logo()
         self.episodes = self.set_episodes(result['items'])
