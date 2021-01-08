@@ -118,7 +118,6 @@ def download_episode(update, context):
     pattern = r'🎙️ (.+) #([0-9]+)'
     match = re.match(pattern, update.message.text)
     podcast_name, index = match[1], int(match[2])
-    print(podcast_name, index)
     podcast = context.bot_data['podcasts'].get(podcast_name)
     episode = podcast.episodes[-index]
     bot.send_chat_action(update.message.chat_id, ChatAction.UPLOAD_AUDIO)
@@ -133,7 +132,7 @@ def download_episode(update, context):
         else:
             forwarded_message = direct_download(podcast, episode, fetching_note, context)
         update.message.edit_text(
-            f"[🎙️]({episode.get_shownotes_url()}) *{podcast.name}* #{episodes_count - index}"
+            f"[🎙️]({episode.get_shownotes_url()}) *{podcast.name}* #{len(podcast.episodes) - index}"
         )
         forwarded_message.edit_caption(
             caption = (
@@ -153,7 +152,7 @@ def download_episode(update, context):
         )
     except Exception as e:
         print(e)
-        update.message.reply_text(f'*{podcast.name}* - 《{episode.title}》下载失败。请[联系开发者](https://t.me/dahawong)以获得更多帮助。')
+        update.message.reply_text(f'*{podcast.name}* - 《{episode.title}》下载失败。\n\n请联系[开发者](https://t.me/dahawong)以获得更多帮助。')
 
 def direct_download(podcast, episode, fetching_note, context):
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
