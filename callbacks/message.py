@@ -5,6 +5,7 @@ from components import PodcastPage, ManagePage
 from base64 import urlsafe_b64encode as encode
 from utils.downloader import local_download as download
 from config import podcast_vault
+from manifest import manifest
 import re
 
 def save_subscription(update, context):
