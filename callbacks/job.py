@@ -12,7 +12,7 @@ def update_podcasts(context):
                     audio = latest_episode.url,
                     caption = latest_episode.discription,
                     title = latest_episode.title,
-                    performer = f"{podcast.name} | {episode.host or podcast.host}",
+                    performer = f"{podcast.name} | {episode.host or podcast.host}" if podcast.host else podcast.name,
                     duration = latest_episode.duration.seconds,
                     thumb = podcast.thumbnail,
                     timeout = 1800

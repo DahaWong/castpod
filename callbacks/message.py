@@ -161,13 +161,13 @@ def direct_download(podcast, episode, fetching_note, context):
             f"*{podcast.name}*   "
             f"[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
             f"\n\n[相关链接]({episode.get_shownotes_url()})"
-            f"\n\n {generate_tag(podcast.name)} "
+            f"\n\n{generate_tag(podcast.name)} "
             f"{' '.join([generate_tag(tag['term']) for tag in podcast.tags if podcast.tags])}"
         ),
         title = episode.title,
-        performer = f"{podcast.name} | {episode.host or podcast.host}",
+        performer = f"{podcast.name} | {episode.host or podcast.host}" if podcast.host else podcast.name,
         duration = episode.duration.seconds,
-        thumb = podcast.thumbnail or podcast.logo or podcast.logo_url,
+        thumb = podcast.logo or podcast.logo_url,
         timeout = 1800
     )
     uploading_note.delete()

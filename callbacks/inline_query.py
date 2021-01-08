@@ -109,20 +109,20 @@ def show_subscription(query, context):
             title = feed.podcast.name,
             input_message_content = InputTextMessageContent(PodcastPage(feed.podcast).text()),
             reply_markup = InlineKeyboardMarkup(PodcastPage(feed.podcast).keyboard()),
-            description = feed.podcast.host,
+            description = feed.podcast.host or feed.podcast.name,
             thumb_url = feed.podcast.logo_url,
             thumb_width = 60, 
             thumb_height = 60 
         ) for index, feed in enumerate(subscription.values())]
     return results
-    
+
 def show_trending(context):
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']
     results = [InlineQueryResultArticle(
         id = uuid4(),
         title = podcast.name,
-        description = podcast.host,
+        description = podcast.host or podcast.name,
         input_message_content = InputTextMessageContent((
             f"{podcast.feed_url}"
         )),
