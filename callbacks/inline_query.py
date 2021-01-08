@@ -115,6 +115,7 @@ def show_subscription(query, context):
             thumb_height = 60 
         ) for index, feed in enumerate(subscription.values())]
     return results
+    
 def show_trending(context):
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']

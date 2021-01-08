@@ -134,13 +134,11 @@ def download_episode(update, context):
         update.message.delete()
         forwarded_message.edit_caption(
             caption = (
-                f"*{podcast.name.replace(' ', '')}* [相关链接]({episode.get_shownotes_url()})"
-                f"\n\n{generate_tag(podcast.name)} "
-                f"{' '.join([generate_tag(tag['term']) for tag in podcast.tags if podcast.tags])}"
+                f"\n\n[相关链接]({episode.get_shownotes_url() or podcast.website})"
             ),
             reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton(
-                    text = "评    论    区", 
+                    text = "评     论     区", 
                     url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
                 ], [
                     InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
@@ -159,7 +157,6 @@ def direct_download(podcast, episode, fetching_note, context):
         audio_file = download(episode.audio_url, context)
     else:   
         audio_file = episode.audio_url
-    tagged_podcast_name = '#'+ re.sub(r'[\W]+', '', podcast.name)
     uploading_note = downloading_note.edit_text("正在上传，请稍候…")
     audio_message = context.bot.send_audio(
         chat_id = f'@{podcast_vault}',
@@ -167,7 +164,9 @@ def direct_download(podcast, episode, fetching_note, context):
         caption = (
             f"<b>{podcast.name}</b>   "
             f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a>"
-            f"\n\n {tagged_podcast_name}"
+            f"\n<a href={episode.get_shownotes_url()}>相关链接</a>"
+            f"\n\n {generate_tag(podcast.name)}"
+            f"{' '.join([generate_tag(tag['term']) for tag in podcast.tags if podcast.tags])}"
         ),
         title = episode.title,
         performer = f"{podcast.name} | {episode.host or podcast.host}",
