@@ -133,7 +133,7 @@ def download_episode(update, context):
         else:
             forwarded_message = direct_download(podcast, episode, fetching_note, context)
         update.message.edit_text(
-            f"[🎙️]({podcast.get_shownotes_url()}) *{podcast.name}* #{episodes_count - index}"
+            f"[🎙️]({episode.get_shownotes_url()}) *{podcast.name}* #{episodes_count - index}"
         )
         forwarded_message.edit_caption(
             caption = (
@@ -153,7 +153,7 @@ def download_episode(update, context):
         )
     except Exception as e:
         print(e)
-        update.message.reply_text(f'*{podcast.name}* - {episode.title} 下载失败。请[联系开发者](https://t.me/dahawong)以获得更多帮助。')
+        update.message.reply_text(f'*{podcast.name}* - 《{episode.title}》下载失败。请[联系开发者](https://t.me/dahawong)以获得更多帮助。')
 
 def direct_download(podcast, episode, fetching_note, context):
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
