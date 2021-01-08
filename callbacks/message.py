@@ -32,8 +32,7 @@ def save_subscription(update, context):
     for i, feed in enumerate(feeds):
         if feed['name'] not in cached_podcasts.keys():
             try:
-                promise = context.dispatcher.run_async(Podcast, feed_url=feed['url'])
-                podcast = promise.result()
+                podcast = Podcast(feed['url'])
                 if podcast:
                     cached_podcasts.update({podcast.name: podcast})
                 else:

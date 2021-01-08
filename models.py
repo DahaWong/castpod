@@ -17,22 +17,53 @@ class User(object):
         self.subscription = {}
         self.subscription_path = "public/subscriptions/{self.user_id}.xml"
 
-    # 没必要：
     def import_feeds(self, podcasts):
-        self.subscription.update({podcast.name: Feed(podcast) for podcast in podcasts})
+        for podcast in podcasts:
+            self.add_feed(podcast)
+        return self.subscription
 
     def add_feed(self, podcast):
         self.subscription.update({podcast.name: Feed(podcast)})
-        # self.update_subscription_file()
+        self.update_subscription_file()
         return self.subscription
 
     def update_subscription_file(self):
-        feeds_as_opml = encode_feeds(self.subscription)
-        with open(self.subscription_path,'w') as subscription:
-            subscription.write(feeds_as_opml)
-
-    def encode_feeds(self, subscription) -> str:
-        pass
+        body = self.encode_feeds(self.subscription)
+        if not os.path.exists(self.subscription_path):
+            head = (
+                "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
+                "   <opml version='1.0'>\n"
+                "     <head>\n"
+                "       <title>Pocket Casts Feeds</title>\n"
+                "     </head>\n"
+                "     <body>\n"
+                "       <outline text='feeds'>\n"
+            )
+            tail = (
+                "       </outline>\n"
+                "     </body>\n"
+                "  </opml>\n"
+            )
+            opml = head + body + tail
+            with open(self.subscription_path,'x') as subscription:
+                subscription.write(opml)
+        else:
+            with open(self.subscription_path,'w+') as subscription:
+                lines = subscription.readlines()
+                pos = 0
+                for i, line in enumerate(lines):
+                    if "</outline>" in line:
+                        pos = i
+                        break
+                lines.insert(pos, body)
+                subscription.writelines(lines)
+    @staticmethod
+    def encode_feeds(subscription) -> str:
+        s = ''
+        for podcast_name, feed in subscription.items():
+            feed_url = feed.podcast.feed_url
+            s += f'<outline type="rss" text="{podcast_name}" xmlUrl="{feed_url}" />\n'
+        return s
     
 class Podcast(object):
     def __init__(self, feed_url):
