@@ -89,6 +89,7 @@ class Podcast(object):
         try:
             with Image.open(infile) as im:
                 im.thumbnail(size=(320, 320))
+                im.convert('RGB')
                 im.save(outfile, "JPEG")
             self.thumbnail = outfile
         except Exception as e:
