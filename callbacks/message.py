@@ -113,6 +113,7 @@ def download_episode(update, context):
     pattern = r'🎙️ (.+) #([0-9]+)'
     match = re.match(pattern, update.message.text)
     podcast_name, index = match[1], int(match[2])
+    print(podcast_name, index)
     podcast = context.bot_data['podcasts'].get(podcast_name)
     episode = podcast.episodes[-index]
     bot.send_chat_action(update.message.chat_id, ChatAction.UPLOAD_AUDIO)
