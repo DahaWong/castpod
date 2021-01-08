@@ -82,20 +82,19 @@ def show_episodes(query, context):
     podcast = podcasts.get(keyword)
     # if not podcast: ..
     episodes = podcast.episodes
+    episodes_count = len(episodes)
     # if context.user_data['preference'].get('reverse_episodes'): episodes.reverse()
     def keyboard(i):
-        return [
-        [InlineKeyboardButton("收      听", callback_data = f"download_episode_{podcast.name}_{i}")],
-        [InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
-        InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")]
-    ]
+        return [[
+            InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
+            InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")
+        ]]
     listed_results = [InlineQueryResultArticle(
         id = index,
         title = episode.title,
         input_message_content = InputTextMessageContent((
-            f"[🎙️]({episode.get_shownotes_url()}) *{podcast.name}*"
-            f"  |  "
-            f"{(episode.host if episode.host!= podcast.name else '') or (podcast.host if podcast.host!= podcast.name else '')}"
+            f"🎙️ *{podcast.name}* #{episodes_count - index}"
+            f"{episode.host or podcast.host}"
         )),
         reply_markup = InlineKeyboardMarkup(keyboard(index)),
         description = f"{episode.duration or podcast.name}\n{episode.subtitle}",

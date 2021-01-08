@@ -12,10 +12,10 @@ def update_podcasts(context):
                     audio = latest_episode.url,
                     caption = latest_episode.discription,
                     title = latest_episode.title,
-                    performer = f"{podcast.name} - {episode.host or podcast.host}",
+                    performer = f"{podcast.name} | {episode.host or podcast.host}",
                     duration = latest_episode.duration.seconds,
-                    thumb = podcast.logo_url,
-                    timeout = 60
+                    thumb = podcast.thumbnail,
+                    timeout = 1800
                 )
             except:
                 # print('File is too big.')
