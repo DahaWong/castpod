@@ -93,8 +93,7 @@ def show_episodes(query, context):
         id = index,
         title = episode.title,
         input_message_content = InputTextMessageContent((
-            f"🎙️ *{podcast.name}* #{episodes_count - index}"
-            f"{episode.host or podcast.host}"
+            f"[🎙️]({podcast.logo_url}) *{podcast.name}* #{episodes_count - index}"
         )),
         reply_markup = InlineKeyboardMarkup(keyboard(index)),
         description = f"{episode.duration or podcast.name}\n{episode.subtitle}",

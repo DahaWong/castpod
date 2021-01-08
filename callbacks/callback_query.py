@@ -1,8 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error, ReplyKeyboardRemove, ChatAction, InputMediaAudio
-from base64 import urlsafe_b64encode as encode
 from models import Episode
 from config import podcast_vault
-from utils.downloader import local_download as download
 from manifest import manifest
 import re
 

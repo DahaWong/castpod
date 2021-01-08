@@ -1,8 +1,10 @@
 from utils.parser import parse_opml
 from models import Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, ReplyKeyboardMarkup, ChatAction
-import re
 from components import PodcastPage, ManagePage
+from base64 import urlsafe_b64encode as encode
+from utils.downloader import local_download as download
+import re
 
 def save_subscription(update, context):
     parsing_note = update.message.reply_text("正在解析订阅文件…")
@@ -108,24 +110,28 @@ def subscribe_feed(update, context):
         subscribing_message.edit_text("订阅失败。可能是因为订阅源损坏 :(")
 
 def download_episode(update, context):
-    fetching_note = bot.send_message(query.from_user.id, "获取节目中…")
-    bot.send_chat_action(query.from_user.id, ChatAction.RECORD_AUDIO)
-    pattern = r'🎙️ (.+) #([0-9])'
-    podcast_name, index = re.match(pattern, update.message.text)[1:3]
+    bot = context.bot
+    fetching_note = bot.send_message(update.message.chat_id, "获取节目中…")
+    bot.send_chat_action(update.message.chat_id, ChatAction.RECORD_AUDIO)
+    pattern = r'🎙️ (.+) #([0-9]+)'
+    match = re.match(pattern, update.message.text)
+    podcast_name, index = match[1], int(match[2])
+    print(podcast_name, index)
     podcast = context.bot_data['podcasts'].get(podcast_name)
     episode = podcast.episodes[-index]
-    bot.send_chat_action(query.from_user.id, ChatAction.UPLOAD_AUDIO)
+    bot.send_chat_action(update.message.chat_id, ChatAction.UPLOAD_AUDIO)
     tagged_podcast_name = '#'+ re.sub(r'[\W]+', '', podcast.name)
     try:
         if episode.message_id:
             fetching_note.delete()
-            forwarded_message = context.bot.forward_message(
+            forwarded_message = bot.forward_message(
                 chat_id = context.user_data['user'].user_id,
                 from_chat_id = f"@{podcast_vault}",
                 message_id = episode.message_id
             )
         else:
             forwarded_message = direct_download(podcast, episode, fetching_note, context)
+        update.message.delete()
         forwarded_message.edit_caption(
             caption = (
                 f"*{podcast.name.replace(' ', '')}*"
@@ -140,7 +146,7 @@ def download_episode(update, context):
         )
     except Exception as e:
         print(e)
-        update.message.reply_text('{podcast.name} {episode.title} 下载失败\n\n请[联系开发者](https://t.me/dahawong)以获得帮助')
+        update.message.reply_text(f'*{podcast.name}*：{episode.title} 下载失败。请[联系开发者](https://t.me/dahawong)以获得帮助。')
 
 def direct_download(podcast, episode, fetching_note, context):
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")

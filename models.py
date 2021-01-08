@@ -53,7 +53,10 @@ class Podcast(object):
         self.download_logo()
         self.episodes = self.set_episodes(result['items'])
         self.latest_episode = self.episodes[0]
-        self.host = feed.author_detail.name
+        if feed.author_detail.name != self.name:
+            self.host = feed.author_detail.name
+        else:
+            self.host = ''
         self.website = feed.link
         self.email = feed.author_detail.get('email') or ""
 
@@ -98,7 +101,10 @@ class Episode(object):
     def __init__(self, from_podcast:str, episode, podcast_logo):
         self.podcast_name = from_podcast
         self.podcast_logo = podcast_logo
-        self.host = episode.get('author') or ''
+        if episode.get('author') != from_podcast:
+            self.host = episode.get('author') or ''
+        else: 
+            self.host = ''
         self.audio = self.set_audio(episode.enclosures)
         if self.audio:
             self.audio_url = self.audio.href
