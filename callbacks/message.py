@@ -36,8 +36,6 @@ def save_subscription(update, context):
                 podcast = promise.result()
                 if podcast:
                     cached_podcasts.update({podcast.name: podcast})
-                    podcasts.append(podcast)
-                    subscribing_note = subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{feeds_count})")
                 else:
                     failed_feeds.append(feed['url'])
                     raise Exception(f"Error when adding feed {feed['url']}")
@@ -47,32 +45,29 @@ def save_subscription(update, context):
                 continue
         else:
             podcast = cached_podcasts[feed['name']]
-            podcasts.append(podcast)
-            subscribing_note = subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{feeds_count})")
+        podcasts.append(podcast)
+        subscribing_note = subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{feeds_count})")
 
-    while len(podcasts) != len(failed_feeds) + len(podcasts):
-        pass
+    if len(podcasts):
+        user.import_feeds(podcasts)
+        newline = '\n'
+        reply = f"成功订阅 {feeds_count} 部播客！" if not len(failed_feeds) else (
+            f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
+            f"\n\n可能损坏的订阅源："
+            f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
+        )
     else:
-        if len(podcasts):
-            user.import_feeds(podcasts)
-            newline = '\n'
-            reply = f"成功订阅 {feeds_count} 部播客！" if not len(failed_feeds) else (
-                f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
-                f"\n\n可能损坏的订阅源："
-                f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
-            )
-        else:
-                reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
+            reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
-        subscribing_note.edit_text(
-            reply, 
-            reply_markup = InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton(
-                    "查 看 订 阅 列 表", 
-                    switch_inline_query_current_chat=""
-                )
+    subscribing_note.edit_text(
+        text = reply, 
+        reply_markup = InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton(
+                "订    阅    列    表", 
+                switch_inline_query_current_chat=""
             )
         )
+    )
 
 def subscribe_feed(update, context):
     context.bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
