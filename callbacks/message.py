@@ -137,13 +137,17 @@ def download_episode(update, context):
         forwarded_message.edit_caption(
             caption = (
                 f"*{podcast.name.replace(' ', '')}*"
-                f"\n\n {tagged_podcast_name}"
+                f"\n\n {tagged_podcast_name} "
+                f"{' '.join(['#'+tag['term'] for tag in podcast.tags if podcast.tags])}"
             ),
-            reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton(
-                    text = "评    论", 
-                    url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}"
-                )
+            reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
+                    InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")
+                ], [
+                    InlineKeyboardButton(
+                    text = "评   论   区", 
+                    url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
+                ]]
             )
         )
     except Exception as e:
