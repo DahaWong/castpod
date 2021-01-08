@@ -122,7 +122,6 @@ def download_episode(update, context):
     podcast = context.bot_data['podcasts'].get(podcast_name)
     episode = podcast.episodes[-index]
     bot.send_chat_action(update.message.chat_id, ChatAction.UPLOAD_AUDIO)
-    tagged_podcast_name = '#'+ re.sub(r'[\W]+', '', podcast.name)
     try:
         if episode.message_id:
             fetching_note.delete()
@@ -137,8 +136,8 @@ def download_episode(update, context):
         forwarded_message.edit_caption(
             caption = (
                 f"[🎙️]({episode.get_shownotes_url()}) *{podcast.name.replace(' ', '')}*"
-                f"\n\n {tagged_podcast_name} "
-                f"{' '.join(['#' + re.sub(r'\W', '', tag['term']) for tag in podcast.tags if podcast.tags])}"
+                f"\n\n{generate_tag(podcast.name)} "
+                f"{' '.join([generate_tag(tag['term']) for tag in podcast.tags if podcast.tags])}"
             ),
             reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
@@ -182,6 +181,9 @@ def direct_download(podcast, episode, fetching_note, context):
     forwarded_message = audio_message.forward(context.user_data['user'].user_id)
     episode.message_id = audio_message.message_id
     return forwarded_message
+
+def generate_tag(text):
+    return '#' + re.sub(r'\W', '', text)
 
 def exit_reply_keyboard(update, context):
     message = update.message
