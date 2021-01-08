@@ -4,6 +4,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRe
 from components import PodcastPage, ManagePage
 from base64 import urlsafe_b64encode as encode
 from utils.downloader import local_download as download
+from config import podcast_vault
 import re
 
 def save_subscription(update, context):
@@ -146,7 +147,7 @@ def download_episode(update, context):
         )
     except Exception as e:
         print(e)
-        update.message.reply_text(f'*{podcast.name}*：{episode.title} 下载失败。请[联系开发者](https://t.me/dahawong)以获得帮助。')
+        update.message.reply_text(f'*{podcast.name}* - {episode.title} 下载失败。请[联系开发者](https://t.me/dahawong)以获得更多帮助。')
 
 def direct_download(podcast, episode, fetching_note, context):
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
