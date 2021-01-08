@@ -117,34 +117,34 @@ def download_episode(update, context):
     podcast = context.bot_data['podcasts'].get(podcast_name)
     episode = podcast.episodes[-index]
     bot.send_chat_action(update.message.chat_id, ChatAction.UPLOAD_AUDIO)
-    try:
-        if episode.message_id:
-            fetching_note.delete()
-            forwarded_message = bot.forward_message(
-                chat_id = context.user_data['user'].user_id,
-                from_chat_id = f"@{podcast_vault}",
-                message_id = episode.message_id
-            )
-        else:
-            forwarded_message = direct_download(podcast, episode, fetching_note, context)
-        update.message.delete()
-        forwarded_message.edit_caption(
-            caption = (
-                f"\n\n[相关链接]({episode.get_shownotes_url() or podcast.website})"
-            ),
-            reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton(
-                    text = "评     论     区", 
-                    url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
-                ], [
-                    InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
-                    InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")
-                ]]
-            )
+    # try:
+    if episode.message_id:
+        fetching_note.delete()
+        forwarded_message = bot.forward_message(
+            chat_id = context.user_data['user'].user_id,
+            from_chat_id = f"@{podcast_vault}",
+            message_id = episode.message_id
         )
-    except Exception as e:
-        print(e)
-        update.message.reply_text(f'*{podcast.name}* - 《{episode.title}》下载失败。\n\n请联系[开发者](https://t.me/dahawong)以获得更多帮助。')
+    else:
+        forwarded_message = direct_download(podcast, episode, fetching_note, context)
+    update.message.delete()
+    forwarded_message.edit_caption(
+        caption = (
+            f"\n\n[相关链接]({episode.get_shownotes_url() or podcast.website})"
+        ),
+        reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                text = "评     论     区", 
+                url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
+            ], [
+                InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
+                InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")
+            ]]
+        )
+    )
+    # except Exception as e:
+    #     print(e)
+    #     update.message.reply_text(f'*{podcast.name}* - 《{episode.title}》下载失败。\n\n请联系[开发者](https://t.me/dahawong)以获得更多帮助。')
 
 def direct_download(podcast, episode, fetching_note, context):
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
