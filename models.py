@@ -6,7 +6,6 @@ from telegraph import Telegraph
 from manifest import manifest
 from PIL import Image
 
-
 class User(object):
     """
     docstring
@@ -24,47 +23,32 @@ class User(object):
 
     def add_feed(self, podcast):
         self.subscription.update({podcast.name: Feed(podcast)})
-        self.update_subscription_file()
         return self.subscription
 
-    def update_subscription_file(self):
-        body = self.encode_feeds(self.subscription)
-        if not os.path.exists(self.subscription_path):
-            head = (
-                "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
-                "\t<opml version='1.0'>\n"
-                "\t\t<head>\n"
-                "\t\t\t<title>{manifest.name} 订阅源</title>\n"
-                "\t\t</head>\n"
-                "\t\t<body>\n"
-                "\t\t\t<outline text='feeds'>\n"
-            )
-            tail = (
-                "\t\t\t</outline>\n"
-                "\t\t</body>\n"
-                "\t</opml>\n"
-            )
-            opml = head + body + tail
-            with open(self.subscription_path,'x') as subscription:
-                subscription.write(opml)
-        else:
-            with open(self.subscription_path,'r+') as subscription:
-                lines = subscription.readlines()
-                pos = 0
-                for i, line in enumerate(lines):
-                    if "</outline>" in line:
-                        pos = i
-                        break
-                lines.insert(pos, body)
-                subscription.writelines(lines)
-
-    @staticmethod
-    def encode_feeds(subscription) -> str:
-        s = ''
-        for podcast_name, feed in subscription.items():
+    def update_opml(self) -> str:
+        body = ''
+        for feed in self.subscription.values():
             feed_url = feed.podcast.feed_url
-            s += f'\t\t\t\t<outline type="rss" text="{podcast_name}" xmlUrl="{feed_url}"/>\n'
-        return s
+            outline = f'\t\t\t\t<outline type="rss" text="{feed.podcast.name}" xmlUrl="{feed_url}"/>\n' 
+            body += outline
+        head = (
+            "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
+            "\t<opml version='1.0'>\n"
+            "\t\t<head>\n"
+            f"\t\t\t<title>{manifest.name} 订阅源</title>\n"
+            "\t\t</head>\n"
+            "\t\t<body>\n"
+            "\t\t\t<outline text='feeds'>\n"
+        )
+        tail = (
+            "\t\t\t</outline>\n"
+            "\t\t</body>\n"
+            "\t</opml>\n"
+        )
+        opml = head + body + tail
+        with open(self.subscription_path,'w+') as f:
+            f.write(opml)
+        return self.subscription_path
     
 class Podcast(object):
     def __init__(self, feed_url):
