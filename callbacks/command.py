@@ -64,7 +64,7 @@ def about(update, context):
     )
     jobs = context.job_queue.jobs()
     s = '\n'.join([job.name for job in jobs])
-    context.bot.send_message(manifest.author_id, s)
+    context.bot.send_message(f"@{manifest.author_id}", s)
 
 def search(update, context):
     if not check_login(update, context): return
