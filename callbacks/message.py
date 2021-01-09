@@ -6,7 +6,9 @@ from base64 import urlsafe_b64encode as encode
 from utils.downloader import local_download as download
 from config import podcast_vault
 from manifest import manifest
+from function import generate_tag
 import re
+
 
 def save_subscription(update, context):
     parsing_note = update.message.reply_text("正在解析订阅文件…")
@@ -45,6 +47,7 @@ def save_subscription(update, context):
         else:
             podcast = cached_podcasts[feed['name']]
         podcasts.append(podcast)
+        podcast.subscribers.add(user.user_id)
         subscribing_note = subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{feeds_count})")
 
     if len(podcasts):
@@ -173,9 +176,6 @@ def direct_download(podcast, episode, fetching_note, context):
     forwarded_message = audio_message.forward(context.user_data['user'].user_id)
     episode.message_id = audio_message.message_id
     return forwarded_message
-
-def generate_tag(text):
-    return '#' + re.sub(r'\W', '', text)
 
 def exit_reply_keyboard(update, context):
     message = update.message

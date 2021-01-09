@@ -65,12 +65,13 @@ def unsubscribe_podcast(update, context):
 
 def confirm_unsubscribe(update, context):
     podcast_name = re.match(r'确认退订 (.+) ？', update.callback_query.message.text)[1]
-    user_subscription = context.user_data['user'].subscription
-    user_subscription.pop(podcast_name)
+    user = context.user_data['user']
+    user.subscription.pop(podcast_name)
     update.callback_query.message.delete()
+    context.bot_data['podcasts'][podcast_name].subscribers.remove(user.user_id)
     manage_page = ManagePage(
-        podcast_names = user_subscription.keys(), 
-        text = f'已退订 `{podcast_name}`'
+        podcast_names = user.subscription.keys(), 
+        text = f'已退订：`{podcast_name}`'
     )
     context.bot.send_message(
         update.callback_query.from_user.id, 

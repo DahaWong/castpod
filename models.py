@@ -5,6 +5,10 @@ from uuid import NAMESPACE_URL, uuid5
 from telegraph import Telegraph
 from manifest import manifest
 from PIL import Image
+from utils.downloader import local_download as download
+from function import generate_tag
+from config import podcast_vault
+from bot import updater
 
 class User(object):
     """
@@ -28,8 +32,8 @@ class User(object):
     def update_opml(self) -> str:
         body = ''
         for feed in self.subscription.values():
-            feed_url = feed.podcast.feed_url
-            outline = f'\t\t\t\t<outline type="rss" text="{feed.podcast.name}" xmlUrl="{feed_url}"/>\n' 
+            podcast = feed.podcast
+            outline = f'\t\t\t\t<outline type="rss" text="{podcast.name}" xmlUrl="{podcast.feed_url}"/>\n' 
             body += outline
         head = (
             "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
@@ -55,6 +59,7 @@ class Podcast(object):
         self.feed_url = feed_url
         # self.id = uuid5(NAMESPACE_URL, feed_url)
         self.parse_feed(feed_url)
+        self.set_updater(updater.job_queue)
         self.subscribers = set()
 
     def parse_feed(self, url):
@@ -77,13 +82,61 @@ class Podcast(object):
         self.website = feed.link
         self.email = feed.author_detail.get('email') or ""
 
-    def update(self):
+    def set_updater(self, job_queue):
+        job_queue.run_repeating(
+            callback = self.update, 
+            interval = datetime.timedelta(minutes = 15),
+            name =  self.name
+        )
+
+    def update(self, context):
         last_published_time = self.latest_episode.published_time
         self.parse_feed(self.feed_url)
         if self.latest_episode.published_time != last_published_time:
-            return self.latest_episode
-        else: 
-            return None
+            try:
+                if int(self.latest_episode.audio_size) >= 20000000 or not self.latest_episode.audio_size:
+                    audio_file = download(self.latest_episode.audio_url, context)
+                else:   
+                    audio_file = self.latest_episode.audio_url
+                audio_message = context.bot.send_audio(
+                chat_id = f'@{podcast_vault}',
+                audio = audio_file,
+                caption = (
+                    f"*{self.name}*   "
+                    f"[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
+                    f"\n\n[相关链接]({self.lastest_episode.get_shownotes_url()})"
+                    f"\n\n{generate_tag(self.name)} "
+                    f"{' '.join([generate_tag(tag['term']) for tag in self.tags if self.tags])}"
+                ),
+                title = self.lastest_episode.title,
+                performer = f"{self.name} | {self.lastest_episode.host or self.host}" if self.host else self.name,
+                duration = self.lastest_episode.duration.seconds,
+                thumb = self.logo or self.logo_url,
+                timeout = 1800
+                )   
+                self.lastest_episode.message_id = audio_message.message_id
+                for user in self.subscribers:
+                    forwarded_message = context.bot.forward_message(
+                        chat_id = user.user_id,
+                        from_chat_id = f"@{podcast_vault}",
+                        message_id = self.lastest_episode.message_id
+                    )
+                    forwarded_message.edit_caption(
+                        caption = (
+                            f"🎙️ *{podcast.name}*\n[相关链接]({episode.get_shownotes_url() or podcast.website})"
+                        ),
+                        reply_markup=InlineKeyboardMarkup([[
+                                InlineKeyboardButton(
+                                text = "评     论     区", 
+                                url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
+                            ], [
+                                InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
+                                InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")
+                            ]]
+                        )
+                    )
+            except Exception as e:
+                print(e)
 
     def set_episodes(self, results):
         episodes = []
@@ -202,7 +255,7 @@ class Episode(object):
             res = telegraph.create_page(
                 title = f"{self.title}",
                 html_content=self.shownotes,
-                author_name = self.host
+                author_name = self.host or self.podcast_name
             )
             self.shownotes_url = f"https://telegra.ph/{res['path']}"
             print(self.shownotes_url)
