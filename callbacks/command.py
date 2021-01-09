@@ -62,7 +62,9 @@ def about(update, context):
         ), 
         reply_markup=markup
     )
-    print(context.job_queue.get_jobs_by_name())
+    jobs = context.job_queue.jobs()
+    s = '\n'.join([job.name for job in jobs])
+    context.bot.send_message(manifest.author_id, s)
 
 def search(update, context):
     if not check_login(update, context): return
