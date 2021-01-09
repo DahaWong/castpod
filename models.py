@@ -8,7 +8,6 @@ from PIL import Image
 from utils.downloader import local_download as download
 from function import generate_tag
 from config import podcast_vault
-from bot import updater
 
 class User(object):
     """
@@ -59,7 +58,6 @@ class Podcast(object):
         self.feed_url = feed_url
         # self.id = uuid5(NAMESPACE_URL, feed_url)
         self.parse_feed(feed_url)
-        self.set_updater(updater.job_queue)
         self.subscribers = set()
 
     def parse_feed(self, url):

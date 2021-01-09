@@ -35,6 +35,7 @@ def save_subscription(update, context):
         if feed['name'] not in cached_podcasts.keys():
             try:
                 podcast = Podcast(feed['url'])
+                podcast.set_updater(context.job_queue)
                 if podcast:
                     cached_podcasts.update({podcast.name: podcast})
                 else:
@@ -79,6 +80,7 @@ def subscribe_feed(update, context):
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']
     podcast = Podcast(feed_url) # 判断是否存在于音乐库中！
+    podcast.set_updater(context.job_queue)
     user.add_feed(podcast)
     try:
         manage_page = ManagePage(

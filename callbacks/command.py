@@ -62,6 +62,7 @@ def about(update, context):
         ), 
         reply_markup=markup
     )
+    print(context.job_queue.get_jobs_by_name())
 
 def search(update, context):
     if not check_login(update, context): return
