@@ -141,7 +141,7 @@ def download_episode(update, context):
         reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton(
                 text = "评     论     区", 
-                url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message}")
+                url = f"https://t.me/{podcast_vault}/{forward_from_message}")
             ], [
                 InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
                 InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")
