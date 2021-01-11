@@ -119,7 +119,7 @@ class Podcast(object):
                     )
                     forwarded_message.edit_caption(
                         caption = (
-                            f"🎙️ *{self.name}*\n[相关链接]({episode.get_shownotes_url() or self.website})"
+                            f"🎙️ *{self.name}*\n\n[相关链接]({episode.get_shownotes_url() or self.website})"
                             f"\n\n{episode.timeline}"
                         ),
                         reply_markup=InlineKeyboardMarkup([[

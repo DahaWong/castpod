@@ -135,7 +135,7 @@ def download_episode(update, context):
     print(forwarded_message.forward_from_message_id)
     forwarded_message.edit_caption(
         caption = (
-            f"🎙️ *{podcast.name}*\n[相关链接]({episode.get_shownotes_url() or podcast.website})"
+            f"🎙️ *{podcast.name}*\n\n[相关链接]({episode.get_shownotes_url() or podcast.website})"
             f"\n\n{episode.timeline}"
         ),
         reply_markup=InlineKeyboardMarkup([[
@@ -165,7 +165,7 @@ def direct_download(podcast, episode, fetching_note, context):
         audio = audio_file,
         caption = (
             f"*{podcast.name}*"
-            f"\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
+            f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
             f" | [相关链接]({episode.get_shownotes_url()})"
         ),
         title = episode.title,
