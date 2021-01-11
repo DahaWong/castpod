@@ -127,8 +127,9 @@ def download_episode(update, context):
             from_chat_id = f"@{podcast_vault}",
             message_id = episode.message_id
         )
+        forward_from_message = episode.message_id
     else:
-        forwarded_message = direct_download(podcast, episode, fetching_note, context)
+        forwarded_message, forward_from_message = direct_download(podcast, episode, fetching_note, context)
     update.message.delete()
     print(forwarded_message)
     print(forwarded_message.forward_from_message_id)
@@ -140,7 +141,7 @@ def download_episode(update, context):
         reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton(
                 text = "评     论     区", 
-                url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
+                url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message}")
             ], [
                 InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
                 InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")
@@ -176,7 +177,7 @@ def direct_download(podcast, episode, fetching_note, context):
     uploading_note.delete()
     forwarded_message = audio_message.forward(context.user_data['user'].user_id)
     episode.message_id = audio_message.message_id
-    return forwarded_message
+    return forwarded_message, audio_message.message_id
 
 def exit_reply_keyboard(update, context):
     message = update.message
