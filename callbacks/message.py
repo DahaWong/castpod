@@ -130,6 +130,7 @@ def download_episode(update, context):
     else:
         forwarded_message = direct_download(podcast, episode, fetching_note, context)
     update.message.delete()
+    print(forwarded_message.forward_from)
     print(forwarded_message.forward_from_message_id)
     forwarded_message.edit_caption(
         caption = (
