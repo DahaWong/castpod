@@ -91,49 +91,52 @@ class Podcast(object):
         last_published_time = self.latest_episode.published_time
         self.parse_feed(self.feed_url)
         if self.latest_episode.published_time != last_published_time:
-            context.bot.send_message(dev_user_id, f'{context.job.name} 检测到更新…')
-            if int(self.latest_episode.audio_size) >= 20000000 or not self.latest_episode.audio_size:
-                audio_file = download(self.latest_episode.audio_url, context)
-            else:   
-                audio_file = self.latest_episode.audio_url
-            audio_message = context.bot.send_audio(
-            chat_id = f'@{podcast_vault}',
-            audio = audio_file,
-            caption = (
-                f"*{self.name}*   "
-                f"[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
-                f"\n\n[相关链接]({self.lastest_episode.get_shownotes_url()})"
-                f"\n\n{generate_tag(self.name)} "
-                f"{' '.join([generate_tag(tag['term']) for tag in self.tags if self.tags])}"
-            ),
-            title = self.lastest_episode.title,
-            performer = f"{self.name} | {self.lastest_episode.host or self.host}" if self.host else self.name,
-            duration = self.lastest_episode.duration.seconds,
-            thumb = self.logo or self.logo_url,
-            timeout = 1800
-            )   
-            self.lastest_episode.message_id = audio_message.message_id
-            for user in self.subscribers:
-                forwarded_message = context.bot.forward_message(
-                    chat_id = user.user_id,
-                    from_chat_id = f"@{podcast_vault}",
-                    message_id = self.lastest_episode.message_id
-                )
-                forwarded_message.edit_caption(
-                    caption = (
-                        f"🎙️ *{podcast.name}*\n[相关链接]({episode.get_shownotes_url() or podcast.website})"
-                    ),
-                    reply_markup=InlineKeyboardMarkup([[
-                            InlineKeyboardButton(
-                            text = "评     论     区", 
-                            url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
-                        ], [
-                            InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
-                            InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{podcast.name}")
-                        ]]
+            try:
+                context.bot.send_message(dev_user_id, f'{context.job.name} 检测到更新…')
+                if int(self.latest_episode.audio_size) >= 20000000 or not self.latest_episode.audio_size:
+                    audio_file = download(self.latest_episode.audio_url, context)
+                else:   
+                    audio_file = self.latest_episode.audio_url
+                audio_message = context.bot.send_audio(
+                chat_id = f'@{podcast_vault}',
+                audio = audio_file,
+                caption = (
+                    f"*{self.name}*   "
+                    f"[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
+                    f"\n\n[相关链接]({self.lastest_episode.get_shownotes_url()})"
+                    f"\n\n{generate_tag(self.name)} "
+                    f"{' '.join([generate_tag(tag['term']) for tag in self.tags if self.tags])}"
+                ),
+                title = self.lastest_episode.title,
+                performer = f"{self.name} | {self.lastest_episode.host or self.host}" if self.host else self.name,
+                duration = self.lastest_episode.duration.seconds,
+                thumb = self.logo or self.logo_url,
+                timeout = 1800
+                )   
+                self.lastest_episode.message_id = audio_message.message_id
+                for user in self.subscribers:
+                    forwarded_message = context.bot.forward_message(
+                        chat_id = user.user_id,
+                        from_chat_id = f"@{podcast_vault}",
+                        message_id = self.lastest_episode.message_id
                     )
-                )
-            context.bot.send_message(dev_user_id, f'{context.job.name} 更新完毕！')
+                    forwarded_message.edit_caption(
+                        caption = (
+                            f"🎙️ *{self.name}*\n[相关链接]({episode.get_shownotes_url() or self.website})"
+                        ),
+                        reply_markup=InlineKeyboardMarkup([[
+                                InlineKeyboardButton(
+                                text = "评     论     区", 
+                                url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
+                            ], [
+                                InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
+                                InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{self.name}")
+                            ]]
+                        )
+                    )
+            except Exception as e:
+                context.bot.send_message(dev_user_id, f'{context.job.name} 更新出错：{e}')
+        context.bot.send_message(dev_user_id, f'{context.job.name} 更新完毕！')
 
     def set_episodes(self, results):
         episodes = []
