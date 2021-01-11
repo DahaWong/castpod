@@ -5,6 +5,7 @@ from manifest import manifest
 from models import User, Feed
 from components import ManagePage, PodcastPage
 import re, os
+from config import dev_user_id
 
 def start(update, context):
     message = update.message
@@ -64,7 +65,7 @@ def about(update, context):
     )
     jobs = context.job_queue.jobs()
     s = '\n'.join([job.name for job in jobs])
-    context.bot.send_message(f"@{manifest.author_id}", s)
+    context.bot.send_message(dev_user_id, s)
 
 def search(update, context):
     if not check_login(update, context): return
