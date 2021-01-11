@@ -136,7 +136,7 @@ class Podcast(object):
                     )
             except Exception as e:
                 print(e)
-            finally
+            finally:
                 context.bot.send_message(dev_user_id, f'{context.job.name} 检测完毕！')
 
     def set_episodes(self, results):
