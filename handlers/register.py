@@ -16,4 +16,4 @@ def register(dispatcher):
     for handler in handlers:
       dispatcher.add_handler(handler)
 
-    # dispatcher.add_error_handler(handle_error, run_async = True)
+    dispatcher.add_error_handler(handle_error, run_async = True)
