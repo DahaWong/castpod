@@ -132,7 +132,7 @@ class Podcast(object):
                             ]]
                         )
                     )
-            context.bot.send_message(dev_user_id, f'{context.job.name} 更新完毕！')
+                context.bot.send_message(dev_user_id, f'{context.job.name} 更新完毕！')
             except Exception as e:
                 context.bot.send_message(dev_user_id, f'{context.job.name} 更新出错：{e}')
 
