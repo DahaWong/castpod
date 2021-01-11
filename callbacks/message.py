@@ -134,6 +134,7 @@ def download_episode(update, context):
         forwarded_message.edit_caption(
             caption = (
                 f"🎙️ *{podcast.name}*\n[相关链接]({episode.get_shownotes_url() or podcast.website})"
+                f"\n\n{episode.timeline}"
             ),
             reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton(

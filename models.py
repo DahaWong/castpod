@@ -189,6 +189,7 @@ class Episode(object):
         self.content = episode.get('content')
         self.summary = episode.get('summary') or ''
         self.shownotes = self.set_shownotes()
+        self.timeline = self.set_timeline()
         self.shownotes_url = ''
         self.published_time = episode.published_parsed
         self.message_id = None
@@ -229,6 +230,11 @@ class Episode(object):
         shownotes = self.content[0]['value'] if self.content else self.summary
         img_content = f"<img src='{self.logo_url or self.podcast_logo}'>" if 'img' not in shownotes else ''
         return img_content + self.replace_invalid_tags(shownotes)
+
+    def set_timeline(self):
+        pattern = r'(?:[0-9]?[0-9]:)?[0-5]?[0-9]:[0-5][0-9][^<]+'
+        matches = re.finditer(pattern, self.shownotes)
+        return '\n'.join([match.group() for match in matches])
 
     def replace_invalid_tags(self, html_content):
         html_content = html_content.replace('h2', 'h3')
