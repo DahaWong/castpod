@@ -173,7 +173,7 @@ def direct_download(podcast, episode, fetching_note, context):
         performer = f"{podcast.name} | {episode.host or podcast.host}" if podcast.host else podcast.name,
         duration = episode.duration.seconds,
         thumb = podcast.logo or podcast.logo_url,
-        timeout = 1800
+        # timeout = 1800
     )
     uploading_note.delete()
     forwarded_message = audio_message.forward(context.user_data['user'].user_id)

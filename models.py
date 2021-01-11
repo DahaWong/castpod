@@ -83,7 +83,7 @@ class Podcast(object):
     def set_updater(self, job_queue):
         job_queue.run_repeating(
             callback = self.update, 
-            interval = datetime.timedelta(minutes = 10),
+            interval = datetime.timedelta(minutes = 5),
             name =  self.name
         )
 
@@ -111,7 +111,7 @@ class Podcast(object):
                 performer = f"{self.name} | {self.lastest_episode.host or self.host}" if self.host else self.name,
                 duration = self.lastest_episode.duration.seconds,
                 thumb = self.logo or self.logo_url,
-                timeout = 1800
+                # timeout = 1800
                 )   
                 self.lastest_episode.message_id = audio_message.message_id
                 for user in self.subscribers:
