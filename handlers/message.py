@@ -2,7 +2,7 @@ from telegram.ext import MessageHandler, Filters
 import callbacks.message as callback
 
 subscription_handler = MessageHandler(
-    Filters.document.mime_type('text/xml') | Filters.document.mime_type('application/octet-stream'), 
+    Filters.document.mime_type('text/xml'), 
     callback.save_subscription
 )
 
