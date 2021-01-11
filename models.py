@@ -83,15 +83,15 @@ class Podcast(object):
     def set_updater(self, job_queue):
         job_queue.run_repeating(
             callback = self.update, 
-            interval = datetime.timedelta(minutes = 1),
+            interval = datetime.timedelta(minutes = 10),
             name =  self.name
         )
 
     def update(self, context):
-        context.bot.send_message(dev_user_id, f'开始检测 {context.job.name}...')
         last_published_time = self.latest_episode.published_time
         self.parse_feed(self.feed_url)
         if self.latest_episode.published_time != last_published_time:
+            context.bot.send_message(dev_user_id, f'{context.job.name} 检测到更新…')
             if int(self.latest_episode.audio_size) >= 20000000 or not self.latest_episode.audio_size:
                 audio_file = download(self.latest_episode.audio_url, context)
             else:   
@@ -133,7 +133,7 @@ class Podcast(object):
                         ]]
                     )
                 )
-        context.bot.send_message(dev_user_id, f'{context.job.name} 检测完毕！')
+            context.bot.send_message(dev_user_id, f'{context.job.name} 更新完毕！')
 
     def set_episodes(self, results):
         episodes = []
