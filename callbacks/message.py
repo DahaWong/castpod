@@ -16,8 +16,10 @@ def save_subscription(update, context):
     cached_podcasts = context.bot_data['podcasts']
 
     doc = update.message['document']
-    doc_name, doc_file = doc['file_name'], context.bot.getFile(doc['file_id'])
-    path = doc_file.download(f"public/subscriptions/{user.user_id}.xml")
+    doc_file = context.bot.getFile(doc['file_id'])
+    doc_name = re.sub(r'.+(?=\.xml|\.opml?)', user.user_id, doc['file_name'])
+    print(doc)
+    path = doc_file.download(doc_name)
 
     try:
         with open(path, 'r') as f:
@@ -27,6 +29,7 @@ def save_subscription(update, context):
         parsing_note.delete()
         update.message.reply_text("订阅失败 :(\n请检查订阅文件是否格式正确/完好无损")
         return
+        
     feeds_count = len(feeds)
     subscribing_note = parsing_note.edit_text(f"订阅中 (0/{feeds_count})")
     podcasts = []
