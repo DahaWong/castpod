@@ -163,9 +163,9 @@ def direct_download(podcast, episode, fetching_note, context):
         chat_id = f'@{podcast_vault}',
         audio = audio_file,
         caption = (
-            f"*{podcast.name}*   "
-            f"[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
-            f"\n\n[相关链接]({episode.get_shownotes_url()})"
+            f"*{podcast.name}*"
+            f"\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
+            f" | [相关链接]({episode.get_shownotes_url()})"
             f"\n\n{generate_tag(podcast.name)} "
             f"{' '.join([generate_tag(tag['term']) for tag in podcast.tags if podcast.tags])}"
         ),

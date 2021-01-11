@@ -101,9 +101,9 @@ class Podcast(object):
                 chat_id = f'@{podcast_vault}',
                 audio = audio_file,
                 caption = (
-                    f"*{self.name}*   "
-                    f"[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
-                    f"\n\n[相关链接]({self.lastest_episode.get_shownotes_url()})"
+                    f"*{self.name}*"
+                    f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
+                    f" | [相关链接]({self.lastest_episode.get_shownotes_url()})"
                     f"\n\n{generate_tag(self.name)} "
                     f"{' '.join([generate_tag(tag['term']) for tag in self.tags if self.tags])}"
                 ),
@@ -123,6 +123,7 @@ class Podcast(object):
                     forwarded_message.edit_caption(
                         caption = (
                             f"🎙️ *{self.name}*\n[相关链接]({episode.get_shownotes_url() or self.website})"
+                            f"\n\n{episode.timeline}"
                         ),
                         reply_markup=InlineKeyboardMarkup([[
                                 InlineKeyboardButton(
