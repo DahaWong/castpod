@@ -19,7 +19,6 @@ def save_subscription(update, context):
     doc_file = context.bot.getFile(doc['file_id'])
     doc_name = re.sub(r'.+(?=\.xml|\.opml?)', str(user.user_id), doc['file_name'])
     path = doc_file.download(doc_name)
-    print(path)
     with open(path, 'r') as f:
         feeds = parse_opml(f)
     # except Exception as e:
