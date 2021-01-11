@@ -27,7 +27,7 @@ webhook_port = int(config['WEBHOOK']['PORT'])
 
 # Build
 update_info = {
-   'token': bot_token_test,
+   'token': bot_token,
    'use_context': True,
    'persistence': persistence,
    'base_url': bot_api,
