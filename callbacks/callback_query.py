@@ -1,6 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error, ReplyKeyboardRemove, ChatAction, InputMediaAudio
 from models import Episode
-from config import podcast_vault
 from manifest import manifest
 import re
 

@@ -6,7 +6,6 @@ from base64 import urlsafe_b64encode as encode
 from utils.downloader import local_download as download
 from config import podcast_vault
 from manifest import manifest
-from function import generate_tag
 import re
 
 
@@ -131,6 +130,7 @@ def download_episode(update, context):
     else:
         forwarded_message = direct_download(podcast, episode, fetching_note, context)
     update.message.delete()
+    print(forwarded_message.forward_from_message_id)
     forwarded_message.edit_caption(
         caption = (
             f"🎙️ *{podcast.name}*\n[相关链接]({episode.get_shownotes_url() or podcast.website})"
@@ -153,7 +153,6 @@ def download_episode(update, context):
 def direct_download(podcast, episode, fetching_note, context):
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
     downloading_note = fetching_note.edit_text("下载中…")
-    print(episode.audio_size)
     if int(episode.audio_size) >= 20000000 or not episode.audio_size:
         audio_file = download(episode.audio_url, context)
     else:   
@@ -166,8 +165,6 @@ def direct_download(podcast, episode, fetching_note, context):
             f"*{podcast.name}*"
             f"\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
             f" | [相关链接]({episode.get_shownotes_url()})"
-            f"\n\n{generate_tag(podcast.name)} "
-            f"{' '.join([generate_tag(tag['term']) for tag in podcast.tags if podcast.tags])}"
         ),
         title = episode.title,
         performer = f"{podcast.name} | {episode.host or podcast.host}" if podcast.host else podcast.name,

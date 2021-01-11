@@ -6,7 +6,6 @@ from telegraph import Telegraph
 from manifest import manifest
 from PIL import Image
 from utils.downloader import local_download as download
-from function import generate_tag
 from config import podcast_vault, dev_user_id
 
 class User(object):
@@ -68,7 +67,7 @@ class Podcast(object):
         feed = result.feed
         self.name = feed.get('title')
         if not self.name: raise Exception("Error when parsing feed.")
-        self.tags = feed.get('tags') or []
+        # self.tags = feed.get('tags') or []
         self.logo_url = feed.get('image').get('href')
         self.download_logo()
         self.episodes = self.set_episodes(result['items'])
@@ -104,8 +103,6 @@ class Podcast(object):
                     f"*{self.name}*"
                     f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
                     f" | [相关链接]({self.lastest_episode.get_shownotes_url()})"
-                    f"\n\n{generate_tag(self.name)} "
-                    f"{' '.join([generate_tag(tag['term']) for tag in self.tags if self.tags])}"
                 ),
                 title = self.lastest_episode.title,
                 performer = f"{self.name} | {self.lastest_episode.host or self.host}" if self.host else self.name,
@@ -135,9 +132,9 @@ class Podcast(object):
                             ]]
                         )
                     )
+            context.bot.send_message(dev_user_id, f'{context.job.name} 更新完毕！')
             except Exception as e:
                 context.bot.send_message(dev_user_id, f'{context.job.name} 更新出错：{e}')
-        context.bot.send_message(dev_user_id, f'{context.job.name} 更新完毕！')
 
     def set_episodes(self, results):
         episodes = []
