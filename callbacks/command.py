@@ -65,7 +65,7 @@ def about(update, context):
     )
     jobs = context.job_queue.jobs()
     s = '\n'.join([job.name for job in jobs])
-    context.bot.send_message(dev_user_id, s)
+    if s: context.bot.send_message(dev_user_id, s)
 
 def search(update, context):
     if not check_login(update, context): return
