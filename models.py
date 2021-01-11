@@ -7,7 +7,7 @@ from manifest import manifest
 from PIL import Image
 from utils.downloader import local_download as download
 from function import generate_tag
-from config import podcast_vault
+from config import podcast_vault, dev_user_id
 
 class User(object):
     """
@@ -83,11 +83,12 @@ class Podcast(object):
     def set_updater(self, job_queue):
         job_queue.run_repeating(
             callback = self.update, 
-            interval = datetime.timedelta(minutes = 10),
+            interval = datetime.timedelta(minutes = 1),
             name =  self.name
         )
 
     def update(self, context):
+        context.bot.send_message(dev_user_id, f'开始检测 {context.job.name}...')
         last_published_time = self.latest_episode.published_time
         self.parse_feed(self.feed_url)
         if self.latest_episode.published_time != last_published_time:
@@ -135,6 +136,8 @@ class Podcast(object):
                     )
             except Exception as e:
                 print(e)
+            finally
+                context.bot.send_message(dev_user_id, f'{context.job.name} 检测完毕！')
 
     def set_episodes(self, results):
         episodes = []
