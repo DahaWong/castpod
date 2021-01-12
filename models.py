@@ -86,7 +86,8 @@ class Podcast(object):
         job = job_queue.run_repeating(
             callback = self.update, 
             interval = datetime.timedelta(minutes = 10),
-            name =  self.name
+            name =  self.name,
+            job_kwargs = {jobstore: 'castpod'}
         )
 
     def update(self, context):
