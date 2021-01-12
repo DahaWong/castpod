@@ -31,7 +31,7 @@ def save_subscription(update, context):
     podcasts = []
     failed_feeds = []
 
-    def add_feed():
+    def add_feed(feed):
         if feed['name'] not in cached_podcasts.keys():
             try:
                 podcast = Podcast(feed['url'])
@@ -46,8 +46,8 @@ def save_subscription(update, context):
         podcast.subscribers.add(user.user_id)
         subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{len(feeds)})")
     
-    for i, feed in enumerate(feeds):
-        context.dispatcher.run_async(add_feed)
+    for feed in feeds:
+        context.dispatcher.run_async(add_feed(feed))
 
     while len(feeds) != len(podcasts) + len(failed_feeds):
         pass
