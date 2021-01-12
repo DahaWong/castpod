@@ -7,6 +7,7 @@ from manifest import manifest
 from PIL import Image
 from utils.downloader import local_download as download
 from config import podcast_vault, dev_user_id
+from base64 import urlsafe_b64encode as encode
 
 class User(object):
     """
@@ -96,6 +97,7 @@ class Podcast(object):
                     audio_file = download(self.latest_episode.audio_url, context)
                 else:   
                     audio_file = self.latest_episode.audio_url
+                encoded_podcast_name = encode(bytes(self.name, 'utf-8')).decode("utf-8")
                 audio_message = context.bot.send_audio(
                 chat_id = f'@{podcast_vault}',
                 audio = audio_file,
@@ -109,7 +111,7 @@ class Podcast(object):
                 duration = self.lastest_episode.duration.seconds,
                 thumb = self.logo or self.logo_url,
                 # timeout = 1800
-                )   
+                )
                 self.lastest_episode.message_id = audio_message.message_id
                 for user in self.subscribers:
                     forwarded_message = context.bot.forward_message(
