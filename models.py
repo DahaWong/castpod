@@ -84,7 +84,7 @@ class Podcast(object):
     def set_updater(self, job_queue):
         job = job_queue.run_repeating(
             callback = self.update, 
-            interval = datetime.timedelta(minutes = 1),
+            interval = datetime.timedelta(minutes = 10),
             name =  self.name
         )
 
