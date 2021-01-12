@@ -32,7 +32,6 @@ def save_subscription(update, context):
     failed_feeds = []
 
     def add_feed():
-        print('in!')
         if feed['name'] not in cached_podcasts.keys():
             try:
                 podcast = Podcast(feed['url'])
@@ -45,21 +44,24 @@ def save_subscription(update, context):
             podcast = cached_podcasts[feed['name']]
         podcasts.append(podcast)
         podcast.subscribers.add(user.user_id)
-        subscribing_note = subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{len(feeds)})")
+        subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{len(feeds)})")
     
     for i, feed in enumerate(feeds):
         context.dispatcher.run_async(add_feed)
 
-    if len(podcasts):
-        user.import_feeds(podcasts)
-        newline = '\n'
-        reply = f"成功订阅 {feeds_count} 部播客！" if not len(failed_feeds) else (
-            f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
-            f"\n\n可能损坏的订阅源："
-            f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
-        )
+    while len(feeds) != len(podcasts) + len(failed_feeds):
+        pass
     else:
-            reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
+        if len(podcasts):
+            user.import_feeds(podcasts)
+            newline = '\n'
+            reply = f"成功订阅 {feeds_count} 部播客！" if not len(failed_feeds) else (
+                f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
+                f"\n\n可能损坏的订阅源："
+                f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
+            )
+        else:
+                reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
     subscribing_note.edit_text(
         text = reply, 
