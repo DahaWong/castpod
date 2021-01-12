@@ -27,11 +27,12 @@ def save_subscription(update, context):
         update.message.reply_text("订阅失败 :(\n请检查订阅文件是否格式正确/完好无损")
         return
 
-    subscribing_note = parsing_note.edit_text(f"订阅中 (0/{len(feeds)}")
+    subscribing_note = parsing_note.edit_text(f"订阅中 (0/{len(feeds)})")
     podcasts = []
     failed_feeds = []
 
     def add_feed():
+        print('in!')
         if feed['name'] not in cached_podcasts.keys():
             try:
                 podcast = Podcast(feed['url'])
@@ -48,10 +49,6 @@ def save_subscription(update, context):
     
     for i, feed in enumerate(feeds):
         context.dispatcher.run_async(add_feed)
-
-    while True:
-        print(len(podcasts) + len(failed_feeds), len(feed))
-        if len(feeds) == len(podcasts) + len(failed_feeds): break
 
     if len(podcasts):
         user.import_feeds(podcasts)
