@@ -240,7 +240,7 @@ class Episode(object):
         return '\n'.join([match.group() for match in matches])
 
     def replace_invalid_tags(self, html_content):
-        html_content = html_content.replace('h2', 'h3')
+        html_content = html_content.replace('h2', 'h4').replace('h1', 'h3')
         html_content = re.sub(r'<div.*?>', '', html_content).replace('</div>', '')
         html_content = re.sub(r'<span.*>', '', html_content).replace('</span>', '')
         html_content = html_content.replace('cite>', "i>")

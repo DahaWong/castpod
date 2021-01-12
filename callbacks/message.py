@@ -36,14 +36,16 @@ def save_subscription(update, context):
             try:
                 podcast = Podcast(feed['url'])
                 podcast.set_updater(context.job_queue)
+                podcasts.append(podcast)
+                podcast.subscribers.add(user.user_id)
                 cached_podcasts.update({podcast.name: podcast})
             except Exception as e: 
                 print(e)
                 failed_feeds.append(feed['url'])
         else:
             podcast = cached_podcasts[feed['name']]
-        podcasts.append(podcast)
-        podcast.subscribers.add(user.user_id)
+            podcasts.append(podcast)
+            podcast.subscribers.add(user.user_id)
         subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{len(feeds)})")
     
     for feed in feeds:
