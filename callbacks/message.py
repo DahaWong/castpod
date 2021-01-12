@@ -42,6 +42,7 @@ def save_subscription(update, context):
             except Exception as e: 
                 print(e)
                 failed_feeds.append(feed['url'])
+                return
         else:
             podcast = cached_podcasts[feed['name']]
             podcasts.append(podcast)
