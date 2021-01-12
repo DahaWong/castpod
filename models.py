@@ -237,14 +237,7 @@ class Episode(object):
     def set_timeline(self):
         pattern = r'(?:([0-9]{1,2}):)?([0-9]{1,3}):([0-5][0-9])([^<]+)'
         matches = re.finditer(pattern, self.shownotes)
-        def validate(match):
-            entry, hour, minute, second, content  = match
-            if len(minute) > 2:
-                hour = int(minute) // 60
-                minute = int(minute) % 60
-                entry = f"{hour}:{minute}:{second}{content}"
-            return entry
-        return '\n'.join([validate(match) for match in matches])
+        return '\n'.join([match for match in matches])
 
     def replace_invalid_tags(self, html_content):
         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
