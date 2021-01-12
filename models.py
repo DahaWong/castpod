@@ -244,9 +244,9 @@ class Episode(object):
             second = match[3]
             content = match[4]
             print(entry, hour, minute, second, content)
-            if len(m) > 2:
-                hour = int(m) / 60
-                minute = int(m) % 60
+            if len(minute) > 2:
+                hour = int(minute) / 60
+                minute = int(minute) % 60
                 entry = f"{hour}:{minute}:{second}{content}"
             return entry
         return '\n'.join([validate(match[0]) for match in matches])
