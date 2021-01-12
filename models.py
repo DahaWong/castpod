@@ -104,26 +104,26 @@ class Podcast(object):
                     caption = (
                         f"*{self.name}*"
                         f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
-                        f" | [相关链接]({self.lastest_episode.get_shownotes_url()})"
+                        f" | [相关链接]({self.latest_episode.get_shownotes_url()})"
                     ),
-                    title = self.lastest_episode.title,
-                    performer = f"{self.name} | {self.lastest_episode.host or self.host}" if self.host else self.name,
-                    duration = self.lastest_episode.duration.seconds,
+                    title = self.latest_episode.title,
+                    performer = f"{self.name} | {self.latest_episode.host or self.host}" if self.host else self.name,
+                    duration = self.latest_episode.duration.seconds,
                     thumb = self.logo or self.logo_url,
                     # timeout = 1800
                 )
                 context.bot.send_message(dev_user_id, f'{context.job.name} 音频文件发送完毕：`{audio_message}`')
-                self.lastest_episode.message_id = audio_message.message_id
+                self.latest_episode.message_id = audio_message.message_id
                 for user_id in self.subscribers:
                     forwarded_message = context.bot.forward_message(
                         chat_id = user_id,
                         from_chat_id = f"@{podcast_vault}",
-                        message_id = self.lastest_episode.message_id
+                        message_id = self.latest_episode.message_id
                     )
                     forwarded_message.edit_caption(
                         caption = (
-                            f"🎙️ *{self.name}*\n\n[相关链接]({self.lastest_episode.get_shownotes_url() or self.website})"
-                            f"\n\n{self.lastest_episode.timeline}"
+                            f"🎙️ *{self.name}*\n\n[相关链接]({self.latest_episode.get_shownotes_url() or self.website})"
+                            f"\n\n{self.latest_episode.timeline}"
                         ),
                         reply_markup=InlineKeyboardMarkup([[
                                 InlineKeyboardButton(
@@ -137,7 +137,7 @@ class Podcast(object):
                     )
                 context.bot.send_message(dev_user_id, f'{context.job.name} 更新完毕！')
             except Exception as e:
-                context.bot.send_message(dev_user_id, f'{context.job.name} 更新出错：{e}')
+                context.bot.send_message(dev_user_id, f'{context.job.name} 更新出错：`{e}`')
 
     def set_episodes(self, results):
         episodes = []
