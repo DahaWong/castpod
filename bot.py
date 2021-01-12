@@ -15,8 +15,8 @@ dispatcher = updater.dispatcher
 if not dispatcher.bot_data:
     updater.dispatcher.bot_data.update({"podcasts":{}})
 
-# print(dispatcher.bot_data['podcasts'])
-# print(dispatcher.user_data)
+for podcast in dispatcher.bot_data['podcasts']:
+    podcast.set_jobqueue(updater.job_queue)
 
 register(updater.dispatcher)
 

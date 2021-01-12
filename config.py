@@ -29,7 +29,7 @@ webhook_port = int(config['WEBHOOK']['PORT'])
 update_info = {
    'token': bot_token,
    'use_context': True,
-#    'persistence': persistence,
+   'persistence': persistence,
    'base_url': bot_api,
    'defaults': defaults,
    'workers': 1024
