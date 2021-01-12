@@ -47,7 +47,7 @@ def save_subscription(update, context):
         subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{len(feeds)})")
     
     for feed in feeds:
-        context.dispatcher.run_async(add_feed(feed))
+        context.dispatcher.run_async(add_feed, feed = feed)
 
     while len(feeds) != len(podcasts) + len(failed_feeds):
         pass
