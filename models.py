@@ -235,12 +235,19 @@ class Episode(object):
         return img_content + self.replace_invalid_tags(shownotes)
 
     def set_timeline(self):
-        pattern = r'(?:[0-9]?[0-9]:)?[0-5]?[0-9]:[0-5][0-9][^<]+'
+        pattern = r'(?:([0-9]{1,2}):)?([0-9]{1,3}):([0-5][0-9])([^<]+)'
         matches = re.finditer(pattern, self.shownotes)
-        return '\n'.join([match.group() for match in matches])
+        def validate(match):
+            entry, hour, minute, second, content = match
+            if len(m) > 2:
+                hour = int(m) / 60
+                minute = int(m) % 60
+                entry = f"{hour}:{minute}:{second}{content}"
+            return entry
+        return '\n'.join([validate(match[0]) for match in matches])
 
     def replace_invalid_tags(self, html_content):
-        html_content = html_content.replace('h2', 'h4').replace('h1', 'h3')
+        html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
         html_content = re.sub(r'<div.*?>', '', html_content).replace('</div>', '')
         html_content = re.sub(r'<span.*>', '', html_content).replace('</span>', '')
         html_content = html_content.replace('cite>', "i>")

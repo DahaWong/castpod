@@ -64,7 +64,7 @@ def save_subscription(update, context):
                 f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
             )
         else:
-                reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
+            reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
     subscribing_note.edit_text(
         text = reply, 

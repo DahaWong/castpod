@@ -32,7 +32,7 @@ update_info = {
    'persistence': persistence,
    'base_url': bot_api,
    'defaults': defaults,
-   'workers': 64
+   'workers': 1024
  }
 
 webhook_info = {
