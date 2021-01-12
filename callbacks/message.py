@@ -1,6 +1,6 @@
 from utils.parser import parse_opml
 from models import Podcast
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, ReplyKeyboardMarkup, ChatAction
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, ReplyKeyboardMarkup, ChatAction, ParseMode
 from components import PodcastPage, ManagePage
 from base64 import urlsafe_b64encode as encode
 from utils.downloader import local_download as download
@@ -139,9 +139,10 @@ def download_episode(update, context):
     print(forwarded_message.forward_from_message_id)
     forwarded_message.edit_caption(
         caption = (
-            f"🎙️ *{podcast.name}*\n\n[相关链接]({episode.get_shownotes_url() or podcast.website})"
+            f"🎙️ <b>{podcast.name}</b>\n\n<a href='{episode.get_shownotes_url() or podcast.website}'>相关链接</a>"
             f"\n\n{episode.timeline}"
         ),
+        parse_mode = ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton(
                 text = "评     论     区", 
