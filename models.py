@@ -87,7 +87,7 @@ class Podcast(object):
             callback = self.update, 
             interval = datetime.timedelta(minutes = 10),
             name =  self.name,
-            job_kwargs = {jobstore: 'castpod'}
+            job_kwargs = {'jobstore': 'castpod'}
         )
 
     def update(self, context):
