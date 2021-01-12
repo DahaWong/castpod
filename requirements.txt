@@ -3,3 +3,4 @@ bs4
 feedparser
 tqdm
 Pillow
+pymongo

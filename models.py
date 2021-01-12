@@ -82,7 +82,7 @@ class Podcast(object):
         self.email = feed.author_detail.get('email') or ""
 
     def set_updater(self, job_queue):
-        job_queue.run_repeating(
+        job = job_queue.run_repeating(
             callback = self.update, 
             interval = datetime.timedelta(minutes = 1),
             name =  self.name
@@ -91,7 +91,7 @@ class Podcast(object):
     def update(self, context):
         last_published_time = self.latest_episode.published_time
         self.parse_feed(self.feed_url)
-        if self.latest_episode.published_time == last_published_time:
+        if self.latest_episode.published_time != last_published_time:
             try:
                 context.bot.send_message(dev_user_id, f'{context.job.name} 检测到更新…')
                 if int(self.latest_episode.audio_size) >= 20000000 or not self.latest_episode.audio_size:

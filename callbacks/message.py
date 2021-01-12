@@ -6,10 +6,12 @@ from base64 import urlsafe_b64encode as encode
 from utils.downloader import local_download as download
 from config import podcast_vault
 from manifest import manifest
+from callbacks.command import check_login
 import re
 
 
 def save_subscription(update, context):
+    if not check_login(update, context): return
     parsing_note = update.message.reply_text("正在解析订阅文件…")
     user = context.user_data['user']
     cached_podcasts = context.bot_data['podcasts']
@@ -77,6 +79,7 @@ def save_subscription(update, context):
     )
 
 def subscribe_feed(update, context):
+    if not check_login(update, context): return
     context.bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
     feed_url = update['message']['text']
     subscribing_message = update.message.reply_text(f"订阅中，请稍候…")
@@ -115,6 +118,7 @@ def subscribe_feed(update, context):
         subscribing_message.edit_text("订阅失败。可能是因为订阅源损坏 :(")
 
 def download_episode(update, context):
+    if not check_login(update, context): return
     bot = context.bot
     fetching_note = bot.send_message(update.message.chat_id, "获取节目中…")
     bot.send_chat_action(update.message.chat_id, ChatAction.RECORD_AUDIO)
@@ -184,6 +188,7 @@ def direct_download(podcast, episode, fetching_note, context):
     return forwarded_message, audio_message.message_id
 
 def exit_reply_keyboard(update, context):
+    if not check_login(update, context): return
     message = update.message
     message.reply_text(
         '好', 
