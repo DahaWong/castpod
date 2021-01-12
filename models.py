@@ -240,7 +240,7 @@ class Episode(object):
         def validate(match):
             entry, hour, minute, second, content  = match
             if len(minute) > 2:
-                hour = int(minute) / 60
+                hour = int(minute) // 60
                 minute = int(minute) % 60
                 entry = f"{hour}:{minute}:{second}{content}"
             return entry
