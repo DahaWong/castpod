@@ -8,6 +8,7 @@ from PIL import Image
 from utils.downloader import local_download as download
 from config import podcast_vault, dev_user_id
 from base64 import urlsafe_b64encode as encode
+from telegram import InlineKeyboardMarkup
 
 class User(object):
     """
@@ -112,7 +113,6 @@ class Podcast(object):
                     thumb = self.logo or self.logo_url,
                     # timeout = 1800
                 )
-                context.bot.send_message(dev_user_id, f'{context.job.name} 音频文件发送完毕：`{audio_message}`')
                 self.latest_episode.message_id = audio_message.message_id
                 for user_id in self.subscribers:
                     forwarded_message = context.bot.forward_message(
