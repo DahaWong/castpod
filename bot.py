@@ -1,7 +1,6 @@
 from config import update_info, webhook_info, webhook_setting
 from telegram.ext import Updater
 from handlers.register import register
-from utils.persistence import persistence
 
 updater = Updater(**update_info)
 dispatcher = updater.dispatcher
