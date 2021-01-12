@@ -27,29 +27,31 @@ def save_subscription(update, context):
         update.message.reply_text("订阅失败 :(\n请检查订阅文件是否格式正确/完好无损")
         return
 
-    feeds_count = len(feeds)
-    subscribing_note = parsing_note.edit_text(f"订阅中 (0/{feeds_count})")
+    subscribing_note = parsing_note.edit_text(f"订阅中 (0/{len(feeds)}")
     podcasts = []
     failed_feeds = []
-    for i, feed in enumerate(feeds):
+
+    def add_feed():
         if feed['name'] not in cached_podcasts.keys():
             try:
                 podcast = Podcast(feed['url'])
                 podcast.set_updater(context.job_queue)
-                if podcast:
-                    cached_podcasts.update({podcast.name: podcast})
-                else:
-                    failed_feeds.append(feed['url'])
-                    raise Exception(f"Error when adding feed {feed['url']}")
+                cached_podcasts.update({podcast.name: podcast})
             except Exception as e: 
                 print(e)
                 failed_feeds.append(feed['url'])
-                continue
         else:
             podcast = cached_podcasts[feed['name']]
         podcasts.append(podcast)
         podcast.subscribers.add(user.user_id)
-        subscribing_note = subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{feeds_count})")
+        subscribing_note = subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{len(feeds)})")
+    
+    for i, feed in enumerate(feeds):
+        context.dispatcher.run_async(add_feed)
+
+    while True:
+        print(len(podcasts) + len(failed_feeds), len(feed))
+        if len(feeds) == len(podcasts) + len(failed_feeds): break
 
     if len(podcasts):
         user.import_feeds(podcasts)
