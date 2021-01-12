@@ -235,7 +235,7 @@ class Episode(object):
         return img_content + self.replace_invalid_tags(shownotes)
 
     def set_timeline(self):
-        pattern = r'(?:([0-9]{1,2}):)?([0-9]{1,3}):([0-5][0-9])([^<]+)'
+        pattern = r'(?:([0-9]{1,2}):)?([0-9]{1,3}):([0-5][0-9])(.+)'
         matches = re.finditer(pattern, self.shownotes)
         return '\n'.join([match for match in matches])
 
