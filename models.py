@@ -238,9 +238,12 @@ class Episode(object):
         pattern = r'(?:([0-9]{1,2}):)?([0-9]{1,3}):([0-5][0-9])([^<]+)'
         matches = re.finditer(pattern, self.shownotes)
         def validate(match):
-            for m in match:
-                print(m)
-            entry, hour, minute, second, content = match
+            entry = match[0]
+            hour = match[1]
+            minute = match[2]
+            second = match[3]
+            content = match[4]
+            print(entry, hour, minute, second, content)
             if len(m) > 2:
                 hour = int(m) / 60
                 minute = int(m) % 60
