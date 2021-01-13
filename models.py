@@ -83,10 +83,12 @@ class Podcast(object):
         self.email = feed.author_detail.get('email') or ""
 
     def set_jobqueue(self, job_queue):
-        # job_queue.scheduler.add_jobstore('mongodb', collection = 'castpod_jobs', alias = 'castpod')
+        # job_queue.scheduler.job_defaults = {
+        #     'max_instances': 3
+        # }
         job = job_queue.run_repeating(
             callback = self.update, 
-            interval = datetime.timedelta(minutes= 1),
+            interval = datetime.timedelta(minutes= 10),
             # interval = datetime.timedelta(minutes = 10),
             name =  self.name,
             # job_kwargs = {'jobstore': 'castpod'}
