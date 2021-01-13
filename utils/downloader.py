@@ -5,11 +5,11 @@ import requests
 def local_download(url, context):
     res = requests.get(url, allow_redirects=True, stream=True)
     if res.status_code != 200: raise Exception(f"Error when downloading audio, status: {res.status_code}.")
+    block_size = 1024 #1 Kibibyte
     if context.user_data: 
         user = context.user_data['user']
         chat_id = user.user_id
         total = int(res.headers.get('content-length', 0))
-        block_size = 1024 #1 Kibibyte
         progress_bar = tqdm(
             total = total, 
             unit='iB',
