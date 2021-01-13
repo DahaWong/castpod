@@ -194,6 +194,7 @@ class Episode(object):
         self.content = episode.get('content')
         self.summary = episode.get('summary') or ''
         self.shownotes = self.set_shownotes()
+        print(self.shownotes)
         self.timeline = self.set_timeline()
         # print(self.timeline)
         self.shownotes_url = ''
