@@ -2,11 +2,13 @@ from tqdm.contrib.telegram import tqdm
 from config import bot_token
 import requests
 
-def local_download(url, context):
+def local_download(episode, context):
     res = requests.get(url, allow_redirects=True, stream=True)
+    print(res)
     if res.status_code != 200: raise Exception(f"Error when downloading audio, status: {res.status_code}.")
     block_size = 1024 #1 Kibibyte
-    if context.user_data: 
+    path = f'public/audio/{episode.podcast_name}/{episode.title}.mp3'
+    if context.user_data:
         user = context.user_data['user']
         chat_id = user.user_id
         total = int(res.headers.get('content-length', 0))
@@ -17,7 +19,7 @@ def local_download(url, context):
             chat_id = chat_id,
             bar_format= '{percentage:3.0f}% |{bar:8}|'
         )
-        with open('public/audio/audio-temp.mp3', 'wb') as f:
+        with open(path, 'wb') as f:
             for data in res.iter_content(block_size):
                 progress_bar.update(len(data))
                 f.write(data)
@@ -27,7 +29,7 @@ def local_download(url, context):
         if total != 0 and progress_bar.n != total:
             raise Exception("ERROR: something went wrong with progress bar.")
     else:
-        with open('public/audio/audio-temp.mp3', 'wb') as f:
+        with open(path, 'wb') as f:
             for data in res.iter_content(block_size):
                 f.write(data)
-    return 'public/audio/audio-temp.mp3'
+    return path

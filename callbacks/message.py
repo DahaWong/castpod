@@ -139,7 +139,6 @@ def download_episode(update, context):
     else:
         forwarded_message, forward_from_message = direct_download(podcast, episode, fetching_note, context)
     update.message.delete()
-    print(episode.timeline)
     forwarded_message.edit_caption(
         caption = (
             f"🎙️ <b>{podcast.name}</b>\n\n<a href='{episode.get_shownotes_url() or podcast.website}'>相关链接</a>"
@@ -164,7 +163,7 @@ def direct_download(podcast, episode, fetching_note, context):
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
     downloading_note = fetching_note.edit_text("下载中…")
     if int(episode.audio_size) >= 20000000 or not episode.audio_size:
-        audio_file = download(episode.audio_url, context)
+        audio_file = download(episode, context)
     else:   
         audio_file = episode.audio_url
     uploading_note = downloading_note.edit_text("正在上传，请稍候…")
