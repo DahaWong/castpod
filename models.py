@@ -194,7 +194,7 @@ class Episode(object):
         self.content = episode.get('content')
         self.summary = episode.get('summary') or ''
         self.shownotes = self.set_shownotes()
-        print(self.shownotes)
+        # print(self.shownotes)
         self.timeline = self.set_timeline()
         # print(self.timeline)
         self.shownotes_url = ''
@@ -268,7 +268,7 @@ class Episode(object):
                 author_name = self.host or self.podcast_name
             )
             self.shownotes_url = f"https://telegra.ph/{res['path']}"
-            print(self.shownotes_url)
+            # print(self.shownotes_url)
             return f"https://telegra.ph/{res['path']}"
         except Exception as e:
             print(e)
