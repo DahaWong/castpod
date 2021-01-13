@@ -86,8 +86,8 @@ class Podcast(object):
         # job_queue.scheduler.add_jobstore('mongodb', collection = 'castpod_jobs', alias = 'castpod')
         job = job_queue.run_repeating(
             callback = self.update, 
-            # interval = datetime.timedelta(seconds= 10),
-            interval = datetime.timedelta(minutes = 10),
+            interval = datetime.timedelta(seconds= 10),
+            # interval = datetime.timedelta(minutes = 10),
             name =  self.name,
             # job_kwargs = {'jobstore': 'castpod'}
         )
