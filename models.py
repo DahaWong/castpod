@@ -89,16 +89,15 @@ class Podcast(object):
         job = job_queue.run_repeating(
             callback = self.update, 
             interval = datetime.timedelta(minutes= 10),
-            # interval = datetime.timedelta(minutes = 10),
             name =  self.name,
             # job_kwargs = {'jobstore': 'castpod'}
         )
-        job.modify(max_instances=16)
+        job.modify(max_instances=64)
 
     def update(self, context):
         last_published_time = self.latest_episode.published_time
         self.parse_feed(self.feed_url)
-        if self.latest_episode.published_time == last_published_time:
+        if self.latest_episode.published_time != last_published_time:
             try:
                 if int(self.latest_episode.audio_size) >= 20000000 or not self.latest_episode.audio_size:
                     audio_file = download(self.latest_episode, context)
