@@ -93,6 +93,7 @@ class Podcast(object):
             name =  self.name,
             # job_kwargs = {'jobstore': 'castpod'}
         )
+        job.modify(max_instances=16)
 
     def update(self, context):
         last_published_time = self.latest_episode.published_time
