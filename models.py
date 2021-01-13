@@ -240,7 +240,7 @@ class Episode(object):
     def set_timeline(self):
         pattern = r'(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
         matches = re.finditer(pattern, self.shownotes)
-        return '\n'.join([re.sub(r'</?(?:li|p/br|cite|del|span|div|s).*?>', '', match[0]) for match in matches])
+        return '\n'.join([re.sub(r'</?(?:li|p|br|cite|del|span|div|s).*?>', '', match[0]) for match in matches])
 
     def replace_invalid_tags(self, html_content):
         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
