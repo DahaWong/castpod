@@ -85,8 +85,8 @@ class Podcast(object):
         # job_queue.scheduler.add_jobstore('mongodb', collection = 'castpod_jobs', alias = 'castpod')
         job = job_queue.run_repeating(
             callback = self.update, 
-            interval = datetime.timedelta(seconds= 10),
-            # interval = datetime.timedelta(minutes = 10),
+            # interval = datetime.timedelta(seconds= 10),
+            interval = datetime.timedelta(minutes = 10),
             name =  self.name,
             # job_kwargs = {'jobstore': 'castpod'}
         )
@@ -96,7 +96,6 @@ class Podcast(object):
         self.parse_feed(self.feed_url)
         if self.latest_episode.published_time == last_published_time:
             try:
-                context.bot.send_message(dev_user_id, f'{context.job.name} 检测到更新…')
                 if int(self.latest_episode.audio_size) >= 20000000 or not self.latest_episode.audio_size:
                     audio_file = download(self.latest_episode.audio_url, context)
                 else:   
@@ -131,14 +130,13 @@ class Podcast(object):
                         reply_markup=InlineKeyboardMarkup([[
                                 InlineKeyboardButton(
                                 text = "评     论     区", 
-                                url = f"https://t.me/{podcast_vault}/{forwarded_message.forward_from_message_id}")
+                                url = f"https://t.me/{podcast_vault}/{audio_message.message_id}")
                             ], [
                                 InlineKeyboardButton("订  阅  列  表", switch_inline_query_current_chat=""),
                                 InlineKeyboardButton("单  集  列  表", switch_inline_query_current_chat = f"{self.name}")
                             ]]
                         )
                     )
-                context.bot.send_message(dev_user_id, f'{context.job.name} 更新完毕！')
             except Exception as e:
                 context.bot.send_message(dev_user_id, f'{context.job.name} 更新出错：`{e}`')
 
@@ -241,13 +239,11 @@ class Episode(object):
     def set_timeline(self):
         pattern = r'(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
         matches = re.finditer(pattern, self.shownotes)
-        return '\n'.join([match[0].replace('</li>', '').replace('</p>', '') for match in matches])
-
+        return '\n'.join([re.sub(r'</?(?:li|p/br|cite|del|span|div|s).*?>', '', match[0]) for match in matches])
 
     def replace_invalid_tags(self, html_content):
         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
-        html_content = re.sub(r'<div.*?>', '', html_content).replace('</div>', '')
-        html_content = re.sub(r'<span.*>', '', html_content).replace('</span>', '')
+        html_content = re.sub(r'</?(?:div|span).*?>', '', html_content)
         html_content = html_content.replace('cite>', "i>")
         html_content = html_content.replace('’', "'")
         # print(html_content)
