@@ -67,8 +67,9 @@ class Podcast(object):
         if str(result.status)[0]!= '2' and str(result.status)[0]!= '3':
             raise Exception(f'Feed URL Open Error, status: {result.status}')
         feed = result.feed
-        self.name = feed.get('title')
+        self.name = feed.get('title')[:55]
         if not self.name: raise Exception("Cannot parse feed name.")
+        if len(self.name) == 56: self.name += '…'
         # self.tags = feed.get('tags') or []
         self.logo_url = feed.get('image').get('href')
         self.download_logo()
