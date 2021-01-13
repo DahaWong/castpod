@@ -3,7 +3,7 @@ from config import bot_token
 import requests
 
 def local_download(episode, context):
-    res = requests.get(url, allow_redirects=True, stream=True)
+    res = requests.get(episode.audio_url, allow_redirects=True, stream=True)
     print(res)
     if res.status_code != 200: raise Exception(f"Error when downloading audio, status: {res.status_code}.")
     block_size = 1024 #1 Kibibyte
