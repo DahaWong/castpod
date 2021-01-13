@@ -67,7 +67,7 @@ class Podcast(object):
         if str(result.status)[0]!= '2' and str(result.status)[0]!= '3':
             raise Exception(f'Feed URL Open Error, status: {result.status}')
         feed = result.feed
-        self.name = feed.get('title')[:55]
+        self.name = feed.get('title')[:48]
         if not self.name: raise Exception("Cannot parse feed name.")
         if len(self.name) == 56: self.name += '…'
         # self.tags = feed.get('tags') or []
@@ -195,7 +195,7 @@ class Episode(object):
         self.summary = episode.get('summary') or ''
         self.shownotes = self.set_shownotes()
         self.timeline = self.set_timeline()
-        # print(self.timeline)
+        print(self.timeline)
         self.shownotes_url = ''
         self.published_time = episode.published_parsed
         self.message_id = None
