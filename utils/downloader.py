@@ -10,7 +10,7 @@ def local_download(episode, context):
     path = f'public/audio/{episode.podcast_name}/{episode.title}.mp3'
     if not os.path.exists(os.path.dirname(path)):
         try:
-            os.makedirs(os.path.dirname(filename))
+            os.makedirs(os.path.dirname(path))
         except OSError as exc: # Guard against race condition
             if exc.errno != errno.EEXIST: raise
     if context.user_data:
