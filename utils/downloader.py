@@ -1,6 +1,6 @@
 from tqdm.contrib.telegram import tqdm
 from config import bot_token
-import requests
+import requests, os, errno
 
 def local_download(episode, context):
     res = requests.get(episode.audio_url, allow_redirects=True, stream=True)
@@ -8,6 +8,11 @@ def local_download(episode, context):
     if res.status_code != 200: raise Exception(f"Error when downloading audio, status: {res.status_code}.")
     block_size = 1024 #1 Kibibyte
     path = f'public/audio/{episode.podcast_name}/{episode.title}.mp3'
+    if not os.path.exists(os.path.dirname(path)):
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST: raise
     if context.user_data:
         user = context.user_data['user']
         chat_id = user.user_id
