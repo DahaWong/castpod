@@ -1,14 +1,14 @@
-# Podcasted
+# Castpod
 
 > v0.0.1
 
 ## Intro
 
-A [Telegram Bot](https://core.telegram.org/bots/api) for
+A [Telegram Bot](https://core.telegram.org/bots/api)
 
 ## Use
 
-Here is [the link of bot](https://t.me/podcasted_bot).
+Here is [the link of bot](https://t.me/castpod).
 
 ### Basics
 
@@ -17,7 +17,6 @@ After `/start` the bot, the bot will
 ### Commands
 
 - `/start`: Start the bot.
-- `/quit`: Log out.
 - `/about`: About the bot.
 
 ## Host Yourself
