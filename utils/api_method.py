@@ -1,10 +1,8 @@
 import requests
-import json
 
-# 换成 google podcast ，spotify 是否可行
 root = 'https://itunes.apple.com/search?'
 endpoints = {
-  'search_podcast': 'media=podcast&country=CN&term=',
+  'search_podcast': 'media=podcast&limit=25&term='
 }
 
 def search(keyword:str):

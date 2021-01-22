@@ -32,8 +32,7 @@ update_info = {
    'persistence': persistence,
    'base_url': bot_api,
    'defaults': defaults,
-   'workers': 1024,
-   'user_sig_handler' : persistence.flush
+   'workers': 1024
  }
 
 webhook_info = {
