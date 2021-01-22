@@ -77,7 +77,7 @@ def home(update, context):
     if not check_login(update, context):
         return
     buttons = [
-        InlineKeyboardButton('搜索 / 管理', switch_inline_query_current_chat=''),
+        InlineKeyboardButton('搜索 | 管理', switch_inline_query_current_chat=''),
         InlineKeyboardButton('收藏的播客', switch_inline_query_current_chat='p '),
         InlineKeyboardButton('收藏的单集', switch_inline_query_current_chat='e ')
     ]

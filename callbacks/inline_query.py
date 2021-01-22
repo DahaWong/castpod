@@ -102,7 +102,8 @@ def search_podcast(keyword):
             result_item = InlineQueryResultArticle(
                 id=result['collectionId'],
                 title=name,
-                input_message_content=InputTextMessageContent(feed, parse_mode=None),
+                input_message_content=InputTextMessageContent(
+                    feed, parse_mode=None),
                 description=host,
                 thumb_url=thumbnail_small,
                 thumb_height=60,
@@ -117,30 +118,13 @@ def show_subscription(context):
     results = [InlineQueryResultArticle(
         id=index,
         title=feed.podcast.name,
-        input_message_content=InputTextMessageContent(feed.podcast.name, parse_mode=None),
+        input_message_content=InputTextMessageContent(
+            feed.podcast.name, parse_mode=None),
         description=feed.podcast.host or feed.podcast.name,
         thumb_url=feed.podcast.logo_url,
         thumb_width=60,
         thumb_height=60
     ) for index, feed in enumerate(subscription.values())]
-    return results
-
-
-def show_trending(context):
-    user = context.user_data['user']
-    podcasts = context.bot_data['podcasts']
-    results = [InlineQueryResultArticle(
-        id=uuid4(),
-        title=podcast.name,
-        description=podcast.host or podcast.name,
-        input_message_content=InputTextMessageContent((
-            f"{podcast.feed_url}"
-        )),
-        # reply_markup = InlineKeyboardMarkup(),
-        thumb_url=podcast.logo_url,
-        thumb_width=60,
-        thumb_height=60
-    ) for podcast in podcasts.values() if not user.subscription.get(podcast.name)]
     return results
 
 
