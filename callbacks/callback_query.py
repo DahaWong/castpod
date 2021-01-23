@@ -12,6 +12,7 @@ def delete_message(update, _):
 def delete_command_context(update, context):
     pattern = r'(delete_command_context_)([0-9]+)'
     query = update.callback_query
+    print(query.data)
     command_message_id = re.match(pattern, query.data)[2]
     query.delete_message()
     context.bot.delete_message(query.message.chat_id, command_message_id)
@@ -38,8 +39,8 @@ def logout(update, _):
     message.edit_text(
         "注销账号之前，您可能希望导出订阅数据？",
         reply_markup=InlineKeyboardMarkup.from_row([
-            InlineKeyboardButton("直 接 注 销", callback_data="delete_account"),
-            InlineKeyboardButton("导 出 订 阅", callback_data="export")
+            InlineKeyboardButton("直  接  注  销", callback_data="delete_account"),
+            InlineKeyboardButton("导  出  订  阅", callback_data="export")
         ])
     )
 
@@ -68,14 +69,6 @@ def delete_account(update, context):
 # Podcast
 
 
-def pin_message(update):
-    update.callback_query.pin_message(disable_notification=True)
-
-
-def unpin_message(update):
-    update.callback_query.unpin_message()
-
-
 def subscribe_podcast(update, context):
     pattern = r'(subscribe_podcast_)(.+)'
     query = update.callback_query
@@ -88,20 +81,16 @@ def toggle_save_podcast(update, context, to: str):
     query = update.callback_query
     podcast_name = re.match(pattern, query.data)[2]
     podcast = context.bot_data['podcasts'].get(podcast_name)
+    kwargs = {}
 
     if (to == 'saved'):
-        pin_method = pin_message
         kwargs = {
             'save_text': '❤️',
             'save_action': "unsave_podcast"
         }
-    elif (to == 'unsaved'):
-        pin_method = unpin_message
-        kwargs = {}
 
     keyboard = PodcastPage(podcast, **kwargs).keyboard()
     query.edit_message_reply_markup(InlineKeyboardMarkup(keyboard))
-    pin_method(update)
 
 
 def save_podcast(update, context):
@@ -125,8 +114,7 @@ def unsubscribe_podcast(update, _):
         )
     )
     update.callback_query.answer((
-        f"即将退订播客：{podcast_name}。"
-        f"\n\n退订后，将不会收到该节目的更新。"), show_alert=True)
+        f"\n确认退订后，将不会收到 {podcast_name} 的更新。"))
 
 
 def confirm_unsubscribe(update, context):
@@ -138,7 +126,7 @@ def confirm_unsubscribe(update, context):
     context.bot_data['podcasts'][podcast_name].subscribers.remove(user.user_id)
     manage_page = ManagePage(
         podcast_names=user.subscription.keys(),
-        text=f'已退订：`{podcast_name}`'
+        text=f'`{podcast_name}` 退订成功'
     )
     context.bot.send_message(
         update.callback_query.from_user.id,
@@ -158,4 +146,18 @@ def back_to_actions(update, context):
     query.edit_message_text(
         text=page.text(),
         reply_markup=InlineKeyboardMarkup(page.keyboard())
+    )
+
+
+def export(update, context):
+    user = context.user_data['user']
+    if not user.subscription:
+        update.callback_query.message.reply_text('你还没有订阅的播客，请先订阅再导出～')
+        return
+    update.callback_query.message.reply_document(
+        filename=f"{user.name} 的 {manifest.name} 订阅.xml",
+        document=user.update_opml(),
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton('彻 底 注 销 账 号', callback_data='delete_account')
+        )
     )

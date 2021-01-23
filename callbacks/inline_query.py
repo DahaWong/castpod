@@ -1,7 +1,6 @@
 from utils.api_method import search
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
 import re
-from uuid import uuid4
 
 
 def handle_inline_query(update, context):
@@ -9,7 +8,7 @@ def handle_inline_query(update, context):
     query_text = query.query
     podcasts_match = re.match('^p (.*)', query_text)
     episodes_match = re.match('^e (.*)', query_text)
-    results, kwargs = [], {"auto_pagination": True, "cache_time": 90}
+    results, kwargs = [], {"auto_pagination": True, "cache_time": 40}
     if not query_text:
         results, kwargs = welcome(context)
     elif podcasts_match:
@@ -25,9 +24,9 @@ def handle_inline_query(update, context):
         podcast = podcasts.get(query_text)
         if podcast:
             results = show_episodes(podcast)
+            kwargs.update({"cache_time": 600})
         else:
             results = search_podcast(query_text)
-        kwargs.update({"cache_time": 600})
 
     query.answer(
         results,

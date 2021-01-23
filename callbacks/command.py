@@ -4,7 +4,6 @@ from manifest import manifest
 from models import User, Feed
 from components import ManagePage, PodcastPage
 from config import dev_user_id
-import re
 
 
 def start(update, context):
@@ -26,19 +25,15 @@ def start(update, context):
             f'\n\n您可以发送 OPML 文件或 RSS 链接以*导入播客订阅*。\n'
         )
 
-        keyboard = [[
-            InlineKeyboardButton(
-                '搜   索   播   客', switch_inline_query_current_chat="search "),
-            InlineKeyboardButton(
-                '订   阅   列   表', switch_inline_query_current_chat="")
-        ]]
-
-        welcome_message = message.reply_text(
+        message.reply_text(
             welcome_text,
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    '搜  索  播  客        |        管  理  订  阅',
+                    switch_inline_query_current_chat=""
+                )
+            )
         )
-
-        welcome_message.pin(disable_notification=True)
     else:
         podcast_name = decode(context.args[0]).decode('utf-8')
         podcast = context.bot_data['podcasts'][podcast_name]
@@ -85,7 +80,7 @@ def home(update, context):
     update.message.reply_text(
         '⭐️',
         reply_markup=InlineKeyboardMarkup.from_column(buttons)
-    )
+    ).pin()
 
     tips = (
         "\n⦿ 前往 Telegram `设置 → 外观 → 大表情 Emoji` 获得更好的显示效果"
@@ -160,7 +155,7 @@ def logout(update, context):
     if not check_login(update, context):
         return
     command_message_id = update.message.message_id
-    keyboard = [[InlineKeyboardButton("返回", callback_data=f"delete_command_context{command_message_id}"),
+    keyboard = [[InlineKeyboardButton("返回", callback_data=f"delete_command_context_{command_message_id}"),
                  InlineKeyboardButton("注销", callback_data="logout")]]
 
     update.message.reply_text(
@@ -197,4 +192,3 @@ def check_login(update, context):
         update.message.reply_text("请先登录：/start")
         return False
     return True
-
