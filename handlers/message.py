@@ -11,9 +11,9 @@ feed_handler = MessageHandler(Filters.entity(
     "url") & Filters.regex(r'^https?://'), callback.subscribe_feed)
 exit_handler = MessageHandler(Filters.regex(
     r'^╳$'), callback.exit_reply_keyboard)
-show_podcast_handler = MessageHandler(Filters.text, callback.show_feed)
 download_episode_handler = MessageHandler(Filters.regex(
-    r'🎙️ (?:.+) #(?:[0-9]+)'), callback.download_episode)
+    r'🎙️ (.+) #([0-9]+)'), callback.download_episode)
+show_podcast_handler = MessageHandler(Filters.text, callback.show_feed)
 
 handlers = [feed_handler, subscription_handler, exit_handler,
-            show_podcast_handler, download_episode_handler]
+            download_episode_handler, show_podcast_handler]
