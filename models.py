@@ -111,10 +111,7 @@ class Podcast(object):
         self.parse_feed(self.feed_url)
         if self.latest_episode.published_time != last_published_time:
             try:
-                if int(self.latest_episode.audio_size) >= 20000000 or not self.latest_episode.audio_size:
-                    audio_file = download(self.latest_episode, context)
-                else:
-                    audio_file = self.latest_episode.audio_url
+                audio_file = download(self.latest_episode, context)
                 encoded_podcast_name = encode(
                     bytes(self.name, 'utf-8')).decode("utf-8")
                 audio_message = context.bot.send_audio(

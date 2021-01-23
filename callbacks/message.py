@@ -173,10 +173,7 @@ def download_episode(update, context):
 def direct_download(podcast, episode, fetching_note, context):
     encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
     downloading_note = fetching_note.edit_text("下载中…")
-    if int(episode.audio_size) >= 20000000 or not episode.audio_size:
-        audio_file = download(episode, context)
-    else:
-        audio_file = episode.audio_url
+    audio_file = download(episode, context)
     uploading_note = downloading_note.edit_text("正在上传，请稍候…")
     audio_message = context.bot.send_audio(
         chat_id=f'@{podcast_vault}',
