@@ -16,6 +16,8 @@ def start(update, context):
         context.user_data.update({
             'user': user,
             'tips': ['search', 'help', 'logout', 'alert'],
+            'saved_podcasts' : {},
+            'saved_episodes' : {}
         })
 
     user = context.user_data['user']
@@ -73,8 +75,8 @@ def home(update, context):
         return
     buttons = [
         InlineKeyboardButton('搜索 | 管理', switch_inline_query_current_chat=''),
-        InlineKeyboardButton('收藏的播客', switch_inline_query_current_chat='p '),
-        InlineKeyboardButton('收藏的单集', switch_inline_query_current_chat='e ')
+        InlineKeyboardButton('收藏的播客', switch_inline_query_current_chat='p all!'),
+        InlineKeyboardButton('收藏的单集', switch_inline_query_current_chat='e all!')
     ]
 
     update.message.reply_text(

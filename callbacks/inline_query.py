@@ -1,6 +1,7 @@
 from utils.api_method import search
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
 import re
+import uuid
 
 
 def handle_inline_query(update, context):
@@ -13,12 +14,11 @@ def handle_inline_query(update, context):
         results, kwargs = welcome(context)
     elif podcasts_match:
         keyword = podcasts_match[1]
-        results = search_saved(
-            'podcasts', keyword, context) if keyword else show_saved('podcasts', context)
+        results = search_saved('podcasts', keyword, context)
+
     elif episodes_match:
         keyword = episodes_match[1]
-        results = search_saved(
-            'episodes', keyword, context) if keyword else show_saved('episodes', context)
+        results = search_saved('episodes', keyword, context)
     else:
         podcasts = context.bot_data['podcasts']
         podcast = podcasts.get(query_text)
@@ -127,9 +127,21 @@ def show_subscription(context):
     return results
 
 
-def search_saved(saved_type, keyword):
-    pass
-
-
-def show_saved(saved_type):
-    pass
+def search_saved(saved_type, keyword, context):
+    user_data = context.user_data
+    items = []
+    if keyword == 'all!':
+        items = user_data[f'saved_{saved_type}'].items()
+    else:
+        items = filter(lambda item: keyword in item,
+                       user_data[f'saved_{saved_type}'])
+    return [InlineQueryResultArticle(
+        id=uuid.uuid4(),
+        title=item_name,
+        input_message_content=InputTextMessageContent(
+            item.name, parse_mode=None),
+        description=item.host or item_name,
+        thumb_url=item.logo_url,
+        thumb_height=60,
+        thumb_width=60
+    ) for item_name, item in items]

@@ -87,6 +87,9 @@ def toggle_save_podcast(update, context, to: str):
             'save_text': '❤️',
             'save_action': "unsave_podcast"
         }
+        context.user_data['saved_podcasts'].update({podcast_name: podcast})
+    else:
+        context.user_data['saved_podcasts'].pop(podcast_name)
 
     keyboard = PodcastPage(podcast, **kwargs).keyboard()
     query.edit_message_reply_markup(InlineKeyboardMarkup(keyboard))
@@ -140,8 +143,10 @@ def back_to_actions(update, context):
     query = update.callback_query
     podcast_name = re.match(pattern, query.data)[2]
     podcast = context.bot_data['podcasts'].get(podcast_name)
-
-    page = PodcastPage(podcast)
+    if podcast_name in context.user_data['saved_podcasts']:
+        page = PodcastPage(podcast, save_text="❤️", save_action="unsave_podcast")
+    else:
+        page = PodcastPage(podcast)
     query.edit_message_text(
         text=page.text(),
         reply_markup=InlineKeyboardMarkup(page.keyboard())

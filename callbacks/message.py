@@ -2,7 +2,7 @@ from utils.parser import parse_opml
 from models import Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
 from components import PodcastPage, ManagePage
-from config import podcast_vault
+from config import podcast_vault, dev_user_id
 from callbacks.command import check_login
 from base64 import urlsafe_b64encode as encode
 from utils.downloader import local_download as download
@@ -214,7 +214,10 @@ def show_feed(update, context):
         feed_name = text
         feed = context.user_data['user'].subscription[feed_name]
         podcast = feed.podcast
-        page = PodcastPage(podcast)
+        if podcast.name in context.user_data['saved_podcasts']:
+            page = PodcastPage(podcast, save_text="❤️", save_action='unsave_podcast')
+        else:
+            page = PodcastPage(podcast)
         update.message.reply_text(
             text=page.text(),
             reply_markup=InlineKeyboardMarkup(page.keyboard())
@@ -223,12 +226,13 @@ def show_feed(update, context):
 
 
 def handle_audio(update, context):
-    print('in')
-    message = update.message
-    if message.sender_chat.user_name != podcast_vault:
+    post = update.channel_post
+    if not post: return
+    if post.chat.username != podcast_vault:
         return
-    podcast_name = re.match(r'🎙️ (.+)', message.caption)[1]
-    index = re.match(r'第 ([0-9]) 期', message.caption)[1] - 1
+    podcast_name = re.match(r'🎙️ (.+)', post.caption)[1]
+    index = int(re.match(r'总第 ([0-9]+) 期', post.caption)[1]) - 1
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[index]
-    episode.message_id = message.message_id
+    episode.message_id = post.message_id
+    context.bot.send_message(dev_user_id, f'message_id: {episode.message_id}')

@@ -114,7 +114,7 @@ class Podcast(object):
                     audio=audio_file,
                     caption=(
                         f"<b>{self.name}</b>\n"
-                        f"第 {len(self.episodes)} 期\n\n"
+                        f"总第 {len(self.episodes)} 期\n\n"
                         f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a> | "
                         f"<a href='{self.latest_episode.get_shownotes_url()}'>相关链接</a>"
                     ),
