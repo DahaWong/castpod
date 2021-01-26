@@ -1,20 +1,18 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from utils.parser import parse_opml
-import socket
 import datetime
-import re
-import time
 import feedparser
-import requests
-import os
-from urllib.error import URLError
-from uuid import NAMESPACE_URL, uuid5
-from telegraph import Telegraph
+import socket
+import random
 from manifest import manifest
-from PIL import Image
 from utils.downloader import local_download as download
 from config import podcast_vault, dev_user_id
 from base64 import urlsafe_b64encode as encode
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+import socket
+import datetime
+import re
+import feedparser
+import requests
+from telegraph import Telegraph
 
 
 class User(object):
@@ -82,7 +80,6 @@ class Podcast(object):
         self.name = self.name[:40]
         if len(self.name) == 40:
             self.name += '…'
-        # self.tags = feed.get('tags') or []
         self.logo_url = feed.get('image').get('href')
         self.download_logo()
         self.episodes = self.set_episodes(result['items'])
@@ -95,20 +92,24 @@ class Podcast(object):
         self.email = feed.author_detail.get('email') or ""
 
     def set_jobqueue(self, job_queue):
-        # job_queue.scheduler.job_defaults = {
-        #     'max_instances': 3
-        # }
-        job = job_queue.run_repeating(
+        job_queue.run_repeating(
             callback=self.update,
-            interval=datetime.timedelta(minutes=10),
-            name=self.name,
-            # job_kwargs = {'jobstore': 'castpod'}
+            interval=datetime.timedelta(
+                minutes=random.choice(range(30, 91, 3))),
+            name=self.name
         )
-        job.modify(max_instances=64)
 
     def update(self, context):
         last_published_time = self.latest_episode.published_time
         self.parse_feed(self.feed_url)
+        context.bot.send_message(
+            dev_user_id,
+            (
+                f'{context.job.name}\n'
+                f'最近一次更新：{last_published_time}\n'
+                f'上一次更新：{self.latest_episode.published_time}'
+            )
+        )
         if self.latest_episode.published_time != last_published_time:
             try:
                 audio_file = download(self.latest_episode, context)
