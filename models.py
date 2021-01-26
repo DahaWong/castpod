@@ -286,18 +286,14 @@ class Episode(object):
             author_url=f'https://t.me/{manifest.bot_id}'
         )
 
-        try:
-            res = telegraph.create_page(
-                title=f"{self.title}",
-                html_content=self.shownotes,
-                author_name=self.host or self.podcast_name
-            )
-            self.shownotes_url = f"https://telegra.ph/{res['path']}"
-            # print(self.shownotes_url)
-            return f"https://telegra.ph/{res['path']}"
-        except Exception as e:
-            print(e)
-            return ''
+        res = telegraph.create_page(
+            title=f"{self.title}",
+            html_content=self.shownotes,
+            author_name=self.host or self.podcast_name
+        )
+        self.shownotes_url = f"https://telegra.ph/{res['path']}"
+        # print(self.shownotes_url)
+        return f"https://telegra.ph/{res['path']}"
 
 
 class Feed(object):
