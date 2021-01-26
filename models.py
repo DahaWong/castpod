@@ -110,7 +110,7 @@ class Podcast(object):
                 f'上一次更新：{self.latest_episode.published_time}'
             )
         )
-        if self.latest_episode.published_time != last_published_time:
+        if self.latest_episode.published_time == last_published_time:
             try:
                 audio_file = download(self.latest_episode, context)
                 encoded_podcast_name = encode(
@@ -272,7 +272,6 @@ class Episode(object):
         html_content = re.sub(r'</?(?:div|span).*?>', '', html_content)
         html_content = html_content.replace('cite>', "i>")
         html_content = html_content.replace('’', "'")
-        # print(html_content)
         return html_content
 
     def get_shownotes_url(self):
@@ -292,8 +291,7 @@ class Episode(object):
             author_name=self.host or self.podcast_name
         )
         self.shownotes_url = f"https://telegra.ph/{res['path']}"
-        # print(self.shownotes_url)
-        return f"https://telegra.ph/{res['path']}"
+        return self.shownotes_url
 
 
 class Feed(object):
