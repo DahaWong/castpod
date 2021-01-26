@@ -14,6 +14,7 @@ exit_handler = MessageHandler(Filters.regex(
 download_episode_handler = MessageHandler(Filters.regex(
     r'🎙️ (.+) #([0-9]+)'), callback.download_episode)
 show_podcast_handler = MessageHandler(Filters.text, callback.show_feed)
+audio_handler = MessageHandler(Filters.audio, callback.handle_audio)
 
 handlers = [feed_handler, subscription_handler, exit_handler,
-            download_episode_handler, show_podcast_handler]
+            download_episode_handler, show_podcast_handler, audio_handler]

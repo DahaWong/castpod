@@ -2,6 +2,8 @@ import datetime
 import feedparser
 import socket
 import random
+
+from telegram.parsemode import ParseMode
 from manifest import manifest
 from utils.downloader import local_download as download
 from config import podcast_vault, dev_user_id
@@ -13,6 +15,7 @@ import re
 import feedparser
 import requests
 from telegraph import Telegraph
+from html import unescape
 
 
 class User(object):
@@ -77,16 +80,15 @@ class Podcast(object):
         self.name = feed.get('title')
         if not self.name:
             raise Exception("Cannot parse feed name.")
-        self.name = self.name[:40]
+        self.name = unescape(self.name)[:40]
         if len(self.name) == 40:
             self.name += '…'
         self.logo_url = feed.get('image').get('href')
         self.download_logo()
         self.episodes = self.set_episodes(result['items'])
         self.latest_episode = self.episodes[0]
-        if feed.author_detail.name != self.name:
-            self.host = feed.author_detail.name
-        else:
+        self.host = unescape(feed.author_detail.name)
+        if self.host == self.name:
             self.host = ''
         self.website = feed.link
         self.email = feed.author_detail.get('email') or ""
@@ -95,22 +97,14 @@ class Podcast(object):
         job_queue.run_repeating(
             callback=self.update,
             interval=datetime.timedelta(
-                minutes=random.choice(range(30, 91, 3))),
+                minutes=random.choice(range(30, 91, 2))),
             name=self.name
         )
 
     def update(self, context):
         last_published_time = self.latest_episode.published_time
         self.parse_feed(self.feed_url)
-        context.bot.send_message(
-            dev_user_id,
-            (
-                f'{context.job.name}\n'
-                f'最近一次更新：{last_published_time}\n'
-                f'上一次更新：{self.latest_episode.published_time}'
-            )
-        )
-        if self.latest_episode.published_time == last_published_time:
+        if self.latest_episode.published_time != last_published_time:
             try:
                 audio_file = download(self.latest_episode, context)
                 encoded_podcast_name = encode(
@@ -119,14 +113,16 @@ class Podcast(object):
                     chat_id=f'@{podcast_vault}',
                     audio=audio_file,
                     caption=(
-                        f"*{self.name}*"
-                        f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
-                        f" | [相关链接]({self.latest_episode.get_shownotes_url()})"
+                        f"<b>{self.name}</b>\n"
+                        f"第 {len(self.episodes)} 期\n\n"
+                        f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a> | "
+                        f"<a href='{self.latest_episode.get_shownotes_url()}'>相关链接</a>"
                     ),
                     title=self.latest_episode.title,
                     performer=f"{self.name} | {self.latest_episode.host or self.host}" if self.host else self.name,
                     duration=self.latest_episode.duration.seconds,
                     thumb=self.logo or self.logo_url,
+                    parse_mode = ParseMode.HTML
                     # timeout = 1800
                 )
                 self.latest_episode.message_id = audio_message.message_id
@@ -195,9 +191,8 @@ class Episode(object):
     def __init__(self, from_podcast: str, episode, podcast_logo):
         self.podcast_name = from_podcast
         self.podcast_logo = podcast_logo
-        if episode.get('author') != from_podcast:
-            self.host = episode.get('author') or ''
-        else:
+        self.host = unescape(episode.get('author')) or ''
+        if self.host == from_podcast:
             self.host = ''
         self.audio = self.set_audio(episode.enclosures)
         if self.audio:
@@ -207,18 +202,16 @@ class Episode(object):
             self.audio_url = ""
             self.audio_size = 0
         self.title = self.set_title(episode.get('title'))
-        self.subtitle = episode.get('subtitle') or ''
+        self.subtitle = unescape(episode.get('subtitle') or '')
         if self.title == self.subtitle:
             self.subtitle = ''
         self.logo_url = episode.get(
             'image').href if episode.get('image') else ''
         self.duration = self.set_duration(episode.get('itunes_duration'))
         self.content = episode.get('content')
-        self.summary = episode.get('summary') or ''
+        self.summary = unescape(episode.get('summary') or '')
         self.shownotes = self.set_shownotes()
-        # print(self.shownotes)
         self.timeline = self.set_timeline()
-        # print(self.timeline)
         self.shownotes_url = ''
         self.published_time = episode.published_parsed
         self.message_id = None
@@ -254,17 +247,18 @@ class Episode(object):
     def set_title(self, title):
         if not title:
             return ''
-        return title.lstrip(self.podcast_name)
+        return unescape(title).lstrip(self.podcast_name)
 
     def set_shownotes(self):
-        shownotes = self.content[0]['value'] if self.content else self.summary
+        shownotes = unescape(self.content[0]['value']) if self.content else self.summary
         img_content = f"<img src='{self.logo_url or self.podcast_logo}'>" if 'img' not in shownotes else ''
         return img_content + self.replace_invalid_tags(shownotes)
 
     def set_timeline(self):
+        self.shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.shownotes)
+        self.shownotes = re.sub(r'(?<=:[0-5][0-9])\S+', '', self.shownotes)
         pattern = r'(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
-        matches = re.finditer(pattern, re.sub(
-            r'</?(?:br|p|li).*?>', '\n', self.shownotes))
+        matches = re.finditer(pattern, self.shownotes)
         return '\n'.join([re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0]) for match in matches])
 
     def replace_invalid_tags(self, html_content):

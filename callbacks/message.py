@@ -1,6 +1,6 @@
 from utils.parser import parse_opml
 from models import Podcast
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode,ReplyKeyboardRemove
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
 from components import PodcastPage, ManagePage
 from config import podcast_vault
 from callbacks.command import check_login
@@ -220,3 +220,15 @@ def show_feed(update, context):
             reply_markup=InlineKeyboardMarkup(page.keyboard())
         )
         update.message.delete()
+
+
+def handle_audio(update, context):
+    print('in')
+    message = update.message
+    if message.sender_chat.user_name != podcast_vault:
+        return
+    podcast_name = re.match(r'🎙️ (.+)', message.caption)[1]
+    index = re.match(r'第 ([0-9]) 期', message.caption)[1] - 1
+    podcast = context.bot_data['podcasts'][podcast_name]
+    episode = podcast.episodes[index]
+    episode.message_id = message.message_id
