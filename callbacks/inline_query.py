@@ -7,18 +7,15 @@ import uuid
 def handle_inline_query(update, context):
     query = update.inline_query
     query_text = query.query
-    podcasts_match = re.match('^p (.*)', query_text)
-    episodes_match = re.match('^e (.*)', query_text)
+    podcasts_match = re.match('^p$', query_text)
+    episodes_match = re.match('^e$', query_text)
     results, kwargs = [], {"auto_pagination": True, "cache_time": 40}
     if not query_text:
         results, kwargs = welcome(context)
     elif podcasts_match:
-        keyword = podcasts_match[1]
-        results = search_saved('podcasts', keyword, context)
-
+        results = search_saved('podcasts', context)
     elif episodes_match:
-        keyword = episodes_match[1]
-        results = search_saved('episodes', keyword, context)
+        results = search_saved('episodes', context)
     else:
         podcasts = context.bot_data['podcasts']
         podcast = podcasts.get(query_text)
@@ -127,14 +124,14 @@ def show_subscription(context):
     return results
 
 
-def search_saved(saved_type, keyword, context):
-    user_data = context.user_data
-    items = []
-    if keyword == 'all!':
-        items = user_data[f'saved_{saved_type}'].items()
-    else:
-        items = filter(lambda item: keyword in item,
-                       user_data[f'saved_{saved_type}'])
+def search_saved(saved_type, context):
+    items = context.user_data[f'saved_{saved_type}'].items()
+    if not items:
+        return [InlineQueryResultArticle(
+            id=0,
+            title="收藏夹是空的 🥡",
+            input_message_content=InputTextMessageContent('/manage 管理订阅的播客'),
+        )]
     return [InlineQueryResultArticle(
         id=uuid.uuid4(),
         title=item_name,
