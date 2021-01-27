@@ -9,8 +9,8 @@ dispatcher = updater.dispatcher
 #updater.bot.log_out()
 
 # Use these methods before you move your bot to another local server:
-# updater.bot.delete_webhook() 
-# updater.bot.close()
+updater.bot.delete_webhook() 
+updater.bot.close()
 
 if not dispatcher.bot_data:
     updater.dispatcher.bot_data.update({"podcasts":{}})

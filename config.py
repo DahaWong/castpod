@@ -42,7 +42,7 @@ webhook_info = {
 }
 
 webhook_setting = {
-    "url": f'http://webhook.daha.me/{bot_token}',
+    "url": f'https://webhook.daha.me/{bot_token}',
     "max_connections": 1000,
     "drop_pending_updates": True,
     "allowed_updates": []
