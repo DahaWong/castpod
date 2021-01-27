@@ -21,9 +21,9 @@ for podcast in dispatcher.bot_data['podcasts'].values():
 register(updater.dispatcher)
 
 # Polling:
-updater.start_polling()
-updater.idle()
+# updater.start_polling()
+# updater.idle()
 
 # Webhook:
-# updater.start_webhook(**webhook_info)
-# updater.bot.set_webhook(**webhook_setting)
+updater.start_webhook(**webhook_info)
+updater.bot.set_webhook(**webhook_setting)
