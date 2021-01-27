@@ -251,7 +251,6 @@ class Episode(object):
 
     def set_shownotes(self):
         shownotes = unescape(self.content[0]['value']) if self.content else self.summary
-        print(shownotes)
         img_content = f"<img src='{self.logo_url or self.podcast_logo}'>" if 'img' not in shownotes else ''
         return img_content + self.replace_invalid_tags(shownotes)
 
@@ -261,6 +260,9 @@ class Episode(object):
         self.shownotes = re.sub(r'[\(\[\{【「（《<]+(?=:[0-5][0-9])', '', self.shownotes)
         pattern = r'(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
         matches = re.finditer(pattern, self.shownotes)
+        for match in matches:
+            print(match[0])
+            print(re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0]))
         return '\n'.join([re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0]) for match in matches])
 
     def replace_invalid_tags(self, html_content):
