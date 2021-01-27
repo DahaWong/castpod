@@ -212,6 +212,7 @@ class Episode(object):
         self.summary = unescape(episode.get('summary') or '')
         self.shownotes = self.set_shownotes()
         self.timeline = self.set_timeline()
+        print(self.timeline)
         self.shownotes_url = ''
         self.published_time = episode.published_parsed
         self.message_id = None
@@ -260,7 +261,7 @@ class Episode(object):
         self.shownotes = re.sub(r'[\(\[\{【「（《<]+(?=:[0-5][0-9])', '', self.shownotes)
         pattern = r'(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
         matches = re.finditer(pattern, self.shownotes)
-        print('\n'.join([re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0]) for match in matches]))
+        # print('\n'.join([re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0]) for match in matches]))
         return '\n'.join([re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0]) for match in matches])
 
     def replace_invalid_tags(self, html_content):
