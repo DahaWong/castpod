@@ -147,8 +147,7 @@ def download_episode(update, context):
         forwarded_message, forward_from_message = direct_download(
             podcast, episode, fetching_note, context)
     update.message.delete()
-    print(episode.shownotes)
-    print(episode.timeline)
+
     forwarded_message.edit_caption(
         caption=(
             f"🎙️ <b>{podcast.name}</b>\n\n<a href='{episode.get_shownotes_url() or podcast.website}'>相关链接</a>"
@@ -177,6 +176,8 @@ def direct_download(podcast, episode, fetching_note, context):
     downloading_note = fetching_note.edit_text("下载中…")
     audio_file = download(episode, context)
     uploading_note = downloading_note.edit_text("正在上传，请稍候…")
+    print(episode.shownotes)
+    print(episode.timeline)
     audio_message = context.bot.send_audio(
         chat_id=f'@{podcast_vault}',
         audio=audio_file,
