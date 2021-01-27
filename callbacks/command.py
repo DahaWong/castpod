@@ -25,6 +25,7 @@ def start(update, context):
         welcome_text = (
             f'欢迎使用 {manifest.name}！                                            '
             f'\n\n您可以发送 OPML 文件或 RSS 链接以*导入播客订阅*。\n'
+            f'\n⚠️ 目前还*没有正式上线*，数据有可能丢失，请妥善保管自己的订阅源～'
         )
 
         message.reply_text(
