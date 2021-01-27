@@ -9,7 +9,7 @@ dispatcher = updater.dispatcher
 # updater.bot.log_out()
 
 # Use these methods before you move your bot to another local server:
-# updater.bot.delete_webhook() 
+updater.bot.delete_webhook() 
 # updater.bot.close()
 
 # Polling:
