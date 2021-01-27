@@ -251,7 +251,9 @@ class Episode(object):
 
     def set_shownotes(self):
         shownotes = unescape(self.content[0]['value']) if self.content else self.summary
+        print(shownotes)
         img_content = f"<img src='{self.logo_url or self.podcast_logo}'>" if 'img' not in shownotes else ''
+        print(img_content + self.replace_invalid_tags(shownotes))
         return img_content + self.replace_invalid_tags(shownotes)
 
     def set_timeline(self):
