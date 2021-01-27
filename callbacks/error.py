@@ -29,20 +29,22 @@ def handle_error(update, context):
         f'<pre>{html.escape(tb_string)}</pre>'
     )
 
-    telegraph = Telegraph()
-    telegraph.create_account(
-        short_name=manifest.name,
-        author_name=manifest.name,
-        author_url=f'https://t.me/{manifest.bot_id}'
-    )
+    context.bot.send_message(int(dev_user_id), message)
 
-    res = telegraph.create_page(
-        title=f"Castpod 错误日志",
-        html_content=message,
-        author_name=manifest.name
-    )
+    # telegraph = Telegraph()
+    # telegraph.create_account(
+    #     short_name=manifest.name,
+    #     author_name=manifest.name,
+    #     author_url=f'https://t.me/{manifest.bot_id}'
+    # )
 
-    context.bot.send_message(
-        chat_id=int(dev_user_id),
-        text=f"[错误日志](https://telegra.ph/{res['path']}) #{datetime.date.today()}"
-    )
+    # res = telegraph.create_page(
+    #     title=f"Castpod 错误日志",
+    #     html_content=message,
+    #     author_name=manifest.name
+    # )
+
+    # context.bot.send_message(
+    #     chat_id=int(dev_user_id),
+    #     text=f"[错误日志](https://telegra.ph/{res['path']}) #{datetime.date.today()}"
+    # )
