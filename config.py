@@ -30,7 +30,7 @@ update_info = {
    'token': bot_token,
    'use_context': True,
    'persistence': persistence,
-#    'base_url': bot_api,
+   'base_url': bot_api,
    'defaults': defaults,
    'workers': 32
  }
