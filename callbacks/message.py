@@ -177,7 +177,6 @@ def direct_download(podcast, episode, fetching_note, context):
     audio_file = download(episode, context)
     uploading_note = downloading_note.edit_text("正在上传，请稍候…")
     print(episode.shownotes)
-    print(episode.timeline)
     audio_message = context.bot.send_audio(
         chat_id=f'@{podcast_vault}',
         audio=audio_file,

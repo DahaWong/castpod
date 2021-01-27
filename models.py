@@ -251,6 +251,7 @@ class Episode(object):
 
     def set_shownotes(self):
         shownotes = unescape(self.content[0]['value']) if self.content else self.summary
+        print(shownotes)
         img_content = f"<img src='{self.logo_url or self.podcast_logo}'>" if 'img' not in shownotes else ''
         return img_content + self.replace_invalid_tags(shownotes)
 
@@ -264,7 +265,7 @@ class Episode(object):
 
     def replace_invalid_tags(self, html_content):
         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
-        html_content = re.sub(r'</?(?:div|span/audio).*?>', '', html_content)
+        html_content = re.sub(r'</?(?:div|span|audio).*?>', '', html_content)
         html_content = html_content.replace('cite>', "i>")
         html_content = html_content.replace('’', "'")
         return html_content
