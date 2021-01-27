@@ -269,6 +269,7 @@ class Episode(object):
         return html_content
 
     def get_shownotes_url(self):
+        print(self.shownotes)
         if self.shownotes_url:
             return self.shownotes_url
 
@@ -285,7 +286,6 @@ class Episode(object):
             author_name=self.host or self.podcast_name
         )
         self.shownotes_url = f"https://telegra.ph/{res['path']}"
-        print(self.shownotes_url)
         return self.shownotes_url
 
 
