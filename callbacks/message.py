@@ -21,9 +21,9 @@ def save_subscription(update, context):
     doc_file = context.bot.getFile(doc['file_id'])
     doc_name = re.sub(r'.+(?=\.xml|\.opml?)',
                       str(user.user_id), doc['file_name'])
-    print(doc_file)
+    # print(doc_file)
     path = doc_file.download(doc_name)
-    print(path)
+    # print(path)
     try:
         with open(path, 'r') as f:
             feeds = parse_opml(f)
@@ -36,8 +36,7 @@ def save_subscription(update, context):
     subscribing_note = parsing_note.edit_text(f"订阅中 (0/{len(feeds)})")
     podcasts = []
     failed_feeds = []
-
-    def add_feed(feed):
+    for feed in feeds:  
         if feed['name'] not in cached_podcasts.keys():
             try:
                 podcast = Podcast(feed['url'])
@@ -55,22 +54,16 @@ def save_subscription(update, context):
             podcast.subscribers.add(user.user_id)
         subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{len(feeds)})")
 
-    for feed in feeds:
-        context.dispatcher.run_async(add_feed, feed=feed)
-
-    while len(feeds) != len(podcasts) + len(failed_feeds):
-        pass
+    if len(podcasts):
+        user.import_feeds(podcasts)
+        newline = '\n'
+        reply = f"成功订阅 {len(feeds)} 部播客！" if not len(failed_feeds) else (
+            f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
+            f"\n\n可能损坏的订阅源："
+            f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
+        )
     else:
-        if len(podcasts):
-            user.import_feeds(podcasts)
-            newline = '\n'
-            reply = f"成功订阅 {len(feeds)} 部播客！" if not len(failed_feeds) else (
-                f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
-                f"\n\n可能损坏的订阅源："
-                f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
-            )
-        else:
-            reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
+        reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
     subscribing_note.edit_text(
         text=reply,
