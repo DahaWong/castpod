@@ -87,7 +87,7 @@ def home(update, context):
 
     tips = (
         "\n⦿ 前往 Telegram `设置 → 外观 → 大表情 Emoji` 获得更好的显示效果"
-        f"\n⦿ 对话框中输入 `@{manifest.bot_id} ` 以唤出管理面板，接着输入关键词即可搜索播客"
+        f"\n⦿ 对话框中输入 `@{manifest.bot_id}` 以唤出管理面板，接着输入关键词即可搜索播客"
     )
 
     Tips(from_command='search', text=tips).send(update, context)

@@ -13,12 +13,12 @@ dispatcher = updater.dispatcher
 # updater.bot.close()
 
 # Polling:
-# updater.start_polling()
-# updater.idle()
+updater.start_polling()
+updater.idle()
 
 # Webhook:
-updater.start_webhook(**webhook_info)
-updater.bot.set_webhook(**webhook_setting)
+# updater.start_webhook(**webhook_info)
+# updater.bot.set_webhook(**webhook_setting)
 
 if not dispatcher.bot_data:
     updater.dispatcher.bot_data.update({"podcasts":{}})
