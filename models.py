@@ -256,7 +256,8 @@ class Episode(object):
 
     def set_timeline(self):
         self.shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.shownotes)
-        self.shownotes = re.sub(r'(?<=:[0-5][0-9])\S+', '', self.shownotes)
+        self.shownotes = re.sub(r'(?<=:[0-5][0-9])[\)\]\}】」）》>]+', '', self.shownotes)
+        self.shownotes = re.sub(r'[\(\[\{【「（《<]+(?=:[0-5][0-9])', '', self.shownotes)
         pattern = r'(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
         matches = re.finditer(pattern, self.shownotes)
         return '\n'.join([re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0]) for match in matches])
