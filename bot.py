@@ -12,6 +12,14 @@ dispatcher = updater.dispatcher
 # updater.bot.delete_webhook() 
 # updater.bot.close()
 
+# Polling:
+# updater.start_polling()
+# updater.idle()
+
+# Webhook:
+updater.start_webhook(**webhook_info)
+updater.bot.set_webhook(**webhook_setting)
+
 if not dispatcher.bot_data:
     updater.dispatcher.bot_data.update({"podcasts":{}})
 
@@ -20,10 +28,3 @@ for podcast in dispatcher.bot_data['podcasts'].values():
 
 register(updater.dispatcher)
 
-# Polling:
-# updater.start_polling()
-# updater.idle()
-
-# Webhook:
-updater.start_webhook(**webhook_info)
-updater.bot.set_webhook(**webhook_setting)
