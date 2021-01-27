@@ -211,6 +211,7 @@ class Episode(object):
         self.content = episode.get('content')
         self.summary = unescape(episode.get('summary') or '')
         self.shownotes = self.set_shownotes()
+        print(self.shownotes)
         self.timeline = self.set_timeline()
         self.shownotes_url = ''
         self.published_time = episode.published_parsed

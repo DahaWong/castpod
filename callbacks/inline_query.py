@@ -129,8 +129,9 @@ def search_saved(saved_type, context):
     if not items:
         return [InlineQueryResultArticle(
             id=0,
-            title="收藏夹是空的 🥡",
+            title="收藏夹还是空的",
             input_message_content=InputTextMessageContent('/manage 管理订阅的播客'),
+            description='🥡',
         )]
     return [InlineQueryResultArticle(
         id=uuid.uuid4(),
