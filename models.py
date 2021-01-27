@@ -251,13 +251,12 @@ class Episode(object):
 
     def set_shownotes(self):
         shownotes = unescape(self.content[0]['value']) if self.content else self.summary
-        print(shownotes)
         img_content = f"<img src='{self.logo_url or self.podcast_logo}'>" if 'img' not in shownotes else ''
-        print(img_content + self.replace_invalid_tags(shownotes))
         return img_content + self.replace_invalid_tags(shownotes)
 
     def set_timeline(self):
         self.shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.shownotes)
+        print(self.shownotes)
         self.shownotes = re.sub(r'(?<=:[0-5][0-9])[\)\]\}】」）》>]+', '', self.shownotes)
         self.shownotes = re.sub(r'[\(\[\{【「（《<]+(?=:[0-5][0-9])', '', self.shownotes)
         pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
