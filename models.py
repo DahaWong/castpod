@@ -264,13 +264,12 @@ class Episode(object):
 
     def replace_invalid_tags(self, html_content):
         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
-        html_content = re.sub(r'</?(?:div|span).*?>', '', html_content)
+        html_content = re.sub(r'</?(?:div|span/audio).*?>', '', html_content)
         html_content = html_content.replace('cite>', "i>")
         html_content = html_content.replace('’', "'")
         return html_content
 
     def get_shownotes_url(self):
-        print(self.shownotes)
         if self.shownotes_url:
             return self.shownotes_url
 
