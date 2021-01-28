@@ -85,7 +85,7 @@ class Podcast(object):
         if len(self.name) == 40:
             self.name += '…'
         self.logo_url = feed.get('image').get('href')
-        self.download_logo()
+        # self.download_logo()
         self.episodes = self.set_episodes(result['items'])
         self.latest_episode = self.episodes[0]
         self.host = unescape(feed.author_detail.name)
@@ -118,7 +118,7 @@ class Podcast(object):
                     title=self.latest_episode.title,
                     performer=f"{self.name} | {self.latest_episode.host or self.host}" if self.host else self.name,
                     duration=self.latest_episode.duration.seconds,
-                    thumb=self.logo or self.logo_url,
+                    thumb=self.logo_url,
                     parse_mode = ParseMode.HTML
                     # timeout = 1800
                 )
@@ -156,28 +156,28 @@ class Podcast(object):
             episodes.append(Episode(self.name, episode, self.logo_url))
         return episodes
 
-    def download_logo(self):
-        infile = f'public/logos/{self.name}.jpg'
-        with open(infile, 'wb') as f:
-            response = requests.get(
-                self.logo_url, allow_redirects=True, stream=True)
-            if not response.ok:
-                raise Exception("URL Open Error: can't get this logo.")
-            for block in response.iter_content(1024):
-                if not block:
-                    break
-                f.write(block)
-        self.logo = infile
-        # outfile = os.path.splitext(infile)[0] + ".thumbnail.jpg"
-        # try:
-        #     with Image.open(infile) as im:
-        #         im.thumbnail(size=(320, 320))
-        #         im.convert('RGB')
-        #         im.save(outfile, "JPEG")
-        #     self.thumbnail = outfile
-        # except Exception as e:
-        #     print(e)
-        #     self.thumbnail = ''
+    # def download_logo(self):
+    #     infile = f'public/logos/{self.name}.jpg'
+    #     with open(infile, 'wb') as f:
+    #         response = requests.get(
+    #             self.logo_url, allow_redirects=True, stream=True)
+    #         if not response.ok:
+    #             raise Exception("URL Open Error: can't get this logo.")
+    #         for block in response.iter_content(1024):
+    #             if not block:
+    #                 break
+    #             f.write(block)
+    #     self.logo = infile
+    #     # outfile = os.path.splitext(infile)[0] + ".thumbnail.jpg"
+    #     # try:
+    #     #     with Image.open(infile) as im:
+    #     #         im.thumbnail(size=(320, 320))
+    #     #         im.convert('RGB')
+    #     #         im.save(outfile, "JPEG")
+    #     #     self.thumbnail = outfile
+    #     # except Exception as e:
+    #     #     print(e)
+    #     #     self.thumbnail = ''
 
 
 class Episode(object):
