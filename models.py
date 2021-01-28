@@ -27,7 +27,7 @@ class User(object):
         self.name = name
         self.user_id = user_id
         self.subscription = {}
-        self.subscription_path = f"public/subscriptions/{self.user_id}.xml"
+        self.subscription_path = f"./public/subscriptions/{self.user_id}.xml"
 
     def import_feeds(self, podcasts):
         for podcast in podcasts:
