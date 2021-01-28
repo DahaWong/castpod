@@ -66,7 +66,7 @@ def about(update, context):
         reply_markup=markup
     )
     jobs = context.job_queue.jobs()
-    s = '\n'.join([job.name for job in jobs])
+    s = '\n'.join([job.name + ' ' + job.next_t for job in jobs])
     if s:
         context.bot.send_message(dev_user_id, s)
 
@@ -80,10 +80,12 @@ def home(update, context):
         InlineKeyboardButton('收藏的单集', switch_inline_query_current_chat='e')
     ]
 
-    update.message.reply_text(
+    message = update.message.reply_text(
         '⭐️',
         reply_markup=InlineKeyboardMarkup.from_column(buttons)
-    ).pin()
+    )
+
+    message.pin()
 
     tips = (
         "\n⦿ 前往 Telegram `设置 → 外观 → 大表情 Emoji` 获得更好的显示效果"

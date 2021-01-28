@@ -22,14 +22,22 @@ updater.start_webhook(**webhook_info)
 updater.bot.set_webhook(**webhook_setting)
 
 if not dispatcher.bot_data:
-    updater.dispatcher.bot_data.update({"podcasts":{}})
+    dispatcher.bot_data.update(
+        {"podcasts":{}}
+    )
 
-for podcast in dispatcher.bot_data['podcasts'].values():
-    podcast.set_jobqueue(updater.job_queue)
+def make_job(i):
+    def job(context):
+        podcasts = context.bot_data['podcasts']
+        if not podcasts: return 
+        for podcast in podcasts:
+            if i in podcast.job_group:
+                podcast.update()
+    return job
 
-# for i in range(96):
-#     time = datetime.time(hour=i//4, minute=i*15%60)
-#     dispatcher.job_queue.run_daily(callback, time, name=f'check_update_{i}')
+for i in range(96):
+    time = datetime.time(hour=i//4, minute=i*15%60)
+    dispatcher.job_queue.run_daily(make_job(i), time, name=f'update_podcast_group_{i}')
 
 register(updater.dispatcher)
 

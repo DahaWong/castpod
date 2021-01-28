@@ -70,6 +70,7 @@ class Podcast(object):
         # self.id = uuid5(NAMESPACE_URL, feed_url)
         self.parse_feed(feed_url)
         self.subscribers = set()
+        self.set_job_group()
 
     def parse_feed(self, url):
         socket.setdefaulttimeout(5)
@@ -93,13 +94,9 @@ class Podcast(object):
         self.website = feed.link
         self.email = feed.author_detail.get('email') or ""
 
-    def set_jobqueue(self, job_queue):
-        job_queue.run_repeating(
-            callback=self.update,
-            interval=datetime.timedelta(
-                minutes=random.choice(range(30, 91, 2))),
-            name=self.name
-        )
+    def set_job_group(self):
+        i = random.randint(0,95)
+        self.job_group = [i % 96 for i in range(i, i + 81, 16)]
 
     def update(self, context):
         last_published_time = self.latest_episode.published_time
