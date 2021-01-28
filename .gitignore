@@ -9,3 +9,6 @@ test*
 persistence
 manifest.py 
 public/*
+
+# Dev
+ecosystem.config.js

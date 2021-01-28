@@ -66,7 +66,7 @@ def about(update, context):
         reply_markup=markup
     )
     jobs = context.job_queue.jobs()
-    s = '\n'.join([job.name + ' ' + job.next_t for job in jobs])
+    s = '\n'.join([job.name + ' ' + str(job.next_t) for job in jobs])
     if s:
         context.bot.send_message(dev_user_id, s)
 
