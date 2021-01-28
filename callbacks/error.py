@@ -2,6 +2,8 @@ import html
 import json
 import logging
 import traceback
+
+from telegram.parsemode import ParseMode
 from config import dev_user_id
 from telegraph import Telegraph
 from manifest import manifest
@@ -29,7 +31,11 @@ def handle_error(update, context):
         f'<pre>{html.escape(tb_string)}</pre>'
     )
 
-    context.bot.send_message(int(dev_user_id), message)
+    context.bot.send_message(
+        chat_id=int(dev_user_id),
+        text=message,
+        parse_mode=ParseMode.HTML
+    )
 
     # telegraph = Telegraph()
     # telegraph.create_account(

@@ -1,3 +1,4 @@
+import datetime
 from config import update_info, webhook_info, webhook_setting
 from telegram.ext import Updater
 from handlers.register import register
@@ -25,6 +26,10 @@ if not dispatcher.bot_data:
 
 for podcast in dispatcher.bot_data['podcasts'].values():
     podcast.set_jobqueue(updater.job_queue)
+
+# for i in range(96):
+#     time = datetime.time(hour=i//4, minute=i*15%60)
+#     dispatcher.job_queue.run_daily(callback, time, name=f'check_update_{i}')
 
 register(updater.dispatcher)
 
