@@ -28,7 +28,7 @@ if not dispatcher.bot_data:
 
 def make_job(i):
     def job(context):
-        podcasts = context.bot_data['podcasts']
+        podcasts = context.bot_data['podcasts'].values()
         if not podcasts: return 
         for podcast in podcasts:
             if i in podcast.job_group:
