@@ -66,7 +66,8 @@ def save_subscription(update, context):
         reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
     manage_page = ManagePage([podcast.name[:32] for podcast in podcasts], text = reply)
-    subscribing_note.edit_text(
+    subscribing_note.delete()
+    update.message.reply_text(
         text = manage_page.text,
         reply_markup = ReplyKeyboardMarkup(
             manage_page.keyboard(),
