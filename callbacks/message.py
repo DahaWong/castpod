@@ -1,3 +1,4 @@
+from handlers import message
 from utils.parser import parse_opml
 from models import Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
@@ -216,14 +217,15 @@ def show_feed(update, context):
 
 def handle_audio(update, context):
     context.bot.send_message(dev_user_id, 'handle audio')
-    post = update.channel_post
-    if not post:
+    message = update.message
+    if not message:
         return
-    if post.chat.username != podcast_vault:
+    if not message.from_user.id == 777000:
         return
-    podcast_name = re.match(r'🎙️ (.+)', post.caption)[1]
-    index = int(re.match(r'总第 ([0-9]+) 期', post.caption)[1])
+    podcast_name = re.match(r'🎙️ (.+)', message.caption)[1]
+    print(message.caption)
+    index = int(re.match(r'总第 ([0-9]+) 期', message.caption)[1])
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[-index]
-    episode.message_id = post.message_id
+    episode.message_id = message.message_id
     context.bot.send_message(dev_user_id, f'{podcast_name}\n{episode.title}')
