@@ -37,5 +37,6 @@ class ManagePage(object):
 
     def keyboard(self):
         podcasts_count = len(self.podcast_names)
+        if not podcasts_count: return [['订阅列表是空的～']]
         rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
         return [['╳']]+[self.row(i) for i in range(rows_count)]

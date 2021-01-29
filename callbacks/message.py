@@ -65,13 +65,13 @@ def save_subscription(update, context):
     else:
         reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
+    manage_page = ManagePage([podcast.name[:32] for podcast in podcasts], text = reply)
     subscribing_note.edit_text(
-        text=reply,
-        reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton(
-                "订阅列表",
-                switch_inline_query_current_chat=""
-            )
+        text = manage_page.text,
+        reply_markup = ReplyKeyboardMarkup(
+            manage_page.keyboard(),
+            resize_keyboard=True,
+            one_time_keyboard=True
         )
     )
 
