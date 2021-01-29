@@ -35,8 +35,8 @@ def make_job(i):
                 podcast.update()
     return job
 
-for i in range(96):
-    time = datetime.time(hour=i//4, minute=i*15%60)
+for i in range(48):
+    time = datetime.time(hour=i//4, minute=i*30%60)
     dispatcher.job_queue.run_daily(make_job(i), time, name=f'update_podcast_group_{i}')
 
 register(updater.dispatcher)

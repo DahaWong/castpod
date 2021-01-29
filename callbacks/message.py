@@ -225,5 +225,5 @@ def handle_audio(update, context):
     podcast_name, index = match[1], int(match[2])
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[-index]
-    episode.message_id = message.message_id
+    episode.message_id = message.forward_from_message_id
     # episode.file_id = message.audio.file_id

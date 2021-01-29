@@ -13,7 +13,6 @@ import socket
 import datetime
 import re
 import feedparser
-import requests
 from telegraph import Telegraph
 from html import unescape
 
@@ -95,8 +94,8 @@ class Podcast(object):
         self.email = feed.author_detail.get('email') or ""
 
     def set_job_group(self):
-        i = random.randint(0,95)
-        self.job_group = [i % 96 for i in range(i, i + 81, 16)]
+        i = random.randint(0,47)
+        self.job_group = [i % 48 for i in range(i, i + 41, 8)]
 
     def update(self, context):
         last_published_time = self.latest_episode.published_time
