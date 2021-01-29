@@ -222,7 +222,7 @@ def handle_audio(update, context):
         return
     if not message.from_user.id == 777000:
         return
-    match = re.match(r'🎙️ (.+?)\n总第 ([0-9]+) 期', message.caption)[1]
+    match = re.match(r'🎙️ (.+?)\n总第 ([0-9]+) 期', message.caption)
     podcast_name, index = match[1], int(match[2])
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[-index]
