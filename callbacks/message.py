@@ -146,7 +146,7 @@ def download_episode(update, context):
             chat_id=f'@{podcast_vault}',
             audio=audio_file,
             caption=(
-                f"*{podcast.name}*\n"
+                f"🎙️ *{podcast.name}*\n"
                 f"总第 {index} 期"
                 f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
                 f" | [相关链接]({episode.get_shownotes_url()})"
