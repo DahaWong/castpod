@@ -89,7 +89,7 @@ def search_podcast(keyword):
         for result in searched_results:
             name = re.sub(r"[_*`]", ' ', result['collectionName'])
             host = re.sub(r"[_*`]", ' ', result['artistName'])
-            feed = result['feedUrl']
+            feed = result.get('feedUrl') or '（此播客没有提供订阅源）'
             thumbnail_small = result['artworkUrl60']
 
             # 如果不在 机器人主页，则：

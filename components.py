@@ -31,7 +31,7 @@ class ManagePage(object):
         self.text = text
 
     def row(self, i):
-        row = [name for index, name in enumerate(
+        row = [name[:32] for index, name in enumerate(
             self.podcast_names) if index // 3 == i]
         return row
 
