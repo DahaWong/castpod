@@ -160,7 +160,7 @@ def download_episode(update, context):
         uploading_note.delete()
         forwarded_message = audio_message.forward(
             context.user_data['user'].user_id)
-        forward_from_message = episode.message_id = audio_message.message_id
+        forward_from_message = audio_message.message_id
     update.message.delete()
 
     forwarded_message.edit_caption(
@@ -216,7 +216,6 @@ def show_feed(update, context):
 
 
 def handle_audio(update, context):
-    context.bot.send_message(dev_user_id, 'handle audio')
     message = update.message
     if not message:
         return
@@ -227,4 +226,4 @@ def handle_audio(update, context):
     podcast = context.bot_data['podcasts'][podcast_name]
     episode = podcast.episodes[-index]
     episode.message_id = message.message_id
-    context.bot.send_message(dev_user_id, f'{podcast_name}\n{episode.title}')
+    # episode.file_id = message.audio.file_id
