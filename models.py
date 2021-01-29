@@ -81,8 +81,8 @@ class Podcast(object):
         self.name = feed.get('title')
         if not self.name:
             raise Exception("Cannot parse feed name.")
-        self.name = unescape(self.name)[:40]
-        if len(self.name) == 40:
+        self.name = unescape(self.name)[:32]
+        if len(self.name) == 32:
             self.name += '…'
         self.logo_url = feed.get('image').get('href')
         # self.download_logo()

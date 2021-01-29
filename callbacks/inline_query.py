@@ -90,7 +90,7 @@ def search_podcast(keyword):
             name = re.sub(r"[_*`]", ' ', result['collectionName'])
             host = re.sub(r"[_*`]", ' ', result['artistName'])
             feed = result.get('feedUrl') or '（此播客没有提供订阅源）'
-            thumbnail_small = result['artworkUrl60']
+            thumbnail_small = result.get('artworkUrl60')
 
             # 如果不在 机器人主页，则：
             # [InlineKeyboardButton('前  往  B O T', url = f"https://t.me/{manifest.bot_id}")],
@@ -101,7 +101,7 @@ def search_podcast(keyword):
                 input_message_content=InputTextMessageContent(
                     feed, parse_mode=None),
                 description=host,
-                thumb_url=thumbnail_small,
+                thumb_url=thumbnail_small or None,
                 thumb_height=60,
                 thumb_width=60
             )

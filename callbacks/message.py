@@ -36,10 +36,9 @@ def save_subscription(update, context):
     subscribing_note = parsing_note.edit_text(f"订阅中 (0/{len(feeds)})")
     podcasts = []
     failed_feeds = []
-    for feed in feeds:  
+    for feed in feeds:
         if feed['name'] not in cached_podcasts.keys():
             try:
-                # print(feed['name'])
                 podcast = Podcast(feed['url'])
                 podcasts.append(podcast)
                 podcast.subscribers.add(user.user_id)
@@ -54,7 +53,7 @@ def save_subscription(update, context):
             podcast.subscribers.add(user.user_id)
         subscribing_note.edit_text(f"订阅中 ({len(podcasts)}/{len(feeds)})")
 
-    if len(podcasts):
+    if podcasts:
         user.import_feeds(podcasts)
         newline = '\n'
         reply = f"成功订阅 {len(feeds)} 部播客！" if not len(failed_feeds) else (
@@ -114,7 +113,7 @@ def subscribe_feed(update, context):
             podcasts.update({podcast.name: podcast})
     except Exception as e:
         print(e)
-        subscribing_message.edit_text("订阅失败。可能是因为订阅源损坏 :(")
+        subscribing_message.edit_text("订阅失败，可能是因为订阅源损坏 :(")
 
 
 def download_episode(update, context):
@@ -138,8 +137,29 @@ def download_episode(update, context):
         )
         forward_from_message = episode.message_id
     else:
-        forwarded_message, forward_from_message = direct_download(
-            podcast, episode, fetching_note, context)
+        encoded_podcast_name = encode(
+            bytes(podcast.name, 'utf-8')).decode("utf-8")
+        downloading_note = fetching_note.edit_text("下载中…")
+        audio_file = download(episode, context)
+        uploading_note = downloading_note.edit_text("正在上传，请稍候…")
+        audio_message = context.bot.send_audio(
+            chat_id=f'@{podcast_vault}',
+            audio=audio_file,
+            caption=(
+                f"*{podcast.name}*\n"
+                f"总第 {index} 期"
+                f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
+                f" | [相关链接]({episode.get_shownotes_url()})"
+            ),
+            title=episode.title,
+            performer=f"{podcast.name} | {episode.host or podcast.host}" if podcast.host else podcast.name,
+            duration=episode.duration.seconds,
+            thumb=podcast.logo_url
+        )
+        uploading_note.delete()
+        forwarded_message = audio_message.forward(
+            context.user_data['user'].user_id)
+        forward_from_message = episode.message_id = audio_message.message_id
     update.message.delete()
 
     forwarded_message.edit_caption(
@@ -161,34 +181,7 @@ def download_episode(update, context):
         ]])
     )
     # except Exception as e:
-    #     print(e)
     #     update.message.reply_text(f'*{podcast.name}* - 《{episode.title}》下载失败。\n\n请联系[开发者](https://t.me/dahawong)以获得更多帮助。')
-
-
-def direct_download(podcast, episode, fetching_note, context):
-    encoded_podcast_name = encode(bytes(podcast.name, 'utf-8')).decode("utf-8")
-    downloading_note = fetching_note.edit_text("下载中…")
-    audio_file = download(episode, context)
-    uploading_note = downloading_note.edit_text("正在上传，请稍候…")
-    audio_message = context.bot.send_audio(
-        chat_id=f'@{podcast_vault}',
-        audio=audio_file,
-        caption=(
-            f"*{podcast.name}*"
-            f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
-            f" | [相关链接]({episode.get_shownotes_url()})"
-        ),
-        title=episode.title,
-        performer=f"{podcast.name} | {episode.host or podcast.host}" if podcast.host else podcast.name,
-        duration=episode.duration.seconds,
-        thumb=podcast.logo_url,
-        # timeout = 1800
-    )
-    uploading_note.delete()
-    forwarded_message = audio_message.forward(
-        context.user_data['user'].user_id)
-    episode.message_id = audio_message.message_id
-    return forwarded_message, audio_message.message_id
 
 
 def exit_reply_keyboard(update, context):
@@ -210,7 +203,8 @@ def show_feed(update, context):
         feed = context.user_data['user'].subscription[feed_name]
         podcast = feed.podcast
         if podcast.name in context.user_data['saved_podcasts']:
-            page = PodcastPage(podcast, save_text="❤️", save_action='unsave_podcast')
+            page = PodcastPage(podcast, save_text="❤️",
+                               save_action='unsave_podcast')
         else:
             page = PodcastPage(podcast)
         update.message.reply_text(
@@ -221,13 +215,15 @@ def show_feed(update, context):
 
 
 def handle_audio(update, context):
+    context.bot.send_message(dev_user_id, 'handle_audio')
     post = update.channel_post
-    if not post: return
+    if not post:
+        return
     if post.chat.username != podcast_vault:
         return
     podcast_name = re.match(r'🎙️ (.+)', post.caption)[1]
-    index = int(re.match(r'总第 ([0-9]+) 期', post.caption)[1]) - 1
+    index = int(re.match(r'总第 ([0-9]+) 期', post.caption)[1])
     podcast = context.bot_data['podcasts'][podcast_name]
-    episode = podcast.episodes[index]
+    episode = podcast.episodes[-index]
     episode.message_id = post.message_id
-    context.bot.send_message(dev_user_id, f'message_id: {episode.message_id}')
+    context.bot.send_message(dev_user_id, f'{podcast_name}\n{episode.title}')
