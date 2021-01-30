@@ -17,6 +17,7 @@ def start(update, context):
         context.user_data.update({
             'user': user,
             'tips': ['search', 'help', 'logout', 'alert'],
+            'is_home_pinned': False,
             'saved_podcasts': {},
             'saved_episodes': {}
         })
@@ -85,7 +86,10 @@ def home(update, context):
         text='⭐️',
         reply_markup=InlineKeyboardMarkup.from_column(buttons)
     ).result()
-    run_async(message.pin)
+
+    if not context.user_data['is_home_pinned']:
+        run_async(message.pin)
+        context.user_data['is_home_pinned'] = True
 
     tips = (
         "⦿ 前往 Telegram `设置 → 外观 → 大表情 Emoji` 获得更好的显示效果\n"
