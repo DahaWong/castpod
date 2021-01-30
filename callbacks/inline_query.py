@@ -112,7 +112,7 @@ def show_subscription(context):
         results = [InlineQueryResultArticle(
             id=0,
             title='订阅列表还是空的 🥡',
-            description=f'试着在 `@{manifest.bot_id} ` 后面输入关键词，寻找喜欢的播客吧',
+            description=f'试着在 @{manifest.bot_id} 后面输入关键词，寻找喜欢的播客吧',
             input_message_content=InputTextMessageContent('🔍️'),
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
