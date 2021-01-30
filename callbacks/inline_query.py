@@ -12,19 +12,19 @@ def handle_inline_query(update, context):
     episodes_match = re.match('^e$', query_text)
     results, kwargs = [], {"auto_pagination": True, "cache_time": 10}
     if not query_text:
-        results, kwargs = run_async(welcome, context)
+        results, kwargs = run_async(welcome, context).result()
     elif podcasts_match:
-        results = run_async(search_saved, 'podcasts', context)
+        results = run_async(search_saved, 'podcasts', context).result()
     elif episodes_match:
-        results = run_async(search_saved, 'episodes', context)
+        results = run_async(search_saved, 'episodes', context).result()
     else:
         podcasts = context.bot_data['podcasts']
         podcast = podcasts.get(query_text)
         if podcast:
-            results = run_async(show_episodes, podcast)
+            results = run_async(show_episodes, podcast).result()
             kwargs.update({"cache_time": 600})
         else:
-            results = run_async(search_podcast, query_text)
+            results = run_async(search_podcast, query_text).result()
 
     run_async(query.answer, results, **kwargs)
 
