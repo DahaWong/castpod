@@ -76,7 +76,7 @@ def subscribe_feed(update, context):
     message = update.message
     run_async(context.bot.send_chat_action,
               chat_id=message.chat_id, action='typing')
-    subscribing_message = run_async(message.reply_text, f"订阅中，请稍候…")
+    subscribing_message = run_async(message.reply_text, f"订阅中，请稍候…").result()
 
     user = context.user_data['user']
     podcasts = context.bot_data['podcasts']
