@@ -59,7 +59,6 @@ def start(update, context):
 def about(update, context):
     keyboard = [[InlineKeyboardButton("源     代     码", url=manifest.repo),
                  InlineKeyboardButton("工     作     室", url=manifest.author_url)]]
-    markup = InlineKeyboardMarkup(keyboard)
     context.dispatcher.run_async(
         update.message.reply_text(
             text=(
@@ -67,7 +66,7 @@ def about(update, context):
                 f"`{manifest.version}`"
                 f"\nby [{manifest.author}](https://t.me/{manifest.author_id})\n"
             ),
-            reply_markup=markup
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
     )
 

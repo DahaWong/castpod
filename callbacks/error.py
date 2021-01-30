@@ -4,7 +4,7 @@ from telegram import ParseMode
 from telegram.utils.helpers import mention_html
 import sys
 import traceback
-import logging 
+import logging
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 def handle_error(update, context):
+    if not update:
+        return
     if update.effective_message:
         text = f"刚刚的操作触发了一个错误，报告已抄送给[开发者](https://t.me/{manifest.author_id})。"
         update.effective_message.reply_text(text)
