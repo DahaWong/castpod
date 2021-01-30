@@ -193,7 +193,7 @@ def exit_reply_keyboard(update, context):
     ).delete()
     message.delete()
 
-
+@check_login
 def show_feed(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
@@ -212,6 +212,8 @@ def show_feed(update, context):
                   reply_markup=InlineKeyboardMarkup(page.keyboard())
                   )
         run_async(update.message.delete)
+    else:
+        run_async(message.reply_text, '抱歉，没能理解您想要做什么。')
 
 
 def handle_audio(update, context):
