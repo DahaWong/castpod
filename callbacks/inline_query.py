@@ -4,6 +4,7 @@ import re
 import uuid
 from manifest import manifest
 
+
 def handle_inline_query(update, context):
     run_async = context.dispatcher.run_async
     query = update.inline_query
@@ -66,7 +67,7 @@ def show_episodes(podcast):
 
 
 def search_podcast(keyword):
-    searched_results = search(keyword)
+    searched_results = search_podcast(keyword)
     listed_results = []
     if not searched_results:
         listed_results = [

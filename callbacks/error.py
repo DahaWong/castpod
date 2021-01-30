@@ -14,14 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 def handle_error(update, context):
-    logger.error(msg="发生异常：\n", exc_info=context.error)
     if update.effective_message:
-        text = f"刚刚处理的更新中出现了错误，错误报告已发给[开发者](https://t.me/{manifest.author_id})。"
+        text = f"刚刚的操作触发了一个错误，报告已抄送给[开发者](https://t.me/{manifest.author_id})。"
         update.effective_message.reply_text(text)
     trace = "".join(traceback.format_tb(sys.exc_info()[2]))
     payload = ""
     if update.effective_user:
-        payload += f'使用者 {mention_html(update.effective_user.id, update.effective_user.first_name)}'
+        payload += f'{mention_html(update.effective_user.id, update.effective_user.first_name)}'
     if update.effective_chat:
         payload += f'<i>{update.effective_chat.title}</i>'
         if update.effective_chat.username:
@@ -31,3 +30,4 @@ def handle_error(update, context):
     text = f"{payload} 触发了一个错误：<code>{context.error}</code>。错误路径如下:\n\n<code>{trace}" \
            f"</code>"
     context.bot.send_message(dev_user_id, text, parse_mode=ParseMode.HTML)
+    logger.error(msg="发生异常：\n", exc_info=context.error)
