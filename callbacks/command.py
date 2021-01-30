@@ -132,7 +132,7 @@ def help(update, context):
     message.reply_text(
         text=(
             f"*{manifest.name} 使用说明*\n\n"
-            "/setting - 偏好设置（开发中）"
+            "/setting - 偏好设置（开发中）\n"
             "/export - 导出订阅\n"
             "/logout - 注销账号\n"
             "/about - 幕后信息\n"
