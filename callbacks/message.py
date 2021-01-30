@@ -164,24 +164,24 @@ def download_episode(update, context):
         forward_from_message = audio_message.message_id
     run_async(update.message.delete)
 
-    run_async(forwarded_message.edit_caption,
-              caption=(
-                  f"🎙️ <b>{podcast.name}</b>\n\n<a href='{episode.get_shownotes_url() or podcast.website}'>相关链接</a>"
-                  f"\n\n{episode.timeline}"
-              ),
-              parse_mode=ParseMode.HTML,
-              reply_markup=InlineKeyboardMarkup([[
-                  InlineKeyboardButton(
-                      text="评论区",
-                      url=f"https://t.me/{podcast_vault}/{forward_from_message}")
-              ], [
-                  InlineKeyboardButton(
-                      "订阅列表", switch_inline_query_current_chat=""),
-                  InlineKeyboardButton(
-                      "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
-
-              ]])
-              )
+    run_async(
+        forwarded_message.edit_caption,
+        caption=(
+            f"🎙️ <b>{podcast.name}</b>\n\n<a href='{episode.get_shownotes_url() or podcast.website}'>相关链接</a>"
+            f"\n\n{episode.timeline}"
+        ),
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton(
+                text="评论区",
+                url=f"https://t.me/{podcast_vault}/{forward_from_message}")
+        ], [
+            InlineKeyboardButton(
+                "订阅列表", switch_inline_query_current_chat=""),
+            InlineKeyboardButton(
+                "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
+        ]])
+    )
 
 
 @check_login
@@ -192,6 +192,7 @@ def exit_reply_keyboard(update, context):
         reply_markup=ReplyKeyboardRemove()
     ).delete()
     message.delete()
+
 
 @check_login
 def show_feed(update, context):

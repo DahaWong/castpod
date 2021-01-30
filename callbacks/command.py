@@ -116,12 +116,12 @@ def manage(update, context):
 
 
 @check_login
-def settings(update, context):
+def setting(update, context):
     keyboard = [["╳"],
                 ["播客更新频率", "快捷置顶单集", "单集信息显示"],
                 ["播客搜索范围", "快捷置顶播客", "单集排序方式"], ]
     update.message.reply_text(
-        f'请选择需调整的偏好设置',
+        f'已打开设置面板',
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     )
 
@@ -132,10 +132,10 @@ def help(update, context):
     message.reply_text(
         text=(
             f"*{manifest.name} 使用说明*\n\n"
-            "/about - 幕后信息\n"
+            "/setting - 偏好设置（开发中）"
             "/export - 导出订阅\n"
             "/logout - 注销账号\n"
-            "/settings - 偏好设置"
+            "/about - 幕后信息\n"
         ),
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
@@ -152,8 +152,7 @@ def export(update, context):
     if not user.subscription:
         update.message.reply_text('你还没有订阅的播客，请先订阅再导出～')
         return
-    context.dispatcher.run_async(
-        update.message.reply_document,
+    update.message.reply_document(
         filename=f"{user.name} 的 {manifest.name} 订阅.xml",
         document=user.update_opml(),
         # thumb = ""
