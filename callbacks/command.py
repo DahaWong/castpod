@@ -74,17 +74,19 @@ def about(update, context):
 
 @check_login
 def home(update, context):
+    run_async = context.dispatcher.run_async
     buttons = [
         InlineKeyboardButton('搜索 | 管理', switch_inline_query_current_chat=''),
         InlineKeyboardButton('收藏的播客', switch_inline_query_current_chat='p'),
         InlineKeyboardButton('收藏的单集', switch_inline_query_current_chat='e')
     ]
 
-    context.dispatcher.run_async(update.message.reply_text,
-                                 text='⭐️',
-                                 reply_markup=InlineKeyboardMarkup.from_column(
-                                     buttons)
-                                 ).pin()
+    message = run_async(
+        update.message.reply_text,
+        text='⭐️',
+        reply_markup=InlineKeyboardMarkup.from_column(buttons)
+    ).result()
+    run_async(message.pin)
 
     tips = (
         "⦿ 前往 Telegram `设置 → 外观 → 大表情 Emoji` 获得更好的显示效果\n"

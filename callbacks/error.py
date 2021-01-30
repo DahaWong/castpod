@@ -21,7 +21,7 @@ def handle_error(update, context):
     payload = ""
     if update.effective_user:
         payload += f"<a href='tg://user?id={update.effective_user.id}'>有人</a>在使用中"
-    if update.effective_chat:
+    if update.effective_chat.title:
         payload += f'<i>{update.effective_chat.title}</i>'
         if update.effective_chat.username:
             payload += f'(@{update.effective_chat.username})'
