@@ -19,7 +19,7 @@ from html import unescape
 
 class User(object):
     """
-    docstring
+    A Telegram User.
     """
 
     def __init__(self, name, user_id):
@@ -252,17 +252,17 @@ class Episode(object):
         return img_content + self.replace_invalid_tags(shownotes)
 
     def set_timeline(self):
-        self.shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.shownotes)
+        shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.shownotes)
         # self.shownotes = re.sub(r'(?<=:[0-5][0-9])[\)\]\}】」）》>]+', '', self.shownotes)
         # self.shownotes = re.sub(r'[\(\[\{【「（《<]+(?=:[0-5][0-9])', '', self.shownotes)
         pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
-        matches = re.finditer(pattern, self.shownotes)
+        matches = re.finditer(pattern, shownotes)
         return '\n'.join([re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0]) for match in matches])
 
     def replace_invalid_tags(self, html_content):
         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
-        html_content = re.sub(r'</?(?:div|span|audio).*?>', '', html_content)
         html_content = html_content.replace('cite>', "i>")
+        html_content = re.sub(r'</?(?:div|span|audio).*?>', '', html_content)
         html_content = html_content.replace('’', "'")
         return html_content
 
