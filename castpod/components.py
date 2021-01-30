@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 class PodcastPage(object):
@@ -37,6 +37,26 @@ class ManagePage(object):
 
     def keyboard(self):
         podcasts_count = len(self.podcast_names)
-        if not podcasts_count: return [['订阅列表是空的～']]
+        if not podcasts_count:
+            return [['订阅列表是空的～']]
         rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
         return [['╳']]+[self.row(i) for i in range(rows_count)]
+
+
+class Tips(object):
+    def __init__(self, from_command, text):
+        self.command = from_command
+        self.text = text
+
+    def keyboard(self):
+        return InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton(
+                "✓", callback_data=f'close_tips_{self.command}')
+        )
+
+    def send(self, update, context):
+        if self.command not in context.user_data.get('tips'):
+            return
+        update.message.reply_text(
+            text=self.text,
+            reply_markup=self.keyboard())

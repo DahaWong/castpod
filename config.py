@@ -1,5 +1,5 @@
+from telegram.ext import PicklePersistence
 import configparser
-from utils.persistence import persistence
 from telegram.ext import Defaults
 
 config = configparser.ConfigParser()
@@ -13,9 +13,8 @@ proxy = config['BOT']['PROXY']
 bot_api = config['BOT']['API']
 podcast_vault = config['BOT']['PODCAST_VAULT']
 defaults = Defaults(
-    parse_mode="MARKDOWN", 
-    disable_notification=True, 
-    run_async=True
+    parse_mode="MARKDOWN",
+    disable_notification=True
 )
 
 # Dev
@@ -26,18 +25,19 @@ webhook_port = int(config['WEBHOOK']['PORT'])
 
 
 # Build
+persistence = PicklePersistence(filename='persistence')
 update_info = {
-   'token': bot_token,
-   'use_context': True,
-   'persistence': persistence,
-   'base_url': bot_api,
-   'defaults': defaults,
-   'workers': 32
- }
+    'token': bot_token,
+    'use_context': True,
+    'persistence': persistence,
+    'base_url': bot_api,
+    'defaults': defaults,
+    'workers': 16 # default is 4
+}
 
 webhook_info = {
-    "listen": '127.0.0.1', 
-    "port": webhook_port, 
+    "listen": '127.0.0.1',
+    "port": webhook_port,
     "url_path": bot_token
 }
 

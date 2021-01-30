@@ -1,36 +1,32 @@
-from utils.api_method import search
+from castpod.utils import search_podcast
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
 import re
 import uuid
-
+from manifest import manifest
 
 def handle_inline_query(update, context):
+    run_async = context.dispatcher.run_async
     query = update.inline_query
     query_text = query.query
     podcasts_match = re.match('^p$', query_text)
     episodes_match = re.match('^e$', query_text)
-    results, kwargs = [], {"auto_pagination": True, "cache_time": 40}
+    results, kwargs = [], {"auto_pagination": True, "cache_time": 10}
     if not query_text:
-        results, kwargs = welcome(context)
+        results, kwargs = run_async(welcome, context)
     elif podcasts_match:
-        results = search_saved('podcasts', context)
+        results = run_async(search_saved, 'podcasts', context)
     elif episodes_match:
-        results = search_saved('episodes', context)
+        results = run_async(search_saved, 'episodes', context)
     else:
         podcasts = context.bot_data['podcasts']
         podcast = podcasts.get(query_text)
         if podcast:
-            results = show_episodes(podcast)
+            results = run_async(show_episodes, podcast)
             kwargs.update({"cache_time": 600})
         else:
-            results = search_podcast(query_text)
+            results = run_async(search_podcast, query_text)
 
-    query.answer(
-        results,
-        **kwargs
-    )
-
-    return 0
+    run_async(query.answer, results, **kwargs)
 
 
 def welcome(context):
@@ -110,17 +106,30 @@ def search_podcast(keyword):
 
 
 def show_subscription(context):
+    results = []
     subscription = context.user_data['user'].subscription
-    results = [InlineQueryResultArticle(
-        id=index,
-        title=feed.podcast.name,
-        input_message_content=InputTextMessageContent(
-            feed.podcast.name, parse_mode=None),
-        description=feed.podcast.host or feed.podcast.name,
-        thumb_url=feed.podcast.logo_url,
-        thumb_width=60,
-        thumb_height=60
-    ) for index, feed in enumerate(subscription.values())]
+    if not subscription:
+        results = [InlineQueryResultArticle(
+            id=0,
+            title='订阅列表还是空的 🥡',
+            description=f'试着在 `@{manifest.bot_id} ` 后面输入关键词，寻找喜欢的播客吧',
+            input_message_content=InputTextMessageContent('🔍️'),
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    '搜索播客', switch_inline_query_current_chat='')
+            )
+        )]
+    else:
+        results = [InlineQueryResultArticle(
+            id=index,
+            title=feed.podcast.name,
+            input_message_content=InputTextMessageContent(
+                feed.podcast.name, parse_mode=None),
+            description=feed.podcast.host or feed.podcast.name,
+            thumb_url=feed.podcast.logo_url,
+            thumb_width=60,
+            thumb_height=60
+        ) for index, feed in enumerate(subscription.values())]
     return results
 
 

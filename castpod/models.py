@@ -5,7 +5,7 @@ import random
 
 from telegram.parsemode import ParseMode
 from manifest import manifest
-from utils.downloader import local_download as download
+from castpod.utils import local_download
 from config import podcast_vault, dev_user_id
 from base64 import urlsafe_b64encode as encode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -102,7 +102,7 @@ class Podcast(object):
         self.parse_feed(self.feed_url)
         if self.latest_episode.published_time != last_published_time:
             try:
-                audio_file = download(self.latest_episode, context)
+                audio_file = local_download(self.latest_episode, context)
                 encoded_podcast_name = encode(
                     bytes(self.name, 'utf-8')).decode("utf-8")
                 audio_message = context.bot.send_audio(
@@ -213,6 +213,7 @@ class Episode(object):
         self.message_id = None
 
     def set_duration(self, duration: str) -> int:
+        duration_timedelta = None
         if duration:
             if ':' in duration:
                 time = duration.split(':')
