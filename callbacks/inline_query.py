@@ -1,4 +1,4 @@
-from castpod.utils import search_podcast
+from castpod.utils import search_itunes
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
 import re
 import uuid
@@ -67,7 +67,7 @@ def show_episodes(podcast):
 
 
 def search_podcast(keyword):
-    searched_results = search_podcast(keyword)
+    searched_results = search_itunes(keyword)
     listed_results = []
     if not searched_results:
         listed_results = [

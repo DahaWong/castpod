@@ -55,7 +55,7 @@ endpoints = {
 }
 
 
-def search_podcast(keyword: str):
+def search_itunes(keyword: str):
     res = requests.get(f"{api_root}{endpoints['search_podcast']}{keyword}")
     status = str(res.status_code)
     if not status.startswith('2'):
