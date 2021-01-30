@@ -42,7 +42,8 @@ def start(update, context):
     else:
         podcast_name = decode(context.args[0]).decode('utf-8')
         podcast = context.bot_data['podcasts'][podcast_name]
-        subscribing_note = run_async(update.message.reply_text, "订阅中…").result()
+        subscribing_note = run_async(
+            update.message.reply_text, "订阅中…").result()
         # 完全一样的订阅逻辑，简化之：
         user.subscription.update({podcast_name: Feed(podcast)})
         podcast.subscribers.add(user_id)
@@ -111,9 +112,9 @@ def manage(update, context):
 
 @check_login
 def settings(update, context):
-    keyboard = [["播客更新频率", "快捷置顶单集", "单集信息显示"],
-                ["播客搜索范围", "快捷置顶播客", "单集排序方式"],
-                ["退出偏好设置"]]
+    keyboard = [["╳"],
+                ["播客更新频率", "快捷置顶单集", "单集信息显示"],
+                ["播客搜索范围", "快捷置顶播客", "单集排序方式"], ]
     update.message.reply_text(
         f'请选择需调整的偏好设置',
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
