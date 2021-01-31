@@ -121,16 +121,21 @@ def show_subscription(context):
             )
         )]
     else:
-        results = [InlineQueryResultArticle(
-            id=index,
-            title=feed.podcast.name,
-            input_message_content=InputTextMessageContent(
-                feed.podcast.name, parse_mode=None),
-            description=feed.podcast.host or feed.podcast.name,
-            thumb_url=feed.podcast.logo_url,
-            thumb_width=60,
-            thumb_height=60
-        ) for index, feed in enumerate(subscription.values())]
+        for index, feed in enumerate(subscription.values()):
+            podcast = feed.podcast
+            podcast_name = podcast.name
+            saved_flag = '⭐️' if podcast_name in context.user_data['saved_podcasts'] else ''
+            result = [InlineQueryResultArticle(
+                id=index,
+                title=podcast_name + saved_flag,
+                input_message_content=InputTextMessageContent(
+                    podcast_name, parse_mode=None),
+                description=podcast.host or podcast_name,
+                thumb_url=podcast.logo_url,
+                thumb_width=60,
+                thumb_height=60
+            )]
+            results.append(result)
     return results
 
 
