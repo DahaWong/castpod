@@ -2,7 +2,7 @@ from castpod.utils import search_itunes
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
 import re
 import uuid
-from manifest import manifest
+from config import manifest
 
 
 def handle_inline_query(update, context):

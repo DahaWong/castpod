@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from base64 import urlsafe_b64decode as decode
-from manifest import manifest
+from config import manifest
 from castpod.models import User, Feed
 from castpod.components import ManagePage, PodcastPage, Tips
 from castpod.utils import check_login
@@ -73,12 +73,12 @@ def about(update, context):
 
 
 @check_login
-def home(update, context):
+def favorites(update, context):
     run_async = context.dispatcher.run_async
     buttons = [
         [InlineKeyboardButton('播  客', switch_inline_query_current_chat='p'),
-        InlineKeyboardButton('单  集', switch_inline_query_current_chat='e')],
-        InlineKeyboardButton('订 阅 列 表', switch_inline_query_current_chat='')
+         InlineKeyboardButton('单  集', switch_inline_query_current_chat='e')],
+        [InlineKeyboardButton('订 阅 列 表', switch_inline_query_current_chat='')]
     ]
 
     message = run_async(

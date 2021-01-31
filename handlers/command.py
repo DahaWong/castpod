@@ -4,7 +4,7 @@ import callbacks.command as callback
 handlers = [
     CommandHandler('start', callback.start, pass_args=True),
     CommandHandler('about', callback.about),
-    CommandHandler('home', callback.home),
+    CommandHandler('favorites', callback.favorites),
     CommandHandler('manage', callback.manage),
     CommandHandler('export', callback.export, run_async=True),
     CommandHandler('setting', callback.setting, run_async=True),

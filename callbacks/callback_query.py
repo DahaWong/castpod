@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, ReplyKeyboardMarkup
 from castpod.components import PodcastPage, ManagePage
-from manifest import manifest
+from config import manifest
 import re
 from castpod.utils import toggle_save_podcast
 
@@ -10,11 +10,11 @@ def delete_command_context(update, context):
     pattern = r'(delete_command_context_)([0-9]+)'
     query = update.callback_query
     command_message_id = re.match(pattern, query.data)[2]
-    run_async(query.delete_message)
     run_async(context.bot.delete_message,
               query.message.chat_id,
               command_message_id
-              )
+    )
+    run_async(query.delete_message)
 
 # Tips
 

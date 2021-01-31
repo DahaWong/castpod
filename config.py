@@ -59,3 +59,14 @@ webhook_setting = {
 #    'base_url': bot_api,
 #    'defaults': defaults
 #  }
+
+# Manifest
+class manifest:
+  name = "Castpod"
+  bot_id = "castpodbot"
+  author= "Daha"
+  author_id = 'dahawong'
+  author_url = "https://office.daha.me/"
+  version= "0.0.1"
+  discription=""
+  repo = "https://github.com/dahawong/castpod"

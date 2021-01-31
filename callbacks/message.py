@@ -1,10 +1,9 @@
 from castpod.models import Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
 from castpod.components import PodcastPage, ManagePage
-from config import podcast_vault
+from config import podcast_vault, manifest
 from castpod.utils import check_login, local_download, parse_doc
 from base64 import urlsafe_b64encode as encode
-from manifest import manifest
 import re
 
 

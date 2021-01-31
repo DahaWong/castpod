@@ -4,9 +4,8 @@ import socket
 import random
 
 from telegram.parsemode import ParseMode
-from manifest import manifest
 from castpod.utils import local_download
-from config import podcast_vault, dev_user_id
+from config import podcast_vault, dev_user_id, manifest
 from base64 import urlsafe_b64encode as encode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import socket
