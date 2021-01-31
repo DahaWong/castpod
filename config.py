@@ -31,8 +31,8 @@ update_info = {
     'use_context': True,
     'persistence': persistence,
     'base_url': bot_api,
-    'defaults': defaults
-    # 'workers': 16 # default is 4
+    'defaults': defaults,
+    'workers': 8
 }
 
 webhook_info = {
