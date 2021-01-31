@@ -23,7 +23,7 @@ def handle_inline_query(update, context):
         podcast = podcasts.get(query_text)
         if podcast:
             results = run_async(show_episodes, podcast).result()
-            kwargs.update({"cache_time": 600})
+            kwargs.update({"cache_time": 40})
         else:
             results = run_async(search_podcast, query_text).result()
 
