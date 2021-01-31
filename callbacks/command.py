@@ -73,7 +73,7 @@ def about(update, context):
 
 
 @check_login
-def favorites(update, context):
+def favourites(update, context):
     run_async = context.dispatcher.run_async
     buttons = [
         [InlineKeyboardButton('播  客', switch_inline_query_current_chat='p'),
