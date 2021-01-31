@@ -10,7 +10,7 @@ def handle_error(update, context):
         update.effective_message.reply_text(text)
     payload = ""
     if update.effective_user:
-        payload += f"有(用户)[tg://user?id={update.effective_user.id}]在使用中"
+        payload += f"有[用户](tg://user?id={update.effective_user.id})在使用中"
     if update.effective_chat.title:
         payload += update.effective_chat.title
         if update.effective_chat.username:

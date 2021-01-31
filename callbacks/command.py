@@ -84,7 +84,7 @@ def favourites(update, context):
     message = run_async(
         update.message.reply_text,
         text='⭐️',
-        reply_markup=InlineKeyboardMarkup.from_column(buttons)
+        reply_markup=InlineKeyboardMarkup(buttons)
     ).result()
 
     if not context.user_data['is_home_pinned']:
