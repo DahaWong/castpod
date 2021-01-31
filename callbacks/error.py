@@ -1,7 +1,6 @@
 from config import dev_user_id
 from manifest import manifest
 from telegram import ParseMode
-from telegram.utils.helpers import mention_html
 import sys
 import traceback
 import logging
