@@ -126,7 +126,7 @@ def show_subscription(context):
             podcast_name = podcast.name
             saved_flag = ''
             if podcast_name in context.user_data['saved_podcasts']:
-                saved_flag = '星星'
+                saved_flag = ' ⭐️'
             result = InlineQueryResultArticle(
                 id=index,
                 title=podcast_name + saved_flag,
