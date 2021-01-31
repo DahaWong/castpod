@@ -114,7 +114,7 @@ class Podcast(object):
                         f"<a href='{self.latest_episode.get_shownotes_url()}'>相关链接</a>"
                     ),
                     title=self.latest_episode.title,
-                    performer=f"{self.name} | {self.latest_episode.host or self.host}" if self.host else self.name,
+                    performer=self.name,
                     duration=self.latest_episode.duration.seconds,
                     thumb=self.logo_url,
                     parse_mode = ParseMode.HTML

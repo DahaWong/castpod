@@ -111,60 +111,56 @@ def subscribe_feed(update, context):
 
 @check_login
 def download_episode(update, context):
-    run_async = context.dispatcher.run_async
     bot = context.bot
     message = update.message
-    fetching_note = run_async(
-        bot.send_message, message.chat_id, "获取节目中…").result()
-    run_async(bot.send_chat_action, message.chat_id, ChatAction.RECORD_AUDIO)
+    fetching_note = bot.send_message(message.chat_id, "获取节目中…")
+    bot.send_chat_action(message.chat_id, ChatAction.RECORD_AUDIO)
     match = re.match(r'🎙️ (.+) #([0-9]+)', message.text)
     podcast_name, index = match[1], int(match[2])
     podcast = context.bot_data['podcasts'].get(podcast_name)
     episode = podcast.episodes[-index]
-    run_async(bot.send_chat_action, update.message.chat_id,
-              ChatAction.UPLOAD_AUDIO)
+    bot.send_chat_action(update.message.chat_id,
+                         ChatAction.UPLOAD_AUDIO)
     if episode.message_id:
-        run_async(fetching_note.delete)
-        forwarded_message = run_async(bot.forward_message,
-                                      chat_id=context.user_data['user'].user_id,
-                                      from_chat_id=f"@{podcast_vault}",
-                                      message_id=episode.message_id
-                                      ).result()
+        fetching_note.delete()
+        forwarded_message = bot.forward_message(
+            chat_id=context.user_data['user'].user_id,
+            from_chat_id=f"@{podcast_vault}",
+            message_id=episode.message_id
+        )
         forward_from_message = episode.message_id
     else:
         encoded_podcast_name = encode(
             bytes(podcast.name, 'utf-8')).decode("utf-8")
-        downloading_note = run_async(fetching_note.edit_text, "下载中…").result()
-        audio_file = run_async(local_download, episode, context).result()
-        uploading_note = run_async(
-            downloading_note.edit_text, "正在上传，请稍候…").result()
+        downloading_note = fetching_note.edit_text("下载中…")
+        audio_file = local_download(episode, context)
+        uploading_note = downloading_note.edit_text("正在上传，请稍候…")
         audio_message = None
         try:
-            audio_message = run_async(bot.send_audio,
-                                      chat_id=f'@{podcast_vault}',
-                                      audio=audio_file,
-                                      caption=(
-                                          f"🎙️ {podcast.name}\n"
-                                          f"总第 {index} 期"
-                                          f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
-                                          f" | [相关链接]({episode.get_shownotes_url()})"
-                                      ),
-                                      title=episode.title,
-                                      performer=f"{podcast.name} | {episode.host or podcast.host}" if podcast.host else podcast.name,
-                                      duration=episode.duration.seconds,
-                                      thumb=podcast.logo_url
-                                      ).result()
+            audio_message = bot.send_audio(
+                chat_id=f'@{podcast_vault}',
+                audio=audio_file,
+                caption=(
+                    f"🎙️ {podcast.name}\n"
+                    f"总第 {index} 期"
+                    f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
+                    f" | [相关链接]({episode.get_shownotes_url()})"
+                ),
+                title=episode.title,
+                performer=podcast.name,
+                duration=episode.duration.seconds,
+                thumb=podcast.logo_url
+            )
         except Exception as e:
             pass  # ⚠️
         finally:
-            run_async(uploading_note.delete)
-        forwarded_message = run_async(audio_message.forward,
-                                      context.user_data['user'].user_id).result()
+            uploading_note.delete()
+        forwarded_message = audio_message.forward(
+            context.user_data['user'].user_id)
         forward_from_message = audio_message.message_id
-    run_async(update.message.delete)
+    update.message.delete()
 
-    run_async(
-        forwarded_message.edit_caption,
+    forwarded_message.edit_caption(
         caption=(
             f"🎙️ <b>{podcast.name}</b>\n\n<a href='{episode.get_shownotes_url() or podcast.website}'>相关链接</a>"
             f"\n\n{episode.timeline}"

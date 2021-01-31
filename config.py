@@ -31,8 +31,7 @@ update_info = {
     'use_context': True,
     'persistence': persistence,
     'base_url': bot_api,
-    'defaults': defaults,
-    'workers': 8
+    'defaults': defaults
 }
 
 webhook_info = {
@@ -43,7 +42,7 @@ webhook_info = {
 
 webhook_setting = {
     "url": f'https://webhook.daha.me/{bot_token}',
-    "max_connections": 1000,
+    "max_connections": 256,
     "drop_pending_updates": True,
     "allowed_updates": []
 }
