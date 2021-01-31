@@ -20,7 +20,7 @@ def toggle_save_podcast(update, context, to: str):
 
     if (to == 'saved'):
         kwargs = {
-            'save_text': '❤️',
+            'save_text': '⭐️',
             'save_action': "unsave_podcast"
         }
         context.user_data['saved_podcasts'].update({podcast_name: podcast})

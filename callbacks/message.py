@@ -204,7 +204,7 @@ def show_feed(update, context):
         feed = context.user_data['user'].subscription[feed_name]
         podcast = feed.podcast
         if podcast.name in context.user_data['saved_podcasts']:
-            page = PodcastPage(podcast, save_text="❤️",
+            page = PodcastPage(podcast, save_text="⭐️",
                                save_action='unsave_podcast')
         else:
             page = PodcastPage(podcast)
