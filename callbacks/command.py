@@ -76,9 +76,9 @@ def about(update, context):
 def home(update, context):
     run_async = context.dispatcher.run_async
     buttons = [
-        InlineKeyboardButton('搜索 | 管理', switch_inline_query_current_chat=''),
-        InlineKeyboardButton('收藏的播客', switch_inline_query_current_chat='p'),
-        InlineKeyboardButton('收藏的单集', switch_inline_query_current_chat='e')
+        [InlineKeyboardButton('播  客', switch_inline_query_current_chat='p'),
+        InlineKeyboardButton('单  集', switch_inline_query_current_chat='e')],
+        InlineKeyboardButton('订 阅 列 表', switch_inline_query_current_chat='')
     ]
 
     message = run_async(
