@@ -1,8 +1,8 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, ReplyKeyboardMarkup
 from castpod.components import PodcastPage, ManagePage
+from castpod.utils import toggle_save_podcast
 from config import manifest
 import re
-from castpod.utils import toggle_save_podcast
 
 
 def delete_command_context(update, context):
@@ -156,6 +156,6 @@ def export(update, context):
         document=user.update_opml(),
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
-                '彻 底 注 销 账 号', callback_data='delete_account')
+                '注销账号', callback_data='delete_account')
         )
     )

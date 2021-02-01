@@ -1,7 +1,8 @@
+from config import bot_token, mongo_uri, mongo_name
+from pymongo import MongoClient
 from telegram import InlineKeyboardMarkup
 from tqdm.contrib.telegram import tqdm
 from castpod.components import PodcastPage
-from config import bot_token
 import requests
 from bs4 import BeautifulSoup
 import errno
@@ -145,3 +146,8 @@ def parse_opml(f):
         feeds.append({"name": podcast.attrs.get('text'),
                       "url": podcast.attrs.get('xmlurl')})
     return feeds
+
+
+# MongoDB
+client = MongoClient(mongo_uri)
+db = client[mongo_name]

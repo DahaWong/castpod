@@ -2,16 +2,12 @@ import datetime
 import feedparser
 import socket
 import random
-
+import re
 from telegram.parsemode import ParseMode
-from castpod.utils import local_download
+from castpod.utils import local_download, db
 from config import podcast_vault, dev_user_id, manifest
 from base64 import urlsafe_b64encode as encode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-import socket
-import datetime
-import re
-import feedparser
 from telegraph import Telegraph
 from html import unescape
 
@@ -65,7 +61,6 @@ class User(object):
 class Podcast(object):
     def __init__(self, feed_url):
         self.feed_url = feed_url
-        # self.id = uuid5(NAMESPACE_URL, feed_url)
         self.parse_feed(feed_url)
         self.subscribers = set()
         self.set_job_group()
@@ -93,7 +88,7 @@ class Podcast(object):
         self.email = feed.author_detail.get('email') or ""
 
     def set_job_group(self):
-        i = random.randint(0,47)
+        i = random.randint(0, 47)
         self.job_group = [i % 48 for i in range(i, i + 41, 8)]
 
     def update(self, context):
@@ -117,7 +112,7 @@ class Podcast(object):
                     performer=self.name,
                     duration=self.latest_episode.duration.seconds,
                     thumb=self.logo_url,
-                    parse_mode = ParseMode.HTML
+                    parse_mode=ParseMode.HTML
                     # timeout = 1800
                 )
                 self.latest_episode.message_id = audio_message.message_id
@@ -246,7 +241,8 @@ class Episode(object):
         return unescape(title).lstrip(self.podcast_name)
 
     def set_shownotes(self):
-        shownotes = unescape(self.content[0]['value']) if self.content else self.summary
+        shownotes = unescape(
+            self.content[0]['value']) if self.content else self.summary
         img_content = f"<img src='{self.logo_url or self.podcast_logo}'>" if 'img' not in shownotes else ''
         return img_content + self.replace_invalid_tags(shownotes)
 

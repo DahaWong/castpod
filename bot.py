@@ -1,7 +1,7 @@
 import datetime
 from config import update_info, webhook_info, webhook_setting
 from telegram.ext import Updater
-from handlers.register import register
+from castpod.handlers import register_handlers
 
 updater = Updater(**update_info)
 dispatcher = updater.dispatcher
@@ -39,5 +39,5 @@ for i in range(48):
     time = datetime.time(hour=i//4, minute=i*30%60)
     dispatcher.job_queue.run_daily(make_job(i), time, name=f'update_podcast_group_{i}')
 
-register(updater.dispatcher)
+register_handlers(updater.dispatcher)
 
