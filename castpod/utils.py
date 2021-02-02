@@ -38,13 +38,11 @@ def toggle_save_podcast(update, context, to: str):
 def validate_user(func):
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
-        user = User.objects(user_id=update.message.from_user.id)
-        if not user:
-            user = User(
+        User(
                 user_id=update.message.from_user.id,
                 name=update.message.from_user.first_name,
                 username=update.message.from_user.username
-            ).save()
+        ).save()
         return func(update, context, *args, **kwargs)
     return wrapped
 
