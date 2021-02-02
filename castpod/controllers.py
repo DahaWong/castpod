@@ -27,15 +27,13 @@ class Podcast(object):
             self.podcast.name += '…'
         self.podcast.logo = feed.get('image')['href']
         for i, item in enumerate(result['items']):
-            episode = models.Episode(podcast=self.podcast, index=i).save()
             # episode.parse(item)
-            self.podcast.update_one(push__episodes=episode)
-            self.podcast.reload()
+            self.podcast.episodes.append(models.Episode(podcast=self.podcast, index=i))
         # self.download_logo()
         self.podcast.host = unescape(feed.author_detail.name or '')
         if self.podcast.host == self.podcast.name:
             self.podcast.host = ''
-        self.podcast.website = feed.link
+        self.podcast.website = feed.get('link')
         self.podcast.email = feed.author_detail.get('email') or ''
         self.podcast.save()
 
