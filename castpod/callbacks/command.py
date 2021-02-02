@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from base64 import urlsafe_b64decode as decode
 from config import manifest
-from castpod.models import User
+from castpod.models import User, Podcast
 from castpod.components import ManagePage, PodcastPage, Tips
 from castpod.utils import check_login
 
@@ -9,25 +9,18 @@ from castpod.utils import check_login
 def start(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    user_id = message['from_user']['id']
-    first_name = message['from_user']['first_name']
-
-    if 'user' not in context.user_data.keys():
-        user = User(first_name, user_id)
-        context.user_data.update({
-            'user': user,
-            'tips': ['search', 'help', 'logout', 'alert'],
-            'is_home_pinned': False,
-            'saved_podcasts': {},
-            'saved_episodes': {}
-        })
-
-    user = context.user_data['user']
+    user = User.objects(id=message.from_user.id)
+    if not user:
+        user = User(
+            user_id=message.from_user.id,
+            name=message.from_user.first_name,
+            username=message.from_user.username
+        ).save()
     if (not context.args) or (context.args[0] == "login"):
         welcome_text = (
             f'欢迎使用 {manifest.name}！                                            '
             f'\n\n您可以发送 OPML 文件或 RSS 链接以*导入播客订阅*。\n'
-            f'\n⚠️ 目前还*没有正式上线*，数据有可能丢失，请妥善保管自己的订阅源～'
+            f'\n⚠️ 目前还*没有正式上线*，正在测试数据库的功能，测试完毕会在[内测群](https://t.me/castpodchat)中告知。'
         )
 
         run_async(
@@ -35,19 +28,15 @@ def start(update, context):
             text=welcome_text,
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
-                    '搜索播客',
-                    switch_inline_query_current_chat=""
+                    '搜索播客', switch_inline_query_current_chat=""
                 )
             )
         )
     else:
-        podcast_name = decode(context.args[0]).decode('utf-8')
-        podcast = context.bot_data['podcasts'][podcast_name]
-        subscribing_note = run_async(
-            update.message.reply_text, "订阅中…").result()
-        # 完全一样的订阅逻辑，简化之：
-        # user.subscription.update({podcast_name: Feed(podcast)})
-        podcast.subscribers.add(user_id)
+        podcast_id = context.args[0]
+        podcast = Podcast.objects(id = podcast_id)
+        subscribing_note = run_async(update.message.reply_text, "订阅中…").result()
+        podcast.update_one(push__subscribers=user)
         page = PodcastPage(podcast)
         run_async(
             subscribing_note.edit_text,
@@ -78,7 +67,8 @@ def favourites(update, context):
     buttons = [
         [InlineKeyboardButton('播 客', switch_inline_query_current_chat='p'),
          InlineKeyboardButton('单 集', switch_inline_query_current_chat='e')],
-        [InlineKeyboardButton('订  阅  列  表', switch_inline_query_current_chat='')]
+        [InlineKeyboardButton(
+            '订  阅  列  表', switch_inline_query_current_chat='')]
     ]
 
     message = run_async(

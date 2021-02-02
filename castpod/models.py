@@ -19,7 +19,8 @@ from html import unescape
 connect(
     db=Mongo.db,
     username=Mongo.user,
-    password=Mongo.pwd
+    password=Mongo.pwd,
+    host=Mongo.remote_host
 )
 
 
@@ -33,8 +34,9 @@ class Subscription(EmbeddedDocument):
 class User(Document):
     user_id = IntField(primary_key=True)
     name = StringField(required=True)
-    username = StringField(unique=True)
+    username = StringField(unique=True, required=True)
     subscriptions = ListField(EmbeddedDocumentField(Subscription))
+
 
     def subscribe(self, subscription):
         self.update(push__subscriptions__0=subscription)

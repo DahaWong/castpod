@@ -31,7 +31,6 @@ class Mongo(object):
     user = mongo['USER']
     pwd = mongo['PWD']
     remote_host = mongo['REMOTE_HOST']
-    local_host = 'localhost'
 
 
 # Build
