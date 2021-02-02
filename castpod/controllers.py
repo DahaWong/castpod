@@ -49,7 +49,7 @@ class User(object):
         self.user = user
 
     def subscribe(self, podcast):
-        self.user.subscriptions.append(models.Subscription(podcast))
+        self.user.subscriptions.append(models.Subscription(podcast=podcast))
         podcast.subscribers.append(self.user)
         podcast.save()
         self.user.save()
