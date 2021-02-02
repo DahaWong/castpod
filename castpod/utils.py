@@ -7,7 +7,8 @@ import errno
 import os
 import re
 from functools import wraps
-from castpod.models import User
+from castpod.models import Subscription, User
+from config import manifest
 
 # Callback Query Helper
 

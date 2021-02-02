@@ -1,7 +1,4 @@
-import datetime
-import feedparser
-import socket
-import random
+
 import re
 from mongoengine import connect
 from mongoengine.document import Document, EmbeddedDocument
@@ -35,38 +32,6 @@ class User(Document):
     name = StringField(required=True)
     username = StringField(unique=True, required=True)
     subscriptions = ListField(EmbeddedDocumentField(Subscription))
-
-    def subscribe(self, podcast):
-        podcast.renew()
-        self.update(push__subscriptions=Subscription(podcast))
-        podcast.update(push__subscribers=self)
-        self.save()
-
-    def opml(self):
-        body = ''
-        for subscription in self.subscriptions:
-            podcast = subscription.podcast
-            outline = f'\t\t\t\t<outline type="rss" text="{podcast.name}" xmlUrl="{podcast.feed}"/>\n'
-            body += outline
-        head = (
-            "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
-            "\t<opml version='1.0'>\n"
-            "\t\t<head>\n"
-            f"\t\t\t<title>{manifest.name} 订阅源</title>\n"
-            "\t\t</head>\n"
-            "\t\t<body>\n"
-            "\t\t\t<outline text='feeds'>\n"
-        )
-        tail = (
-            "\t\t\t</outline>\n"
-            "\t\t</body>\n"
-            "\t</opml>\n"
-        )
-        opml = head + body + tail
-        path = f"./public/subscriptions/{manifest.name} 订阅源.xml"
-        with open(path, 'w+') as f:
-            f.write(opml)
-        return path
 
 
 class Shownotes(EmbeddedDocument):
@@ -128,34 +93,34 @@ class Episode(EmbeddedDocument):
     message_id = IntField()
     file_id = StringField()
 
-    def parse(self, item):
-        self.audio.performer = unescape(item.get('author') or '')
-        if self.host == self.podcast.name:
-            self.host = ''
-        audio = item.enclosures[0]
-        self.audio = Audio(
-            url=audio.href,
-            size=audio.get('length') or 0,
-            performer=self.podcast.name,
-            logo=item.get('image').href if item.get('image') else '',
-            duration=self.set_duration(item.get('itunes_duration'))
-        ).save()
-        self.title = unescape(item.get('title') or '')
-        self.subtitle = unescape(item.get('subtitle') or '')
-        if self.title == self.subtitle:
-            self.subtitle = ''
-        self.content = item.get('content')
-        self.summary = unescape(item.get('summary') or '')
-        self.shownotes = Shownotes(self.content).save()
-        self.published_time = item.published_parsed
-        self.save()
+    # def parse(self, item):
+    #     self.audio.performer = unescape(item.get('author') or '')
+    #     if self.host == self.podcast.name:
+    #         self.host = ''
+    #     audio = item.enclosures[0]
+    #     self.audio = Audio(
+    #         url=audio.href,
+    #         size=audio.get('length') or 0,
+    #         performer=self.podcast.name,
+    #         logo=item.get('image').href if item.get('image') else '',
+    #         duration=self.set_duration(item.get('itunes_duration'))
+    #     ).save()
+    #     self.title = unescape(item.get('title') or '')
+    #     self.subtitle = unescape(item.get('subtitle') or '')
+    #     if self.title == self.subtitle:
+    #         self.subtitle = ''
+    #     self.content = item.get('content')
+    #     self.summary = unescape(item.get('summary') or '')
+    #     self.shownotes = Shownotes(self.content).save()
+    #     self.published_time = item.published_parsed
+    #     self.save()
 
-    def replace_invalid_tags(self, html_content):
-        html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
-        html_content = html_content.replace('cite>', "i>")
-        html_content = re.sub(r'</?(?:div|span|audio).*?>', '', html_content)
-        html_content = html_content.replace('’', "'")
-        return html_content
+    # def replace_invalid_tags(self, html_content):
+    #     html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
+    #     html_content = html_content.replace('cite>', "i>")
+    #     html_content = re.sub(r'</?(?:div|span|audio).*?>', '', html_content)
+    #     html_content = html_content.replace('’', "'")
+    #     return html_content
 
 
 class Podcast(Document):
@@ -170,32 +135,6 @@ class Podcast(Document):
     update_time = DateTimeField()
     job_group = IntField(min_value=0, max_value=47)
 
-    def renew(self):
-        self.set_job_group()
-        socket.setdefaulttimeout(5)
-        result = feedparser.parse(self.feed)
-        if str(result.status)[0] != '2' and str(result.status)[0] != '3':
-            raise Exception(f'Feed open error, status: {result.status}')
-        feed = result.feed
-        self.name = feed.get('title')
-        if not self.name:
-            self.delete()
-            raise Exception("Cannot parse feed name.")
-        self.name = unescape(self.name)[:63]
-        if len(self.name) == 63:
-            self.name += '…'
-        self.logo = feed.get('image')['href']
-        for i, item in enumerate(result['items']):
-            episode = Episode(podcast=self, index=i)
-            episode.parse(item)
-            self.update(push__episodes=episode)
-        # self.download_logo()
-        self.host = unescape(feed.author_detail.name or '')
-        if self.host == self.name:
-            self.host = ''
-        self.website = feed.link
-        self.email = feed.author_detail.get('email') or ''
-        self.save()
 
     # def download_logo(self):
     #     infile = f'public/logos/{self.name}.jpg'
@@ -221,10 +160,7 @@ class Podcast(Document):
     #         self.thumbnail = ''
 
 
-    def set_job_group(self):
-        i = random.randint(0, 47)
-        self.job_group = [i % 48 for i in range(i, i + 41, 8)]
-        self.save()
+
 
     # def update(self, context):
     #     last_published_time = self.episodes[0].published_time
