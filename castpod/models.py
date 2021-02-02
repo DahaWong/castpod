@@ -18,8 +18,8 @@ from html import unescape
 
 connect(
     db=Mongo.db,
-    host=Mongo.remote_uri
-    # host = Mongo.local_uri
+    # host=Mongo.remote_uri
+    host = Mongo.local_uri
 )
 
 
