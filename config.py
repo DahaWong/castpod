@@ -31,8 +31,7 @@ class Mongo(object):
     user = mongo['USER'],
     pwd = mongo['PWD'],
     remote_host = mongo['REMOTE_HOST']
-    local_uri = f"mongodb://{user}:{pwd}@127.0.0.1",
-    remote_uri = f"mongodb://{user}:{pwd}@{remote_host}"
+    local_host = 'localhost'
 
 
 # Build
