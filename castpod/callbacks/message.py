@@ -1,4 +1,5 @@
-from castpod.models import Podcast, Subscription, User
+import castpod.models as models
+import castpod.controllers as controllers
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
 from castpod.components import PodcastPage, ManagePage
 from config import podcast_vault, manifest
@@ -15,11 +16,11 @@ def subscribe_feed(update, context):
               chat_id=message.chat_id, action='typing')
     subscribing_message = run_async(message.reply_text, f"订阅中，请稍候…").result()
 
-    user = User.objects(user_id=message.from_user.id)
-    podcast = Podcast.objects(feed=message.text)
+    user = models.User.objects(user_id=message.from_user.id)
+    podcast = models.Podcast.objects(feed=message.text)
     if not podcast:
-        podcast = Podcast(feed=message.text).save()
-    user.subscribe(Subscription(podcast))
+        podcast = models.Podcast(feed=message.text).save()
+    controllers.User(user).subscribe(podcast)
     try:
         manage_page = ManagePage(
             podcast_names=user.subscription.keys(),
