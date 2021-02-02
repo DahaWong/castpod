@@ -9,7 +9,7 @@ from castpod.utils import check_login
 def start(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    user = User.objects(id=message.from_user.id)
+    user = User.objects(user_id=message.from_user.id)
     if not user:
         user = User(
             user_id=message.from_user.id,
