@@ -2,5 +2,5 @@ python-telegram-bot
 bs4
 feedparser
 tqdm
-pymongo
 telegraph
+mongoengine

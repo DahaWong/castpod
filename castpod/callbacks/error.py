@@ -6,7 +6,7 @@ def handle_error(update, context):
     if not update:
         return
     if update.effective_message:
-        text = f"刚刚的操作触发了一个错误，报告已经抄送给[开发者](https://t.me/{manifest.author_id})了。"
+        text = f"刚刚的操作触发了一个错误，报告已抄送给[开发者](https://t.me/{manifest.author_id})。"
         update.effective_message.reply_text(text)
     payload = ""
     if update.effective_user:

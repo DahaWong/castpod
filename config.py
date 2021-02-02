@@ -1,11 +1,10 @@
 from telegram.ext import PicklePersistence
 import configparser
 from telegram.ext import Defaults
-import urllib.parse
 
 
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('config.ini')  # Read the configuration file on your machine.
 
 
 # Bot
@@ -26,10 +25,14 @@ dev_user_id = config['DEV']['USER_ID']
 webhook_port = int(config['WEBHOOK']['PORT'])
 
 # MongoDB
-mongo_name = urllib.parse.quote_plus(config['MONGODB']['DB_NAME'])
-mongo_username = urllib.parse.quote_plus(config['MONGODB']['USER'])
-mongo_password = config['MONGODB']['PWD']
-mongo_uri = f'mongodb://{mongo_username}:{mongo_password}@127.0.0.1'
+class Mongo(object):
+    mongo = config['MONGODB']
+    db = mongo['DB_NAME'],
+    user = mongo['USER'],
+    pwd = mongo['PWD'],
+    remote_host = mongo['REMOTE_HOST']
+    local_uri = f"mongodb://{user}:{pwd}@127.0.0.1",
+    remote_uri = f"mongodb://{user}:{pwd}@{remote_host}"
 
 
 # Build
@@ -70,11 +73,11 @@ webhook_setting = {
 
 # Manifest
 class manifest:
-  name = "Castpod"
-  bot_id = "castpodbot"
-  author= "Daha"
-  author_id = 'dahawong'
-  author_url = "https://office.daha.me/"
-  version= "0.0.1"
-  discription=""
-  repo = "https://github.com/dahawong/castpod"
+    name = "Castpod"
+    bot_id = "castpodbot"
+    author = "Daha"
+    author_id = 'dahawong'
+    author_url = "https://office.daha.me/"
+    version = "0.0.1"
+    discription = ""
+    repo = "https://github.com/dahawong/castpod"
