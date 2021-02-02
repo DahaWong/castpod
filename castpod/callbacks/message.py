@@ -17,8 +17,9 @@ def subscribe_feed(update, context):
     subscribing_message = run_async(message.reply_text, f"订阅中，请稍候…").result()
 
     user = models.User.objects(user_id=message.from_user.id).first()
-    models.Podcast(feed=message.text).save()
     podcast = models.Podcast.objects(feed=message.text).first()
+    if not podcast:
+        podcast = models.Podcast(feed=message.text).save()
     controllers.User(user).subscribe(podcast)
     try:
         manage_page = ManagePage(
