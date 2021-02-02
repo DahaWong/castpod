@@ -17,9 +17,9 @@ from telegraph import Telegraph
 from html import unescape
 
 connect(
-    db=Mongo.db,
-    username=Mongo.user,
-    password=Mongo.pwd
+    db=Mongo.db
+    # username=Mongo.user,
+    # password=Mongo.pwd
     # host=Mongo.remote_host
 )
 
