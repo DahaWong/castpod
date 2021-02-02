@@ -27,9 +27,9 @@ webhook_port = int(config['WEBHOOK']['PORT'])
 # MongoDB
 class Mongo(object):
     mongo = config['MONGODB']
-    db = mongo['DB_NAME'],
-    user = mongo['USER'],
-    pwd = mongo['PWD'],
+    db = mongo['DB_NAME']
+    user = mongo['USER']
+    pwd = mongo['PWD']
     remote_host = mongo['REMOTE_HOST']
     local_host = 'localhost'
 

@@ -18,7 +18,6 @@ from html import unescape
 
 connect(
     db=Mongo.db,
-    name=Mongo.db,
     username = Mongo.user,
     password = Mongo.pwd
 )
