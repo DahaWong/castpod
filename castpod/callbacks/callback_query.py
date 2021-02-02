@@ -1,6 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, ReplyKeyboardMarkup
 from castpod.components import PodcastPage, ManagePage
 from castpod.utils import toggle_save_podcast
+from castpod.models import User
 from config import manifest
 import re
 
@@ -16,19 +17,6 @@ def delete_command_context(update, context):
     )
     run_async(query.delete_message)
 
-# Tips
-
-
-def close_tips(update, context):
-    run_async = context.dispatcher.run_async
-    query = update.callback_query
-    from_command = re.match(r'close_tips_(\w+)', query.data)[1]
-    context.user_data['tips'].remove(from_command)
-    run_async(query.delete_message)
-    show_tips_alert = 'alert' in context.user_data['tips']
-    if show_tips_alert:
-        run_async(query.answer, "阅读完毕，它不会再出现在对话框中～")
-        context.user_data['tips'].remove('alert')
 
 # Account:
 
@@ -49,13 +37,10 @@ def logout(update, context):
 def delete_account(update, context):
     run_async = context.dispatcher.run_async
     bot = context.bot
-    user = context.user_data['user']
     message = update.callback_query.message
+    user = User.objects(user_id=message.from_user.id)
     deleting_note = run_async(message.edit_text, "注销中…").result()
-    if user.subscription.values():
-        for feed in user.subscription.values():
-            if user.user_id in feed.podcast.subscribers:
-                feed.podcast.subscribers.remove(user.user_id)
+    user.delete()
     context.user_data.clear()
     run_async(deleting_note.delete)
     run_async(bot.send_message,
@@ -67,7 +52,7 @@ def delete_account(update, context):
               chat_id=user.user_id, text="👋️",
               reply_markup=InlineKeyboardMarkup.from_button(
                   InlineKeyboardButton(
-                      '重 新 开 始', url=f"https://t.me/{manifest.bot_id}?start=login")
+                      '重新开始', url=f"https://t.me/{manifest.bot_id}?start=login")
               )
     )
 

@@ -1,13 +1,51 @@
-from castpod.models import Podcast
+from castpod.models import Podcast, Subscription, User
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
 from castpod.components import PodcastPage, ManagePage
 from config import podcast_vault, manifest
-from castpod.utils import check_login, local_download, parse_doc
+from castpod.utils import validate_user, local_download, parse_doc
 from base64 import urlsafe_b64encode as encode
 import re
 
 
-@check_login
+@validate_user
+def subscribe_feed(update, context):
+    run_async = context.dispatcher.run_async
+    message = update.message
+    run_async(context.bot.send_chat_action,
+              chat_id=message.chat_id, action='typing')
+    subscribing_message = run_async(message.reply_text, f"订阅中，请稍候…").result()
+
+    user = User.objects(user_id=message.from_user.id)
+    podcast = Podcast.objects(feed=message.text)
+    if not podcast:
+        podcast = Podcast(feed=message.text).save()
+    user.subscribe(Subscription(podcast))
+    try:
+        manage_page = ManagePage(
+            podcast_names=user.subscription.keys(),
+            text=f"`{podcast.name}` 订阅成功！"
+        )
+        run_async(subscribing_message.delete)
+        run_async(message.reply_text,
+                  text=manage_page.text,
+                  reply_markup=ReplyKeyboardMarkup(
+                      manage_page.keyboard(),
+                      resize_keyboard=True,
+                      one_time_keyboard=True
+                  )
+                  )
+        podcast_page = PodcastPage(podcast)
+        run_async(message.reply_text,
+                  text=podcast_page.text(),
+                  reply_markup=InlineKeyboardMarkup(podcast_page.keyboard())
+                  )
+        run_async(message.delete)
+    except Exception as e:
+        run_async(subscribing_message.edit_text, "订阅失败，可能是因为订阅源损坏 :(")
+        raise e
+
+
+@validate_user
 def save_subscription(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
@@ -69,47 +107,7 @@ def save_subscription(update, context):
               )
 
 
-@check_login
-def subscribe_feed(update, context):
-    run_async = context.dispatcher.run_async
-    message = update.message
-    run_async(context.bot.send_chat_action,
-              chat_id=message.chat_id, action='typing')
-    subscribing_message = run_async(message.reply_text, f"订阅中，请稍候…").result()
-
-    user = context.user_data['user']
-    podcasts = context.bot_data['podcasts']
-    podcast = Podcast(feed_url=message.text)  # 判断是否存在于音乐库中！
-    user.add_feed(podcast)
-    try:
-        manage_page = ManagePage(
-            podcast_names=user.subscription.keys(),
-            text=f"`{podcast.name}` 订阅成功！"
-        )
-        run_async(subscribing_message.delete)
-        run_async(message.reply_text,
-                  text=manage_page.text,
-                  reply_markup=ReplyKeyboardMarkup(
-                      manage_page.keyboard(),
-                      resize_keyboard=True,
-                      one_time_keyboard=True
-                  )
-                  )
-        podcast_page = PodcastPage(podcast)
-        run_async(message.reply_text,
-                  text=podcast_page.text(),
-                  reply_markup=InlineKeyboardMarkup(podcast_page.keyboard())
-                  )
-        run_async(message.delete)
-        podcast.subscribers.add(user.user_id)
-        if podcast.name not in podcasts.keys():
-            podcasts.update({podcast.name: podcast})
-    except Exception as e:
-        print(e)
-        run_async(subscribing_message.edit_text, "订阅失败，可能是因为订阅源损坏 :(")
-
-
-@check_login
+@validate_user
 def download_episode(update, context):
     bot = context.bot
     message = update.message
@@ -179,17 +177,16 @@ def download_episode(update, context):
     )
 
 
-@check_login
 def exit_reply_keyboard(update, context):
     message = update.message
     message.reply_text(
-        '已退出管理面板',
+        '已关闭操作面板',
         reply_markup=ReplyKeyboardRemove()
     ).delete()
     message.delete()
 
 
-@check_login
+@validate_user
 def show_feed(update, context):
     run_async = context.dispatcher.run_async
     message = update.message

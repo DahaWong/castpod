@@ -7,6 +7,7 @@ import errno
 import os
 import re
 from functools import wraps
+from castpod.models import User
 
 # Callback Query Helper
 
@@ -35,13 +36,16 @@ def toggle_save_podcast(update, context, to: str):
 # User Init
 
 
-def check_login(func):
+def validate_user(func):
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
-        user = context.user_data.get('user')
+        user = User.objects(user_id=update.message.from_user.id)
         if not user:
-            update.message.reply_text("请先登录：/start")
-            return
+            user = User(
+                user_id=update.message.from_user.id,
+                name=update.message.from_user.first_name,
+                username=update.message.from_user.username
+            ).save()
         return func(update, context, *args, **kwargs)
     return wrapped
 

@@ -1,5 +1,4 @@
 import datetime
-from enum import unique
 import feedparser
 import socket
 import random
@@ -7,11 +6,11 @@ import re
 from mongoengine import connect
 from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import BooleanField, DateTimeField, EmailField, EmbeddedDocumentField, IntField, ListField, ReferenceField, StringField, URLField
+from mongoengine.queryset.base import PULL
 from mongoengine.queryset.manager import queryset_manager
 from telegram.parsemode import ParseMode
 from castpod.utils import local_download
 from config import podcast_vault, dev_user_id, manifest, Mongo
-from base64 import urlsafe_b64encode as encode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegraph import Telegraph
 from html import unescape
@@ -37,10 +36,11 @@ class User(Document):
     username = StringField(unique=True, required=True)
     subscriptions = ListField(EmbeddedDocumentField(Subscription))
 
-
-    def subscribe(self, subscription):
-        self.update(push__subscriptions__0=subscription)
-        self.reload()
+    def subscribe(self, podcast):
+        podcast.renew()
+        self.update(push__subscriptions=Subscription(podcast))
+        podcast.update(push__subscribers=self)
+        self.save()
 
     def opml(self):
         body = ''
@@ -63,7 +63,7 @@ class User(Document):
             "\t</opml>\n"
         )
         opml = head + body + tail
-        path = f"./public/subscriptions/{self.name} - {manifest.name} 订阅源.xml"
+        path = f"./public/subscriptions/{manifest.name} 订阅源.xml"
         with open(path, 'w+') as f:
             f.write(opml)
         return path
@@ -72,6 +72,7 @@ class User(Document):
 class Shownotes(EmbeddedDocument):
     content = StringField(required=True)
     url = URLField(unique=True)
+    timeline = StringField()
 
     def set_url(self):
         telegraph = Telegraph()
@@ -87,11 +88,25 @@ class Shownotes(EmbeddedDocument):
             author_name=self.host or self.podcast_name
         )
         self.url = f"https://telegra.ph/{res['path']}"
-        self.reload()
+        self.save()
+
+    def set_shownotes(self):
+        shownotes = unescape(
+            self.content[0]['value']) if self.content else self.summary
+        img_content = f"<img src='{self.logo_url or self.podcast_logo}'>" if 'img' not in shownotes else ''
+        return img_content + self.replace_invalid_tags(shownotes)
+
+    def set_timeline(self):
+        shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.content)
+        # self.shownotes = re.sub(r'(?<=:[0-5][0-9])[\)\]\}】」）》>]+', '', self.shownotes)
+        # self.shownotes = re.sub(r'[\(\[\{【「（《<]+(?=:[0-5][0-9])', '', self.shownotes)
+        pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
+        matches = re.finditer(pattern, shownotes)
+        return '\n\n'.join([re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches])
 
 
 class Audio(EmbeddedDocument):
-    url = URLField(required=True)
+    url = URLField()
     performer = StringField()
     logo = URLField()
     size = IntField()
@@ -100,16 +115,40 @@ class Audio(EmbeddedDocument):
 
 class Episode(EmbeddedDocument):
     podcast = ReferenceField('Podcast', required=True)
+    index = IntField(required=True)
     audio = EmbeddedDocumentField(Audio)
-    title = StringField(max_length=64, required=True)
+    title = StringField(max_length=64)
     subtitle = StringField()
     content = StringField()
     summary = StringField()
+    host = StringField()
     shownotes = EmbeddedDocumentField(Shownotes)
     timeline = StringField()
     published_time = DateTimeField()
     message_id = IntField()
     file_id = StringField()
+
+    def parse(self, item):
+        self.audio.performer = unescape(item.get('author') or '')
+        if self.host == self.podcast.name:
+            self.host = ''
+        audio = item.enclosures[0]
+        self.audio = Audio(
+            url=audio.href,
+            size=audio.get('length') or 0,
+            performer=self.podcast.name,
+            logo=item.get('image').href if item.get('image') else '',
+            duration=self.set_duration(item.get('itunes_duration'))
+        ).save()
+        self.title = unescape(item.get('title') or '')
+        self.subtitle = unescape(item.get('subtitle') or '')
+        if self.title == self.subtitle:
+            self.subtitle = ''
+        self.content = item.get('content')
+        self.summary = unescape(item.get('summary') or '')
+        self.shownotes = Shownotes(self.content).save()
+        self.published_time = item.published_parsed
+        self.save()
 
     def replace_invalid_tags(self, html_content):
         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
@@ -118,33 +157,45 @@ class Episode(EmbeddedDocument):
         html_content = html_content.replace('’', "'")
         return html_content
 
-    # def parse_feed(self, url):
-    #     socket.setdefaulttimeout(5)
-    #     result = feedparser.parse(url)
-    #     if str(result.status)[0] != '2' and str(result.status)[0] != '3':
-    #         raise Exception(f'Feed URL Open Error, status: {result.status}')
-    #     feed = result.feed
-    #     self.name = feed.get('title')
-    #     if not self.name:
-    #         raise Exception("Cannot parse feed name.")
-    #     self.name = unescape(self.name)[:32]
-    #     if len(self.name) == 32:
-    #         self.name += '…'
-    #     self.logo_url = feed.get('image').get('href')
-    #     # self.download_logo()
-    #     self.episodes = self.set_episodes(result['items'])
-    #     self.latest_episode = self.episodes[0]
-    #     self.host = unescape(feed.author_detail.name)
-    #     if self.host == self.name:
-    #         self.host = ''
-    #     self.website = feed.link
-    #     self.email = feed.author_detail.get('email') or ""
 
-    # def set_episodes(self, results):
-    #     episodes = []
-    #     for episode in results:
-    #         episodes.append(Episode(self.name, episode, self.logo_url))
-    #     return episodes
+class Podcast(Document):
+    feed = URLField(required=True, unique=True)
+    name = StringField(max_length=64)
+    logo = URLField()
+    host = StringField()
+    website = URLField()
+    email = EmailField(allow_ip_domain=True, allow_utf8_user=True)
+    episodes = ListField(EmbeddedDocumentField(Episode))
+    subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
+    update_time = DateTimeField()
+    job_group = IntField(min_value=0, max_value=47)
+
+    def renew(self):
+        self.set_job_group()
+        socket.setdefaulttimeout(5)
+        result = feedparser.parse(self.feed)
+        if str(result.status)[0] != '2' and str(result.status)[0] != '3':
+            raise Exception(f'Feed open error, status: {result.status}')
+        feed = result.feed
+        self.name = feed.get('title')
+        if not self.name:
+            self.delete()
+            raise Exception("Cannot parse feed name.")
+        self.name = unescape(self.name)[:63]
+        if len(self.name) == 63:
+            self.name += '…'
+        self.logo = feed.get('image')['href']
+        for i, item in enumerate(result['items']):
+            episode = Episode(podcast=self, index=i)
+            episode.parse(item)
+            self.update(push__episodes=episode)
+        # self.download_logo()
+        self.host = unescape(feed.author_detail.name or '')
+        if self.host == self.name:
+            self.host = ''
+        self.website = feed.link
+        self.email = feed.author_detail.get('email') or ''
+        self.save()
 
     # def download_logo(self):
     #     infile = f'public/logos/{self.name}.jpg'
@@ -158,37 +209,22 @@ class Episode(EmbeddedDocument):
     #                 break
     #             f.write(block)
     #     self.logo = infile
-        # outfile = os.path.splitext(infile)[0] + ".thumbnail.jpg"
-        # try:
-        #     with Image.open(infile) as im:
-        #         im.thumbnail(size=(320, 320))
-        #         im.convert('RGB')
-        #         im.save(outfile, "JPEG")
-        #     self.thumbnail = outfile
-        # except Exception as e:
-        #     print(e)
-        #     self.thumbnail = ''
+    #     outfile = os.path.splitext(infile)[0] + ".thumbnail.jpg"
+    #     try:
+    #         with Image.open(infile) as im:
+    #             im.thumbnail(size=(320, 320))
+    #             im.convert('RGB')
+    #             im.save(outfile, "JPEG")
+    #         self.thumbnail = outfile
+    #     except Exception as e:
+    #         print(e)
+    #         self.thumbnail = ''
 
 
-class Podcast(Document):
-    feed = URLField(required=True, unique=True)
-    name = StringField(max_length=64)
-    logo = URLField()
-    host = StringField()
-    website = URLField()
-    email = EmailField(allow_ip_domain=True, allow_utf8_user=True)
-    episodes = ListField(EmbeddedDocumentField(Episode))
-    subscribers = ListField(ReferenceField(User))
-    update_time = DateTimeField()
-    job_group = IntField(min_value=0, max_value=47)
-
-    # def parse(self):
-    #     pass
-
-    # def set_job_group(self):
-    #     i = random.randint(0, 47)
-    #     self.update(job_group=[i % 48 for i in range(i, i + 41, 8)])
-    #     self.reload()
+    def set_job_group(self):
+        i = random.randint(0, 47)
+        self.job_group = [i % 48 for i in range(i, i + 41, 8)]
+        self.save()
 
     # def update(self, context):
     #     last_published_time = self.episodes[0].published_time
@@ -243,83 +279,14 @@ class Podcast(Document):
     #                 dev_user_id, f'{context.job.name} 更新出错：`{e}`')
 
 
-# class Episode(object):
-#     """
-#     Episode of a specific podcast.
-#     """
+# class UserStats(EmbeddedDocument):
+#     pass
 
-#     def __init__(self, from_podcast: str, episode, podcast_logo):
-#         self.podcast_name = from_podcast
-#         self.podcast_logo = podcast_logo
-#         self.host = unescape(episode.get('author')) or ''
-#         if self.host == from_podcast:
-#             self.host = ''
-#         self.audio = self.set_audio(episode.enclosures)
-#         if self.audio:
-#             self.audio_url = self.audio.href
-#             self.audio_size = self.audio.get('length') or 0
-#         else:
-#             self.audio_url = ""
-#             self.audio_size = 0
-#         self.title = self.set_title(episode.get('title'))
-#         self.subtitle = unescape(episode.get('subtitle') or '')
-#         if self.title == self.subtitle:
-#             self.subtitle = ''
-#         self.logo_url = episode.get(
-#             'image').href if episode.get('image') else ''
-#         self.duration = self.set_duration(episode.get('itunes_duration'))
-#         self.content = episode.get('content')
-#         self.summary = unescape(episode.get('summary') or '')
-#         self.shownotes = self.set_shownotes()
-#         self.timeline = self.set_timeline()
-#         self.shownotes_url = ''
-#         self.published_time = episode.published_parsed
-#         self.message_id = None
+# class CommandStats(UserStats):
+#     name = StringField(required=True, unique=True)
+#     count = IntField()
 
-#     def set_duration(self, duration: str) -> int:
-#         duration_timedelta = None
-#         if duration:
-#             if ':' in duration:
-#                 time = duration.split(':')
-#                 if len(time) == 3:
-#                     duration_timedelta = datetime.timedelta(
-#                         hours=int(time[0]),
-#                         minutes=int(time[1]),
-#                         seconds=int(time[2])
-#                     )
-#                 elif len(time) == 2:
-#                     duration_timedelta = datetime.timedelta(
-#                         hours=0,
-#                         minutes=int(time[0]),
-#                         seconds=int(time[1])
-#                     )
-#             else:
-#                 duration_timedelta = datetime.timedelta(seconds=int(duration))
-#         else:
-#             duration_timedelta = datetime.timedelta(seconds=0)
-#         return duration_timedelta
+# class ListenStats(UserStats):
+#     liked_
 
-#     def set_audio(self, enclosure):
-#         if enclosure:
-#             return enclosure[0]
-#         else:
-#             return None
-
-#     def set_title(self, title):
-#         if not title:
-#             return ''
-#         return unescape(title).lstrip(self.podcast_name)
-
-#     def set_shownotes(self):
-#         shownotes = unescape(
-#             self.content[0]['value']) if self.content else self.summary
-#         img_content = f"<img src='{self.logo_url or self.podcast_logo}'>" if 'img' not in shownotes else ''
-#         return img_content + self.replace_invalid_tags(shownotes)
-
-#     def set_timeline(self):
-#         shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.shownotes)
-#         # self.shownotes = re.sub(r'(?<=:[0-5][0-9])[\)\]\}】」）》>]+', '', self.shownotes)
-#         # self.shownotes = re.sub(r'[\(\[\{【「（《<]+(?=:[0-5][0-9])', '', self.shownotes)
-#         pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
-#         matches = re.finditer(pattern, shownotes)
-#         return '\n\n'.join([re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches])
+# class PodcastStats(Stats):

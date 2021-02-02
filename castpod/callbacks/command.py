@@ -1,28 +1,34 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
-from base64 import urlsafe_b64decode as decode
 from config import manifest
 from castpod.models import User, Podcast
-from castpod.components import ManagePage, PodcastPage, Tips
-from castpod.utils import check_login
+from castpod.components import ManagePage, PodcastPage
+from castpod.utils import validate_user
 
 
+@validate_user
 def start(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    user = User.objects(user_id=message.from_user.id)
-    if not user:
-        user = User(
-            user_id=message.from_user.id,
-            name=message.from_user.first_name,
-            username=message.from_user.username
-        ).save()
-    if (not context.args) or (context.args[0] == "login"):
+    user = User.objects(user_id=update.message.from_user.id)
+
+    if context.args and context.args[0] != 'login':
+        podcast_id = context.args[0]
+        podcast = Podcast.objects(id=podcast_id)
+        subscribing_note = run_async(
+            update.message.reply_text, "正在订阅…").result()
+        user.subscribe(podcast)
+        page = PodcastPage(podcast)
+        run_async(
+            subscribing_note.edit_text,
+            text=page.text(),
+            reply_markup=InlineKeyboardMarkup(page.keyboard())
+        )
+    else:
         welcome_text = (
             f'欢迎使用 {manifest.name}！                                            '
             f'\n\n您可以发送 OPML 文件或 RSS 链接以*导入播客订阅*。\n'
-            f'\n⚠️ 目前还*没有正式上线*，正在测试数据库的功能，测试完毕会在[内测群](https://t.me/castpodchat)中告知。'
+            f'\n⚠️ 目前还*没有正式上线*，正在接入数据库的功能，测试完毕会在[内测群组](https://t.me/castpodchat)中告知。'
         )
-
         run_async(
             message.reply_text,
             text=welcome_text,
@@ -32,23 +38,11 @@ def start(update, context):
                 )
             )
         )
-    else:
-        podcast_id = context.args[0]
-        podcast = Podcast.objects(id = podcast_id)
-        subscribing_note = run_async(update.message.reply_text, "订阅中…").result()
-        podcast.update_one(push__subscribers=user)
-        page = PodcastPage(podcast)
-        run_async(
-            subscribing_note.edit_text,
-            text=page.text(),
-            reply_markup=InlineKeyboardMarkup(page.keyboard())
-        )
 
 
-@check_login
 def about(update, context):
-    keyboard = [[InlineKeyboardButton("源     代     码", url=manifest.repo),
-                 InlineKeyboardButton("工     作     室", url=manifest.author_url)]]
+    keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
+                 InlineKeyboardButton("工作室", url=manifest.author_url)]]
     context.dispatcher.run_async(
         update.message.reply_text(
             text=(
@@ -61,7 +55,6 @@ def about(update, context):
     )
 
 
-@check_login
 def favourites(update, context):
     run_async = context.dispatcher.run_async
     buttons = [
@@ -71,25 +64,19 @@ def favourites(update, context):
             '订  阅  列  表', switch_inline_query_current_chat='')]
     ]
 
-    message = run_async(
+    run_async(
         update.message.reply_text,
         text='⭐️',
         reply_markup=InlineKeyboardMarkup(buttons)
-    ).result()
-
-    if not context.user_data['is_home_pinned']:
-        run_async(message.pin)
-        context.user_data['is_home_pinned'] = True
-
-    tips = (
-        "⦿ 前往 Telegram `设置 → 外观 → 大表情 Emoji` 获得更好的显示效果\n"
-        f"⦿ 在对话框中输入 `@{manifest.bot_id}` 以唤出管理面板，接着输入关键词即可搜索播客"
     )
 
-    Tips(from_command='search', text=tips).send(update, context)
+    # tips = (
+    #     "⦿ 前往 Telegram `设置 → 外观 → 大表情 Emoji` 获得更好的显示效果\n"
+    #     f"⦿ 在对话框中输入 `@{manifest.bot_id}` 以唤出管理面板，接着输入关键词即可搜索播客"
+    # )
 
 
-@check_login
+@validate_user
 def manage(update, context):
     run_async = context.dispatcher.run_async
     user = context.user_data['user']
@@ -105,7 +92,7 @@ def manage(update, context):
     )
 
 
-@check_login
+@validate_user
 def setting(update, context):
     keyboard = [["╳"],
                 ["播客更新频率", "快捷置顶单集", "单集信息显示"],
@@ -116,7 +103,6 @@ def setting(update, context):
     )
 
 
-@check_login
 def help(update, context):
     message = update.message
     message.reply_text(
@@ -136,20 +122,19 @@ def help(update, context):
     )
 
 
-@check_login
+@validate_user
 def export(update, context):
-    user = context.user_data['user']
-    if not user.subscription:
+    user = User.objects(user_id=update.message.from_user.id)
+    if not user.subscriptions:
         update.message.reply_text('你还没有订阅的播客，请先订阅再导出～')
-        return
-    update.message.reply_document(
-        filename=f"{user.name} 的 {manifest.name} 订阅.xml",
-        document=user.update_opml(),
-        # thumb = ""
-    )
+    else:
+        update.message.reply_document(
+            document=user.opml(),
+            # thumb = ""
+        )
 
 
-@check_login
+@validate_user
 def logout(update, context):
     keyboard = [[InlineKeyboardButton("返回", callback_data=f"delete_command_context_{update.message.message_id}"),
                  InlineKeyboardButton("注销", callback_data="logout")]]
@@ -159,4 +144,4 @@ def logout(update, context):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    Tips('logout', "⦿ 这将清除所有存储在后台的个人数据。").send(update, context)
+    # Tips('logout', "⦿ 这将清除所有存储在后台的个人数据。").send(update, context)
