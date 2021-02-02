@@ -33,8 +33,6 @@ def toggle_save_podcast(update, context, to: str):
         InlineKeyboardMarkup(keyboard)
     )
 
-# User Init
-
 
 def validate_user(func):
     @wraps(func)
