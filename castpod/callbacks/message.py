@@ -23,7 +23,7 @@ def subscribe_feed(update, context):
     controllers.User(user).subscribe(podcast)
     try:
         manage_page = ManagePage(
-            podcast_names=user.subscription.keys(),
+            podcast_names=[subscription.podcast.name for subscription in user.subscriptions],
             text=f"`{podcast.name}` 订阅成功！"
         )
         run_async(subscribing_message.delete)
