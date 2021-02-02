@@ -24,7 +24,7 @@ connect(
 
 
 class Subscription(EmbeddedDocument):
-    podcast = ReferenceField('Podcast', reverse_delete_rule=True, requied=True)
+    podcast = ReferenceField('Podcast', required=True)
     is_saved = BooleanField(default=False)
     is_latest = BooleanField(default=True)
 
