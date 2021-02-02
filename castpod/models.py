@@ -18,13 +18,14 @@ from html import unescape
 
 connect(
     db=Mongo.db,
-    username = Mongo.user,
-    password = Mongo.pwd
+    username=Mongo.user,
+    password=Mongo.pwd
 )
 
 
 class Subscription(EmbeddedDocument):
-    podcast = ReferenceField('Podcast', required=True)
+    podcast = ReferenceField(
+        'Podcast', required=True)
     is_saved = BooleanField(default=False)
     is_latest = BooleanField(default=True)
 
@@ -33,7 +34,7 @@ class User(Document):
     user_id = IntField(primary_key=True)
     name = StringField(required=True)
     username = StringField(unique=True)
-    subscriptions = ListField(EmbeddedDocumentField('Subscription'))
+    subscriptions = ListField(EmbeddedDocumentField(Subscription))
 
     def subscribe(self, subscription):
         self.update(push__subscriptions__0=subscription)
@@ -66,79 +67,6 @@ class User(Document):
         return path
 
 
-class Podcast(Document):
-    feed = URLField(required=True, unique=True)
-    name = StringField(max_length=64)
-    logo = URLField()
-    host = StringField()
-    website = URLField()
-    email = EmailField(allow_ip_domain=True, allow_utf8_user=True)
-    episodes = ListField(EmbeddedDocumentField('Episode'))
-    subscribers = ListField(ReferenceField(User))
-    update_time = DateTimeField()
-    job_group = IntField(min_value=0, max_value=47)
-
-    def parse(self):
-        pass
-
-    def set_job_group(self):
-        i = random.randint(0, 47)
-        self.update(job_group=[i % 48 for i in range(i, i + 41, 8)])
-        self.reload()
-
-    def update(self, context):
-        last_published_time = self.episodes[0].published_time
-        self.parse()
-        if self.episodes[0].published_time != last_published_time:
-            try:
-                audio_file = local_download(self.episodes[0], context)
-                encoded_podcast_name = encode(
-                    bytes(self.name, 'utf-8')).decode("utf-8")
-                audio_message = context.bot.send_audio(
-                    chat_id=f'@{podcast_vault}',
-                    audio=audio_file,
-                    caption=(
-                        f"<b>{self.name}</b>\n"
-                        f"总第 {len(self.episodes)} 期\n\n"
-                        f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a> | "
-                        f"<a href='{self.episodes[0].get_shownotes_url()}'>相关链接</a>"
-                    ),
-                    title=self.episodes[0].title,
-                    performer=self.name,
-                    duration=self.episodes[0].duration.seconds,
-                    thumb=self.logo_url,
-                    parse_mode=ParseMode.HTML
-                    # timeout = 1800
-                )
-                self.episodes[0].message_id = audio_message.message_id
-                for user_id in self.subscribers:
-                    forwarded_message = context.bot.forward_message(
-                        chat_id=user_id,
-                        from_chat_id=f"@{podcast_vault}",
-                        message_id=self.episodes[0].message_id
-                    )
-                    forwarded_message.edit_caption(
-                        caption=(
-                            f"🎙️ *{self.name}*\n\n[相关链接]({self.episodes[0].get_shownotes_url() or self.website})"
-                            f"\n\n{self.episodes[0].timeline}"
-                        ),
-                        reply_markup=InlineKeyboardMarkup([[
-                            InlineKeyboardButton(
-                                text="评     论     区",
-                                url=f"https://t.me/{podcast_vault}/{audio_message.message_id}")
-                        ], [
-                            InlineKeyboardButton(
-                                "订  阅  列  表", switch_inline_query_current_chat=""),
-                            InlineKeyboardButton(
-                                "单  集  列  表", switch_inline_query_current_chat=f"{self.name}")
-                        ]]
-                        )
-                    )
-            except Exception as e:
-                context.bot.send_message(
-                    dev_user_id, f'{context.job.name} 更新出错：`{e}`')
-
-
 class Shownotes(EmbeddedDocument):
     content = StringField(required=True)
     url = URLField(unique=True)
@@ -159,6 +87,7 @@ class Shownotes(EmbeddedDocument):
         self.url = f"https://telegra.ph/{res['path']}"
         self.reload()
 
+
 class Audio(EmbeddedDocument):
     url = URLField(required=True)
     performer = StringField()
@@ -166,8 +95,9 @@ class Audio(EmbeddedDocument):
     size = IntField()
     duration = IntField()
 
+
 class Episode(EmbeddedDocument):
-    podcast = ReferenceField(Podcast, reverse_delete_rule=True, required=True)
+    podcast = ReferenceField('Podcast', required=True)
     audio = EmbeddedDocumentField(Audio)
     title = StringField(max_length=64, required=True)
     subtitle = StringField()
@@ -236,6 +166,79 @@ class Episode(EmbeddedDocument):
         # except Exception as e:
         #     print(e)
         #     self.thumbnail = ''
+
+
+class Podcast(Document):
+    feed = URLField(required=True, unique=True)
+    name = StringField(max_length=64)
+    logo = URLField()
+    host = StringField()
+    website = URLField()
+    email = EmailField(allow_ip_domain=True, allow_utf8_user=True)
+    episodes = ListField(EmbeddedDocumentField(Episode))
+    subscribers = ListField(ReferenceField(User))
+    update_time = DateTimeField()
+    job_group = IntField(min_value=0, max_value=47)
+
+    # def parse(self):
+    #     pass
+
+    # def set_job_group(self):
+    #     i = random.randint(0, 47)
+    #     self.update(job_group=[i % 48 for i in range(i, i + 41, 8)])
+    #     self.reload()
+
+    # def update(self, context):
+    #     last_published_time = self.episodes[0].published_time
+    #     self.parse()
+    #     if self.episodes[0].published_time != last_published_time:
+    #         try:
+    #             audio_file = local_download(self.episodes[0], context)
+    #             encoded_podcast_name = encode(
+    #                 bytes(self.name, 'utf-8')).decode("utf-8")
+    #             audio_message = context.bot.send_audio(
+    #                 chat_id=f'@{podcast_vault}',
+    #                 audio=audio_file,
+    #                 caption=(
+    #                     f"<b>{self.name}</b>\n"
+    #                     f"总第 {len(self.episodes)} 期\n\n"
+    #                     f"<a href='https://t.me/{manifest.bot_id}?start={encoded_podcast_name}'>订阅</a> | "
+    #                     f"<a href='{self.episodes[0].get_shownotes_url()}'>相关链接</a>"
+    #                 ),
+    #                 title=self.episodes[0].title,
+    #                 performer=self.name,
+    #                 duration=self.episodes[0].duration.seconds,
+    #                 thumb=self.logo_url,
+    #                 parse_mode=ParseMode.HTML
+    #                 # timeout = 1800
+    #             )
+    #             self.episodes[0].message_id = audio_message.message_id
+    #             for user_id in self.subscribers:
+    #                 forwarded_message = context.bot.forward_message(
+    #                     chat_id=user_id,
+    #                     from_chat_id=f"@{podcast_vault}",
+    #                     message_id=self.episodes[0].message_id
+    #                 )
+    #                 forwarded_message.edit_caption(
+    #                     caption=(
+    #                         f"🎙️ *{self.name}*\n\n[相关链接]({self.episodes[0].get_shownotes_url() or self.website})"
+    #                         f"\n\n{self.episodes[0].timeline}"
+    #                     ),
+    #                     reply_markup=InlineKeyboardMarkup([[
+    #                         InlineKeyboardButton(
+    #                             text="评     论     区",
+    #                             url=f"https://t.me/{podcast_vault}/{audio_message.message_id}")
+    #                     ], [
+    #                         InlineKeyboardButton(
+    #                             "订  阅  列  表", switch_inline_query_current_chat=""),
+    #                         InlineKeyboardButton(
+    #                             "单  集  列  表", switch_inline_query_current_chat=f"{self.name}")
+    #                     ]]
+    #                     )
+    #                 )
+    #         except Exception as e:
+    #             context.bot.send_message(
+    #                 dev_user_id, f'{context.job.name} 更新出错：`{e}`')
 
 
 # class Episode(object):

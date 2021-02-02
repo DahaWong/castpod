@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from base64 import urlsafe_b64decode as decode
 from config import manifest
-from castpod.models import User, Feed
+from castpod.models import User
 from castpod.components import ManagePage, PodcastPage, Tips
 from castpod.utils import check_login
 
@@ -46,7 +46,7 @@ def start(update, context):
         subscribing_note = run_async(
             update.message.reply_text, "订阅中…").result()
         # 完全一样的订阅逻辑，简化之：
-        user.subscription.update({podcast_name: Feed(podcast)})
+        # user.subscription.update({podcast_name: Feed(podcast)})
         podcast.subscribers.add(user_id)
         page = PodcastPage(podcast)
         run_async(
