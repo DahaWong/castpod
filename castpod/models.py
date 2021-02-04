@@ -100,7 +100,7 @@ class Shownotes(EmbeddedDocument):
         )
         self.url = f"https://telegra.ph/{res['path']}"
         print(self.url)
-        sleep(1.2)
+        sleep(0.8)
 
     def set_content(self, logo):
         content = self.content
