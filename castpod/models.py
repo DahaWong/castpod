@@ -225,7 +225,7 @@ class Podcast(Document):
         episode.shownotes.set_content(episode.audio.logo)
         episode.shownotes.set_timeline()
         episode.shownotes.set_url(episode.title, self.name)
-        episode.published_time = datetime.fromtimestamp(
+        episode.published_time = datetime.datetime.fromtimestamp(
             mktime(item.published_parsed))
         return episode
 
