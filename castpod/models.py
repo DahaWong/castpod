@@ -2,7 +2,7 @@ import re
 import random
 import socket
 import datetime
-from time import mktime
+from time import mktime,sleep
 import feedparser
 from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentField, EmbeddedDocumentListField, IntField, LazyReferenceField, ListField, ReferenceField, StringField, URLField
@@ -99,6 +99,7 @@ class Shownotes(EmbeddedDocument):
             author_name=author
         )
         self.url = f"https://telegra.ph/{res['path']}"
+        sleep(0.3)
 
     def set_content(self, logo):
         content = self.content
