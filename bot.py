@@ -15,6 +15,10 @@ dispatcher = updater.dispatcher
 # updater.bot.delete_webhook()
 # updater.bot.close()
 
+# Webhook:
+updater.start_webhook(**webhook_info)
+updater.bot.set_webhook(**webhook_setting)
+
 connection = dispatcher.run_async(
     connect,
     db=Mongo.db
@@ -51,7 +55,3 @@ else:
 # Polling:
 # updater.start_polling() #test
 # updater.idle()     #test
-
-# Webhook:
-updater.start_webhook(**webhook_info)
-updater.bot.set_webhook(**webhook_setting)
