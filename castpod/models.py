@@ -100,7 +100,7 @@ class Shownotes(EmbeddedDocument):
         self.update(url=f"https://telegra.ph/{res['path']}")
 
     def set_content(self, logo):
-        content = self.content or self.summary
+        content = self.content
         img_content = f"<img src='{logo}'>" if 'img' not in content else ''
         self.update(content=img_content + self.replace_invalid_tags(content))
 
@@ -217,9 +217,9 @@ class Podcast(Document):
         episode.subtitle = unescape(item.get('subtitle') or '')
         if episode.title == episode.subtitle:
             episode.subtitle = ''
-        episode.content = item.get('content')
         episode.summary = unescape(item.get('summary') or '')
-        episode.shownotes = Shownotes(self.content).save()
+        episode.content = item.get('content')[0]['value'] if item.get('content') else episode.summary
+        episode.shownotes = Shownotes(content=episode.content).save()
         episode.shownotes.set_content(episode.logo)
         episode.shownotes.set_timeline()
         episode.shownotes.set_url()
