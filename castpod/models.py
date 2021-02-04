@@ -2,6 +2,7 @@ import re
 import random
 import socket
 import datetime
+from time import mktime
 import feedparser
 from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentField, EmbeddedDocumentListField, IntField, LazyReferenceField, ListField, ReferenceField, StringField, URLField
@@ -137,8 +138,7 @@ class Episode(EmbeddedDocument):
     host = StringField()
     shownotes = EmbeddedDocumentField(Shownotes)
     timeline = StringField()
-    published_time = StringField()
-    # published_time = DateTimeField()
+    published_time = DateTimeField()
     message_id = IntField()
     file_id = StringField()
 
@@ -225,8 +225,8 @@ class Podcast(Document):
         episode.shownotes.set_content(episode.audio.logo)
         episode.shownotes.set_timeline()
         episode.shownotes.set_url(episode.title, self.name)
-        episode.published_time = item.published_parsed
-        print(episode.published_time, type(episode.published_time))
+        episode.published_time = datetime.fromtimestamp(
+            mktime(item.published_parsed))
         return episode
 
     def set_duration(self, duration: str) -> int:
