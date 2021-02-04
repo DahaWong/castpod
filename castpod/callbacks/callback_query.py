@@ -68,7 +68,7 @@ def unsave_podcast(update, context):
 
 def toggle_save_podcast(update, context, to: str):
     query = update.callback_query
-    user = User.objects(query.from_user).only('subscriptions').first()
+    user = User.objects(id=query.from_user.id).only('subscriptions').first()
     podcast_id = re.match(
         r'(un)?save_podcast_(.+)',
         query.data
