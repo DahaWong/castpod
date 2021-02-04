@@ -1,7 +1,7 @@
 from telegram.ext import Updater
 from config import update_info, webhook_info, webhook_setting, Mongo
 from castpod.handlers import register_handlers
-from castpod.stats import register_stats
+from castpod.stats import register as register_stats
 from mongoengine import connect
 import datetime
 
@@ -14,6 +14,14 @@ dispatcher = updater.dispatcher
 # Use these methods before you move your bot to another local server:
 # updater.bot.delete_webhook()
 # updater.bot.close()
+
+connection = dispatcher.run_async(
+    connect,
+    db=Mongo.db
+    # username=Mongo.user, # for auth
+    # password=Mongo.pwd # for auth
+    # host=Mongo.remote_host # for remote test
+)
 
 
 def make_job(i):
@@ -35,14 +43,7 @@ for i in range(48):
 register_handlers(dispatcher)
 register_stats(dispatcher)
 
-connection = connect(
-    db=Mongo.db
-    # username=Mongo.user, # for auth
-    # password=Mongo.pwd # for auth
-    # host=Mongo.remote_host # for remote test
-)
-
-if connection:
+if connection.result():
     print('MongoDB Connected!')
 else:
     raise Exception('MongoDB Connection Failed.')

@@ -2,7 +2,7 @@ from ptbstats import set_dispatcher, register_stats, SimpleStats
 from telegram.ext import Filters
 
 
-def register_stats(dispatcher):
+def register(dispatcher):
     set_dispatcher(dispatcher)
 
     register_stats(
