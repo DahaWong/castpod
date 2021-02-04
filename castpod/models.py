@@ -233,9 +233,8 @@ class Podcast(Document):
         duration_timedelta = None
         if duration:
             if ':' in duration:
-                print('1')
                 time = duration.split(':')
-                print('2')
+                print(time,len(time))
                 if len(time) == 3:
                     print('3')
                     duration_timedelta = datetime.timedelta(
