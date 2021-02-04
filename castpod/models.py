@@ -192,7 +192,7 @@ class Podcast(Document):
         for i, item in enumerate(result['items']):
             episode = self.parse_episode(item, i)
             self.update(push__episodes=episode)
-            # self.reload()
+            self.reload()
         self.host = unescape(feed.author_detail.name or '')
         if self.host == self.name:
             self.host = ''
