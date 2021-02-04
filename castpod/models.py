@@ -15,12 +15,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegraph import Telegraph
 from html import unescape
 
-telegraph = Telegraph()
-telegraph.create_account(
-    short_name=manifest.name,
-    author_name=manifest.name,
-    author_url=f'https://t.me/{manifest.bot_id}'
-)
+
 
 
 class Subscription(EmbeddedDocument):
@@ -93,14 +88,19 @@ class Shownotes(EmbeddedDocument):
     timeline = StringField()
 
     def set_url(self, title, author):
+        telegraph = Telegraph()
+        telegraph.create_account(
+            short_name=manifest.name,
+            author_name=manifest.name,
+            author_url=f'https://t.me/{manifest.bot_id}'
+        )
         res = telegraph.create_page(
             title=f"{title}",
             html_content=self.content,
             author_name=author
         )
         self.url = f"https://telegra.ph/{res['path']}"
-        print(self.url)
-        sleep(1)
+        sleep(0.3)
 
     def set_content(self, logo):
         content = self.content
