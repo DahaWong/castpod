@@ -250,4 +250,5 @@ class Podcast(Document):
                 duration_timedelta = datetime.timedelta(seconds=int(duration))
         else:
             duration_timedelta = datetime.timedelta(seconds=0)
+        print(duration_timedelta)
         return duration_timedelta
