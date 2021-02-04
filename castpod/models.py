@@ -137,7 +137,8 @@ class Episode(EmbeddedDocument):
     host = StringField()
     shownotes = EmbeddedDocumentField(Shownotes)
     timeline = StringField()
-    published_time = DateTimeField()
+    published_time = StringField()
+    # published_time = DateTimeField()
     message_id = IntField()
     file_id = StringField()
 
@@ -225,6 +226,7 @@ class Podcast(Document):
         episode.shownotes.set_timeline()
         episode.shownotes.set_url(episode.title, self.name)
         episode.published_time = item.published_parsed
+        print(episode.published_time, type(episode.published_time))
         return episode
 
     def set_duration(self, duration: str) -> int:
