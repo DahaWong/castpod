@@ -239,14 +239,13 @@ class Podcast(Document):
                         hours=int(time[0]),
                         minutes=int(time[1]),
                         seconds=int(time[2])
-                    )
+                    ).total_seconds()
                 elif len(time) == 2:
-                    print(time[0],time[1])
                     duration_timedelta = datetime.timedelta(
                         hours=0,
                         minutes=int(time[0]),
                         seconds=int(time[1])
-                    )
+                    ).total_seconds()
                     print(datetime.timedelta)
             else:
                 duration_timedelta = datetime.timedelta(seconds=int(duration))
