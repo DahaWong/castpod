@@ -28,7 +28,7 @@ def handle_inline_query(update, context):
             print(e)
             results = run_async(search_podcast, query_text).result()
 
-    run_async(query.answer, results, **kwargs)
+    run_async(query.answer, list(results), **kwargs)
 
 
 def show_subscription(user):
