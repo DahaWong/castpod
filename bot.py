@@ -1,8 +1,9 @@
-import datetime
-from config import update_info, webhook_info, webhook_setting
 from telegram.ext import Updater
+from config import update_info, webhook_info, webhook_setting, Mongo
 from castpod.handlers import register_handlers
 from castpod.stats import register_stats
+from mongoengine import connect
+import datetime
 
 updater = Updater(**update_info)
 dispatcher = updater.dispatcher
@@ -34,6 +35,17 @@ for i in range(48):
 register_handlers(dispatcher)
 register_stats(dispatcher)
 
+connection = connect(
+    db=Mongo.db
+    # username=Mongo.user, # for auth
+    # password=Mongo.pwd # for auth
+    # host=Mongo.remote_host # for remote test
+)
+
+if connection:
+    print('MongoDB Connected!')
+else:
+    raise Exception('MongoDB Connection Failed.')
 
 # Polling:
 # updater.start_polling() #test
