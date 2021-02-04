@@ -104,6 +104,7 @@ def save_subscription(update, context):
                 f"若文件没有问题，请私信[开发者](tg://user?id={dev_user_id})。"
             )
         )
+        raise e
 
 
 def download_episode(update, context):
