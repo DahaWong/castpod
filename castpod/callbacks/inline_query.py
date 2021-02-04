@@ -15,9 +15,9 @@ def handle_inline_query(update, context):
     if not query_text:
         results = run_async(show_subscription, user).result()
     elif re.match('^p$', query_text):
-        results = run_async(search_fav, 'podcasts', user).result()
+        results = run_async(show_fav_podcasts, user).result()
     elif re.match('^e$', query_text):
-        results = run_async(search_fav, 'episodes', user).result()
+        results = run_async(show_fav_episodes, user).result()
     else:
         try:
             podcast = Podcast.objects.get(
@@ -62,27 +62,31 @@ def show_subscription(user):
             yield result
 
 
-def search_fav(fav_type, user):
-    pass
-    # items = context.user_data[f'fav_{fav_type}'].items()
-    # if not items:
-    #     return [InlineQueryResultArticle(
-    #         id=0,
-    #         title="收藏夹还是空的",
-    #         input_message_content=InputTextMessageContent('/manage 管理订阅的播客'),
-    #         description='🥡',
-    #     )]
-    # return [InlineQueryResultArticle(
-    #     id=uuid.uuid4(),
-    #     title=item_name,
-    #     input_message_content=InputTextMessageContent(
-    #         item.name, parse_mode=None),
-    #     description=item.host or item_name,
-    #     thumb_url=item.logo,
-    #     thumb_height=60,
-    #     thumb_width=60
-    # ) for item_name, item in items]
+def show_fav_podcasts(user):
+    favs = user.subscriptions.get(is_fav=True)
+    if not favs:
+        yield InlineQueryResultArticle(
+            id=0,
+            title="播客收藏夹是空的",
+            input_message_content=InputTextMessageContent('/manage'),
+            description='🥡',
+        )
+    else:
+        for fav in favs:
+            podcast = fav.podcast
+            yield InlineQueryResultArticle(
+                id=podcast.id,
+                title=podcast.name + "  ⭐️",
+                input_message_content=InputTextMessageContent(
+                    podcast.name, parse_mode=None),
+                description=podcast.host or podcast.name,
+                thumb_url=podcast.logo,
+                thumb_height=60,
+                thumb_width=60
+            )
 
+def show_fav_episodes(user):
+    pass
 
 def show_episodes(podcast):
     episodes = podcast.episodes
