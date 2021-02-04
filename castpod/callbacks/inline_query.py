@@ -63,7 +63,7 @@ def show_subscription(user):
 
 
 def show_fav_podcasts(user):
-    favs = user.subscriptions.get(is_fav=True)
+    favs = user.subscriptions.filter(is_fav=True)
     if not favs:
         yield InlineQueryResultArticle(
             id=0,
