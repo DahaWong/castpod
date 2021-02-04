@@ -97,19 +97,19 @@ class Shownotes(EmbeddedDocument):
             html_content=self.content,
             author_name=author
         )
-        self.update(url=f"https://telegra.ph/{res['path']}")
+        self.url = f"https://telegra.ph/{res['path']}"
 
     def set_content(self, logo):
         content = self.content
         img_content = f"<img src='{logo}'>" if 'img' not in content else ''
-        self.update(content=img_content + self.replace_invalid_tags(content))
+        self.content = img_content + self.replace_invalid_tags(content)
 
     def set_timeline(self):
         shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.content)
         pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
         matches = re.finditer(pattern, shownotes)
-        self.update(timeline='\n\n'.join([re.sub(
-            r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches]))
+        self.timeline = '\n\n'.join([re.sub(
+            r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches])
 
     def replace_invalid_tags(self, html_content):
         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
@@ -218,7 +218,8 @@ class Podcast(Document):
         if episode.title == episode.subtitle:
             episode.subtitle = ''
         episode.summary = unescape(item.get('summary') or '')
-        episode.content = item.get('content')[0]['value'] if item.get('content') else episode.summary
+        episode.content = item.get('content')[0]['value'] if item.get(
+            'content') else episode.summary
         episode.shownotes = Shownotes(content=episode.content)
         episode.shownotes.set_content(episode.audio.logo)
         episode.shownotes.set_timeline()
