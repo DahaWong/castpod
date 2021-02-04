@@ -191,16 +191,10 @@ class Podcast(Document):
         self.logo = feed['image']['href']
         self.episodes = []
         for i, item in enumerate(result['items']):
-            print(self.name)
             episode = self.parse_episode(item, i)
-            print(self.name)
             self.update(push__episodes=episode)
-            print(self.name)
             self.save()
-            # self.reload()
-        print(self.name)
         self.host = unescape(feed.author_detail.name or '')
-        print(self.name)
         if self.host == self.name:
             self.host = ''
         self.website = feed.get('link')

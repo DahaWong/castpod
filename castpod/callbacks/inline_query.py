@@ -100,11 +100,11 @@ def show_episodes(podcast):
             id=index,
             title=episode.title,
             input_message_content=InputTextMessageContent((
-                f"[🎙️]({podcast.logo}) *{podcast.name}* #{len(episodes) - index}"
+                f"[🎙️]({podcast.logo}) *{podcast.name}* #{episodes.count() - index}"
             )),
             reply_markup=InlineKeyboardMarkup.from_row(buttons),
-            description=f"{episode.duration or podcast.name}\n{episode.subtitle}",
-            thumb_url=podcast.logo,
+            description=f"{episode.audio.duration or podcast.name}\n{episode.subtitle}",
+            thumb_url=episode.audio.logo,
             thumb_width=60,
             thumb_height=60
         )
