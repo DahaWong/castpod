@@ -225,7 +225,6 @@ class Podcast(Document):
         episode.shownotes.set_timeline()
         episode.shownotes.set_url(episode.title, self.name)
         episode.published_time = item.published_parsed
-        episode.save()
         return episode
 
     def set_duration(self, duration: str) -> int:
