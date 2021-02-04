@@ -152,7 +152,7 @@ class Podcast(Document):
     email = StringField()
     episodes = EmbeddedDocumentListField(Episode)
     subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
-    update_time = DateTimeField()
+    # update_time = DateTimeField()
     job_group = ListField(IntField(min_value=0, max_value=47))
 
     @classmethod
