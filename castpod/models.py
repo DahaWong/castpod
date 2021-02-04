@@ -212,7 +212,7 @@ class Podcast(Document):
             performer=self.name,
             logo=item.get('image').href if item.get('image') else self.logo,
             duration=self.set_duration(item.get('itunes_duration'))
-        ).save()
+        )
         episode.title = unescape(item.get('title') or '')
         episode.subtitle = unescape(item.get('subtitle') or '')
         if episode.title == episode.subtitle:
