@@ -180,7 +180,7 @@ class Podcast(Document):
         self.logo = feed.get('image')['href']
         self.episodes = []
         for i, item in enumerate(result['items']):
-            self.parse_episode(item)
+            # self.parse_episode(item)
             self.episodes.append(Episode(index=i))
         self.host = unescape(feed.author_detail.name or '')
         if self.host == self.name:
