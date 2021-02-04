@@ -15,6 +15,6 @@ def register_stats(dispatcher):
     )
     register_stats(
         SimpleStats(
-            'ilq',
+            'inline',
             lambda u: bool(u.inline_query and u.inline_query.query))
     )
