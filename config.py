@@ -33,15 +33,7 @@ class Mongo(object):
     remote_host = mongo['REMOTE_HOST']
 
 
-# Build
-persistence = PicklePersistence(filename='persistence')
-update_info = {
-    'token': bot_token,
-    'use_context': True,
-    'persistence': persistence,
-    'base_url': bot_api,
-    'defaults': defaults
-}
+
 
 webhook_info = {
     "listen": '127.0.0.1',
@@ -57,16 +49,26 @@ webhook_setting = {
 }
 
 # Test
+# persistence = PicklePersistence(filename='persistence')
 # update_info = {
-#    'token': bot_token,
+#    'token': bot_token_test,
 #    'use_context': True,
 #    'request_kwargs': {
-#       'proxy_url':proxy  // Use proxy especially when telegram is banned in your country
+#       'proxy_url':proxy  # Use proxy especially when telegram is banned in your country
 #     },
-#    'persistence': persistence,
-#    'base_url': bot_api,
-#    'defaults': defaults
+#    'defaults': defaults,
+#    'persistence': persistence
 #  }
+
+ # Build
+persistence = PicklePersistence(filename='persistence')
+update_info = {
+    'token': bot_token,
+    'use_context': True,
+    'persistence': persistence,
+    'base_url': bot_api,     #build 
+    'defaults': defaults
+}
 
 
 # Manifest
@@ -76,6 +78,6 @@ class manifest:
     author = "Daha"
     author_id = 'dahawong'
     author_url = "https://office.daha.me/"
-    version = "0.0.1"
+    version = "0.0.2"
     discription = ""
     repo = "https://github.com/dahawong/castpod"

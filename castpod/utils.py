@@ -10,39 +10,16 @@ from functools import wraps
 from castpod.models import Subscription, User
 from config import manifest
 
-# Callback Query Helper
-
-
-def toggle_save_podcast(update, context, to: str):
-    podcast_name = re.match(r'(un)?save_podcast_(.+)',
-                            update.callback_query.data)[2]
-    podcast = context.bot_data['podcasts'].get(podcast_name)
-    kwargs = {}
-
-    if (to == 'saved'):
-        kwargs = {
-            'save_text': '⭐️',
-            'save_action': "unsave_podcast"
-        }
-        context.user_data['saved_podcasts'].update({podcast_name: podcast})
-    else:
-        context.user_data['saved_podcasts'].pop(podcast_name)
-
-    keyboard = PodcastPage(podcast, **kwargs).keyboard()
-    context.dispatcher.run_async(
-        update.callback_query.edit_message_reply_markup,
-        InlineKeyboardMarkup(keyboard)
-    )
-
-
 def validate_user(func):
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
-        User(
+        user = User.objects(user_id=update.message.from_user.id).first()
+        if not user:
+            user = User(
                 user_id=update.message.from_user.id,
                 name=update.message.from_user.first_name,
                 username=update.message.from_user.username
-        ).save()
+            ).save()
         return func(update, context, *args, **kwargs)
     return wrapped
 
@@ -131,7 +108,6 @@ def parse_doc(context, user, doc):
     doc_file = context.bot.getFile(doc['file_id'])
     doc_name = re.sub(r'.+(?=\.xml|\.opml?)',
                       str(user.user_id), doc['file_name'])
-    # print(doc_file)
     path = doc_file.download(doc_name)
     with open(path, 'r') as f:
         feeds = parse_opml(f)

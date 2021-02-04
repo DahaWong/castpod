@@ -8,8 +8,8 @@ test*
 # Private:
 
 persistence
-manifest.py 
 public/*
 
 # Dev
 ecosystem.config.js
+test.py

@@ -2,18 +2,16 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from config import manifest
 from castpod.models import User, Podcast
 from castpod.components import ManagePage, PodcastPage
-from castpod.utils import validate_user
 
 
-@validate_user
 def start(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    user = User.objects(user_id=update.message.from_user.id)
+    user = User.validate_user(message.from_user)
 
     if context.args and context.args[0] != 'login':
         podcast_id = context.args[0]
-        podcast = Podcast.objects(id=podcast_id)
+        podcast = Podcast.objects(id=podcast_id).first()
         subscribing_note = run_async(
             update.message.reply_text, "正在订阅…").result()
         user.subscribe(podcast)
@@ -76,7 +74,6 @@ def favourites(update, context):
     # )
 
 
-@validate_user
 def manage(update, context):
     run_async = context.dispatcher.run_async
     user = context.user_data['user']
@@ -92,7 +89,6 @@ def manage(update, context):
     )
 
 
-@validate_user
 def setting(update, context):
     keyboard = [["╳"],
                 ["播客更新频率", "快捷置顶单集", "单集信息显示"],
@@ -122,19 +118,17 @@ def help(update, context):
     )
 
 
-@validate_user
 def export(update, context):
-    user = User.objects(user_id=update.message.from_user.id)
+    user = User.validate_user(update.message.from_user.id)
     if not user.subscriptions:
         update.message.reply_text('你还没有订阅的播客，请先订阅再导出～')
     else:
         update.message.reply_document(
-            document=user.opml(),
+            document=user.generate_opml(),
             # thumb = ""
         )
 
 
-@validate_user
 def logout(update, context):
     keyboard = [[InlineKeyboardButton("返回", callback_data=f"delete_command_context_{update.message.message_id}"),
                  InlineKeyboardButton("注销", callback_data="logout")]]

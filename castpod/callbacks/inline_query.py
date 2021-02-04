@@ -1,8 +1,8 @@
 from castpod.utils import search_itunes
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
 import re
-import uuid
 from config import manifest
+from castpod.models import User
 
 
 def handle_inline_query(update, context):
@@ -12,36 +12,77 @@ def handle_inline_query(update, context):
     podcasts_match = re.match('^p$', query_text)
     episodes_match = re.match('^e$', query_text)
     results, kwargs = [], {"auto_pagination": True, "cache_time": 10}
+    user = User.validate_user(query.from_user)
     if not query_text:
-        results, kwargs = run_async(welcome, context).result()
+        results, kwargs = run_async(show_subscription, user).result()
     elif podcasts_match:
-        results = run_async(search_saved, 'podcasts', context).result()
+        results = run_async(search_saved, 'podcasts', user).result()
     elif episodes_match:
-        results = run_async(search_saved, 'episodes', context).result()
+        results = run_async(search_saved, 'episodes', user).result()
     else:
-        podcasts = context.bot_data['podcasts']
-        podcast = podcasts.get(query_text)
-        if podcast:
+        try:
+            podcast = user.subscriptions.get(podcast=query_text)
             results = run_async(show_episodes, podcast).result()
             kwargs.update({"cache_time": 40})
-        else:
+        except Exception as e:
+            print(e)
             results = run_async(search_podcast, query_text).result()
 
     run_async(query.answer, results, **kwargs)
 
 
-def welcome(context):
-    if not context.user_data.get('user'):
-        results = []
-        kwargs = {
-            "switch_pm_text": "登录",
-            "switch_pm_parameter": "login",
-            "cache_time": 0
-        }
+def show_subscription(user):
+    subscriptions = user.subscriptions
+    if not subscriptions:
+        yield InlineQueryResultArticle(
+            id=0,
+            title='订阅列表还是空的 🥡',
+            description=f'试着在 @{manifest.bot_id} 后面输入关键词，寻找喜欢的播客吧',
+            input_message_content=InputTextMessageContent('🔍️'),
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    '搜索播客', switch_inline_query_current_chat='')
+            )
+        )
     else:
-        results = show_subscription(context)
-        kwargs = {}
-    return results, kwargs
+        for index, subscription in enumerate(subscriptions):
+            podcast = subscription.podcast
+            saved_flag = ''
+            if subscription.is_saved:
+                saved_flag = '  ⭐️'
+            result = InlineQueryResultArticle(
+                id=index,
+                title=podcast.name + saved_flag,
+                input_message_content=InputTextMessageContent(
+                    podcast.name, parse_mode=None),
+                description=podcast.host or podcast.name,
+                thumb_url=podcast.logo,
+                thumb_width=60,
+                thumb_height=60
+            )
+            yield result
+
+
+def search_saved(saved_type, user):
+    pass
+    # items = context.user_data[f'saved_{saved_type}'].items()
+    # if not items:
+    #     return [InlineQueryResultArticle(
+    #         id=0,
+    #         title="收藏夹还是空的",
+    #         input_message_content=InputTextMessageContent('/manage 管理订阅的播客'),
+    #         description='🥡',
+    #     )]
+    # return [InlineQueryResultArticle(
+    #     id=uuid.uuid4(),
+    #     title=item_name,
+    #     input_message_content=InputTextMessageContent(
+    #         item.name, parse_mode=None),
+    #     description=item.host or item_name,
+    #     thumb_url=item.logo,
+    #     thumb_height=60,
+    #     thumb_width=60
+    # ) for item_name, item in items]
 
 
 def show_episodes(podcast):
@@ -51,37 +92,34 @@ def show_episodes(podcast):
         InlineKeyboardButton(
             "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
     ]
-    results = [InlineQueryResultArticle(
-        id=index,
-        title=episode.title,
-        input_message_content=InputTextMessageContent((
-            f"[🎙️]({podcast.logo_url}) *{podcast.name}* #{len(episodes) - index}"
-        )),
-        reply_markup=InlineKeyboardMarkup.from_row(buttons),
-        description=f"{episode.duration or podcast.name}\n{episode.subtitle}",
-        thumb_url=podcast.logo_url,
-        thumb_width=60,
-        thumb_height=60
-    ) for index, episode in enumerate(episodes)]
-    return results
+    for index, episode in enumerate(episodes):
+        yield InlineQueryResultArticle(
+            id=index,
+            title=episode.title,
+            input_message_content=InputTextMessageContent((
+                f"[🎙️]({podcast.logo}) *{podcast.name}* #{len(episodes) - index}"
+            )),
+            reply_markup=InlineKeyboardMarkup.from_row(buttons),
+            description=f"{episode.duration or podcast.name}\n{episode.subtitle}",
+            thumb_url=podcast.logo,
+            thumb_width=60,
+            thumb_height=60
+        )
 
 
 def search_podcast(keyword):
     searched_results = search_itunes(keyword)
-    listed_results = []
     if not searched_results:
-        listed_results = [
-            InlineQueryResultArticle(
-                id='0',
-                title="没有找到相关的播客呢 :(",
-                description="换个关键词试试",
-                input_message_content=InputTextMessageContent("🔍️"),
-                reply_markup=InlineKeyboardMarkup.from_button(
-                    InlineKeyboardButton(
-                        '返回搜索', switch_inline_query_current_chat=keyword)
-                )
+        yield InlineQueryResultArticle(
+            id='0',
+            title="没有找到相关的播客呢 :(",
+            description="换个关键词试试",
+            input_message_content=InputTextMessageContent("🔍️"),
+            reply_markup=InlineKeyboardMarkup.from_button(
+                        InlineKeyboardButton(
+                            '返回搜索', switch_inline_query_current_chat=keyword)
             )
-        ]
+        )
     else:
         for result in searched_results:
             name = re.sub(r"[_*`]", ' ', result['collectionName'])
@@ -92,7 +130,7 @@ def search_podcast(keyword):
             # 如果不在 机器人主页，则：
             # [InlineKeyboardButton('前  往  B O T', url = f"https://t.me/{manifest.bot_id}")],
 
-            result_item = InlineQueryResultArticle(
+            yield InlineQueryResultArticle(
                 id=result['collectionId'],
                 title=name,
                 input_message_content=InputTextMessageContent(
@@ -102,61 +140,3 @@ def search_podcast(keyword):
                 thumb_height=60,
                 thumb_width=60
             )
-            listed_results.append(result_item)
-    return listed_results
-
-
-def show_subscription(context):
-    results = []
-    subscription = context.user_data['user'].subscription
-    if not subscription:
-        results = [InlineQueryResultArticle(
-            id=0,
-            title='订阅列表还是空的 🥡',
-            description=f'试着在 @{manifest.bot_id} 后面输入关键词，寻找喜欢的播客吧',
-            input_message_content=InputTextMessageContent('🔍️'),
-            reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton(
-                    '搜索播客', switch_inline_query_current_chat='')
-            )
-        )]
-    else:
-        for index, feed in enumerate(subscription.values()):
-            podcast = feed.podcast
-            podcast_name = podcast.name
-            saved_flag = ''
-            if podcast_name in context.user_data['saved_podcasts']:
-                saved_flag = '  ⭐️'
-            result = InlineQueryResultArticle(
-                id=index,
-                title=podcast_name + saved_flag,
-                input_message_content=InputTextMessageContent(
-                    podcast_name, parse_mode=None),
-                description=podcast.host or podcast_name,
-                thumb_url=podcast.logo_url,
-                thumb_width=60,
-                thumb_height=60
-            )
-            results.append(result)
-    return results
-
-
-def search_saved(saved_type, context):
-    items = context.user_data[f'saved_{saved_type}'].items()
-    if not items:
-        return [InlineQueryResultArticle(
-            id=0,
-            title="收藏夹还是空的",
-            input_message_content=InputTextMessageContent('/manage 管理订阅的播客'),
-            description='🥡',
-        )]
-    return [InlineQueryResultArticle(
-        id=uuid.uuid4(),
-        title=item_name,
-        input_message_content=InputTextMessageContent(
-            item.name, parse_mode=None),
-        description=item.host or item_name,
-        thumb_url=item.logo_url,
-        thumb_height=60,
-        thumb_width=60
-    ) for item_name, item in items]

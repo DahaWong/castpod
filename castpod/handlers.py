@@ -32,7 +32,7 @@ handlers.extend([
         Filters.document.file_extension("opm"),
         message.save_subscription
     ),
-    MessageHandler(Filters.text, message.show_feed),
+    MessageHandler(Filters.text, message.show_podcast),
     MessageHandler(Filters.audio, message.handle_audio),
     InlineQueryHandler(inline_query.handle_inline_query)
 ])

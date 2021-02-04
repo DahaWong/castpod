@@ -1,40 +1,39 @@
-import castpod.models as models
-import castpod.controllers as controllers
+from castpod.models import User, Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
 from castpod.components import PodcastPage, ManagePage
-from config import podcast_vault, manifest
-from castpod.utils import validate_user, local_download, parse_doc
-from base64 import urlsafe_b64encode as encode
+from config import podcast_vault, manifest, dev_user_id
+from castpod.utils import local_download, parse_doc
 import re
 
 
-@validate_user
 def subscribe_feed(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    run_async(context.bot.send_chat_action,
-              chat_id=message.chat_id, action='typing')
+    run_async(
+        context.bot.send_chat_action,
+        chat_id=message.chat_id,
+        action='typing'
+    )
     subscribing_message = run_async(message.reply_text, f"订阅中，请稍候…").result()
 
-    user = models.User.objects(user_id=message.from_user.id).first()
-    podcast = models.Podcast.objects(feed=message.text).first()
-    if not podcast:
-        podcast = models.Podcast(feed=message.text).save()
-    controllers.User(user).subscribe(podcast)
+    user = User.validate_user(message.from_user, subsets='subscriptions')
+    podcast = Podcast.validate_feed(feed=message.text)
+    user.subscribe(podcast)
     try:
         manage_page = ManagePage(
-            podcast_names=[subscription.podcast.name for subscription in user.subscriptions],
+            podcasts=Podcast.objects(subscribers=user).only('name'),
             text=f"`{podcast.name}` 订阅成功！"
         )
         run_async(subscribing_message.delete)
-        run_async(message.reply_text,
-                  text=manage_page.text,
-                  reply_markup=ReplyKeyboardMarkup(
-                      manage_page.keyboard(),
-                      resize_keyboard=True,
-                      one_time_keyboard=True
-                  )
-                  )
+        run_async(
+            message.reply_text,
+            text=manage_page.text,
+            reply_markup=ReplyKeyboardMarkup(
+                manage_page.keyboard(),
+                resize_keyboard=True,
+                one_time_keyboard=True
+            )
+        )
         podcast_page = PodcastPage(podcast)
         run_async(message.reply_text,
                   text=podcast_page.text(),
@@ -46,80 +45,80 @@ def subscribe_feed(update, context):
         raise e
 
 
-@validate_user
 def save_subscription(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
     parsing_note = run_async(message.reply_text, "正在解析订阅文件…").result()
-    user = context.user_data['user']
-    cached_podcasts = context.bot_data['podcasts']
+    user = User.validate_user(message.from_user)
     try:
-        feeds = run_async(parse_doc, context, user,
-                          message.document).result()
-    except Exception as e:
-        print(e)
-        run_async(parsing_note.delete)
-        run_async(message.reply_text, "订阅失败 :(\n请检查订阅文件是否格式正确/完好无损")
-        return
-
-    subscribing_note = run_async(
-        parsing_note.edit_text, f"订阅中 (0/{len(feeds)})").result()
-    podcasts = []
-    failed_feeds = []
-    for feed in feeds:
-        if feed['name'] not in cached_podcasts.keys():
+        feeds = run_async(
+            parse_doc, context, user, message.document
+        ).result()
+        feeds_count = len(feeds)
+        subscribing_note = run_async(
+            parsing_note.edit_text, f"订阅中 (0/{feeds_count})").result()
+        podcasts_count = 0
+        failed_feeds = []
+        for feed in feeds:
             try:
-                podcast = Podcast(feed['url'])
-                podcasts.append(podcast)
-                podcast.subscribers.add(user.user_id)
-                cached_podcasts.update({podcast.name: podcast})
+                podcast = Podcast.validate_feed(feed=feed['url'])
+                user.subscribe(podcast)
+                podcasts_count += 1
             except Exception as e:
                 print(e)
                 failed_feeds.append(feed['url'])
                 continue
+            run_async(
+                subscribing_note.edit_text, f"订阅中 ({podcasts_count}/{feeds_count})"
+            )
+
+        if podcasts_count:
+            newline = '\n'
+            reply = f"成功订阅 {feeds_count} 部播客！" if not len(failed_feeds) else (
+                f"成功订阅 {podcasts_count} 部播客，部分订阅源解析失败。"
+                f"\n\n可能损坏的订阅源："
+                # use Reduce ?
+                f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
+            )
         else:
-            podcast = cached_podcasts[feed['name']]
-            podcasts.append(podcast)
-            podcast.subscribers.add(user.user_id)
-        run_async(subscribing_note.edit_text,
-                  f"订阅中 ({len(podcasts)}/{len(feeds)})")
+            reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
-    if podcasts:
-        user.import_feeds(podcasts)
-        newline = '\n'
-        reply = f"成功订阅 {len(feeds)} 部播客！" if not len(failed_feeds) else (
-            f"成功订阅 {len(podcasts)} 部播客，部分订阅源解析失败。"
-            f"\n\n可能损坏的订阅源："
-            f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
+        manage_page = ManagePage(Podcast.objects(subscribers=user), text=reply)
+        run_async(subscribing_note.delete)
+        run_async(
+            message.reply_text,
+            text=manage_page.text,
+            reply_markup=ReplyKeyboardMarkup(
+                manage_page.keyboard(),
+                resize_keyboard=True,
+                one_time_keyboard=True
+            )
         )
-    else:
-        reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
-    manage_page = ManagePage([podcast.name[:32]
-                              for podcast in podcasts], text=reply)
-    run_async(subscribing_note.delete)
-    run_async(message.reply_text,
-              text=manage_page.text,
-              reply_markup=ReplyKeyboardMarkup(
-                  manage_page.keyboard(),
-                  resize_keyboard=True,
-                  one_time_keyboard=True
-              )
-              )
+    except Exception as e:
+        run_async(parsing_note.delete)
+        run_async(
+            message.reply_text, (
+                f"订阅失败 :(\n"
+                f"请检查订阅文件是否完好无损；"
+                f"若文件没有问题，请私信[开发者](tg://user?id={dev_user_id})。"
+            )
+        )
 
 
-@validate_user
 def download_episode(update, context):
     bot = context.bot
     message = update.message
     fetching_note = bot.send_message(message.chat_id, "获取节目中…")
     bot.send_chat_action(message.chat_id, ChatAction.RECORD_AUDIO)
     match = re.match(r'🎙️ (.+) #([0-9]+)', message.text)
-    podcast_name, index = match[1], int(match[2])
-    podcast = context.bot_data['podcasts'].get(podcast_name)
+    podcast = Podcast.objects.get(name=match[1])
+    index = int(match[2])
     episode = podcast.episodes[-index]
-    bot.send_chat_action(update.message.chat_id,
-                         ChatAction.UPLOAD_AUDIO)
+    bot.send_chat_action(
+        update.message.chat_id,
+        ChatAction.UPLOAD_AUDIO
+    )
     if episode.message_id:
         fetching_note.delete()
         forwarded_message = bot.forward_message(
@@ -129,8 +128,6 @@ def download_episode(update, context):
         )
         forward_from_message = episode.message_id
     else:
-        encoded_podcast_name = encode(
-            bytes(podcast.name, 'utf-8')).decode("utf-8")
         downloading_note = fetching_note.edit_text("下载中…")
         audio_file = local_download(episode, context)
         uploading_note = downloading_note.edit_text("正在上传，请稍候…")
@@ -142,20 +139,19 @@ def download_episode(update, context):
                 caption=(
                     f"🎙️ {podcast.name}\n"
                     f"总第 {index} 期"
-                    f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={encoded_podcast_name})"
+                    f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={podcast.id})"
                     f" | [相关链接]({episode.get_shownotes_url()})"
                 ),
                 title=episode.title,
                 performer=podcast.name,
                 duration=episode.duration.seconds,
-                thumb=podcast.logo_url
+                thumb=podcast.logo
             )
         except Exception as e:
             pass  # ⚠️
         finally:
             uploading_note.delete()
-        forwarded_message = audio_message.forward(
-            context.user_data['user'].user_id)
+        forwarded_message = audio_message.forward(message.from_user.id)
         forward_from_message = audio_message.message_id
     update.message.delete()
 
@@ -187,27 +183,31 @@ def exit_reply_keyboard(update, context):
     message.delete()
 
 
-@validate_user
-def show_feed(update, context):
+def show_podcast(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    feed_name = message.text
-    user = context.user_data['user']
-    if feed_name in user.subscription.keys():
-        feed = context.user_data['user'].subscription[feed_name]
-        podcast = feed.podcast
-        if podcast.name in context.user_data['saved_podcasts']:
-            page = PodcastPage(podcast, save_text="⭐️",
-                               save_action='unsave_podcast')
+    user = User.validate_user(message.from_user)
+    try:
+        podcast = Podcast.objects.get(name=message.text)
+        subscription = user.subscriptions.get(podcast=podcast)
+        if subscription.is_saved:
+            page = PodcastPage(
+                podcast,
+                save_text="⭐️",
+                save_action='unsave_podcast'
+            )
         else:
             page = PodcastPage(podcast)
-        run_async(update.message.reply_text,
-                  text=page.text(),
-                  reply_markup=InlineKeyboardMarkup(page.keyboard())
-                  )
+            run_async(
+                update.message.reply_text,
+                text=page.text(),
+                reply_markup=InlineKeyboardMarkup(page.keyboard())
+            )
+    except Exception as e:
+        print(e)
+        run_async(message.reply_text, '抱歉，没能理解您的指令。')
+    finally:
         run_async(update.message.delete)
-    else:
-        run_async(message.reply_text, '抱歉，没能理解您想要做什么。')
 
 
 def handle_audio(update, context):

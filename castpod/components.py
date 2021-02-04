@@ -17,26 +17,26 @@ class PodcastPage(object):
 
     def keyboard(self):
         return [
-            [InlineKeyboardButton("退订", callback_data=f"unsubscribe_podcast_{self.podcast.name}"),
+            [InlineKeyboardButton("退订", callback_data=f"unsubscribe_podcast_{self.podcast.id}"),
              InlineKeyboardButton("关于", url=self.podcast.website),
-             InlineKeyboardButton(self.save_text, callback_data=f"{self.save_action}_{self.podcast.name}")],
+             InlineKeyboardButton(self.save_text, callback_data=f"{self.save_action}_{self.podcast.id}")],
             [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
              InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
         ]
 
 
 class ManagePage(object):
-    def __init__(self, podcast_names, text="已启动管理面板"):
-        self.podcast_names = podcast_names
+    def __init__(self, podcasts, text="已启动管理面板"):
+        self.podcasts = podcasts
         self.text = text
 
     def row(self, i):
-        row = [name[:32] for index, name in enumerate(
-            self.podcast_names) if index // 3 == i]
+        row = [podcast.name for index, podcast in enumerate(
+            self.podcasts) if index // 3 == i]
         return row
 
     def keyboard(self):
-        podcasts_count = len(self.podcast_names)
+        podcasts_count = self.podcasts.count()
         if not podcasts_count:
             return [['订阅列表是空的～']]
         rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
