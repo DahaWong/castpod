@@ -233,13 +233,17 @@ class Podcast(Document):
         duration_timedelta = None
         if duration:
             if ':' in duration:
+                print('1')
                 time = duration.split(':')
+                print('2')
                 if len(time) == 3:
+                    print('3')
                     duration_timedelta = datetime.timedelta(
                         hours=int(time[0]),
                         minutes=int(time[1]),
                         seconds=int(time[2])
                     )
+                    print('4')
                 elif len(time) == 2:
                     duration_timedelta = datetime.timedelta(
                         hours=0,
