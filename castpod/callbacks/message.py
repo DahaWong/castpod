@@ -45,7 +45,7 @@ def subscribe_feed(update, context):
         raise e
 
 
-def fav_subscription(update, context):
+def save_subscription(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
     parsing_note = run_async(message.reply_text, "正在解析订阅文件…").result()
@@ -87,7 +87,7 @@ def fav_subscription(update, context):
             podcasts=Podcast.of_subscriber(user, 'name'),
             text=reply
         )
-        
+
         run_async(subscribing_note.delete)
         run_async(
             message.reply_text,
@@ -195,20 +195,19 @@ def show_podcast(update, context):
     try:
         podcast = Podcast.objects.get(name=message.text)
         subscription = user.subscriptions.get(podcast=podcast)
+        kwargs = {}
         if subscription.is_fav:
-            page = PodcastPage(
-                podcast,
-                fav_text="⭐️",
-                fav_action='unfav_podcast'
-            )
-        else:
-            page = PodcastPage(podcast)
-            run_async(
-                update.message.reply_text,
-                text=page.text(),
-                reply_markup=InlineKeyboardMarkup(page.keyboard()),
-                parse_mode="MARKDOWN"
-            )
+            kwargs = {
+                'fav_text': "⭐️",
+                'fav_action': 'unfav_podcast'
+            }
+        page = PodcastPage(podcast, **kwargs)
+        run_async(
+            update.message.reply_text,
+            text=page.text(),
+            reply_markup=InlineKeyboardMarkup(page.keyboard()),
+            parse_mode="MARKDOWN"
+        )
     except:
         run_async(message.reply_text, '抱歉，没能理解您的指令。')
     run_async(update.message.delete)
