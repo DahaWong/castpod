@@ -14,7 +14,7 @@ def handle_inline_query(update, context):
     results, kwargs = [], {"auto_pagination": True, "cache_time": 10}
     user = User.validate_user(query.from_user)
     if not query_text:
-        results, kwargs = run_async(show_subscription, user).result()
+        results= run_async(show_subscription, user).result()
     elif podcasts_match:
         results = run_async(search_saved, 'podcasts', user).result()
     elif episodes_match:
