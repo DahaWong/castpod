@@ -68,8 +68,7 @@ def unfav_podcast(update, context):
 
 def toggle_fav_podcast(update, context, to: str):
     query = update.callback_query
-    user = User.objects(user_id=update.effective_user.id).only(
-        'subscriptions').first()
+    user = User.objects.get(user_id=update.effective_user.id)
     podcast_id = re.match(
         r'(un)?fav_podcast_(.+)',
         query.data
