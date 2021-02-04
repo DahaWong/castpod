@@ -247,7 +247,6 @@ class Podcast(Document):
                         minutes=int(time[0]),
                         seconds=int(time[1])
                     ).total_seconds()
-                    print(datetime.timedelta)
             else:
                 duration_timedelta = duration
         else:
