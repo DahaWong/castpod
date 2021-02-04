@@ -30,7 +30,7 @@ class Mongo(object):
     db = mongo['DB_NAME']
     user = mongo['USER']
     pwd = mongo['PWD']
-    remote_host = mongo['REMOTE_HOST']
+    remote_host = mongo['REMOTE_HOST'] # test
 
 
 
