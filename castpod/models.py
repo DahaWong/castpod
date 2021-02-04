@@ -223,7 +223,7 @@ class Podcast(Document):
         episode.shownotes = Shownotes(content=episode.content)
         episode.shownotes.set_content(episode.audio.logo)
         episode.shownotes.set_timeline()
-        episode.shownotes.set_url()
+        episode.shownotes.set_url(episode.title, self.name)
         episode.published_time = item.published_parsed
         episode.save()
         return episode
