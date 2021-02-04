@@ -186,21 +186,22 @@ class Podcast(Document):
             self.delete()
             raise Exception("Cannot parse feed name.")
         self.name = unescape(self.name)[:63]
-        print(self.name)
         if len(self.name) == 63:
             self.name += '…'
-        print(self.name)
         self.logo = feed['image']['href']
         self.episodes = []
         for i, item in enumerate(result['items']):
+            print(self.name)
             episode = self.parse_episode(item, i)
+            print(self.name)
             self.update(push__episodes=episode)
+            print(self.name)
             self.reload()
+        print(self.name)
         self.host = unescape(feed.author_detail.name or '')
         print(self.name)
         if self.host == self.name:
             self.host = ''
-        print(self.name)
         self.website = feed.get('link')
         self.email = feed.author_detail.get('email') or ''
         self.save()
