@@ -225,3 +225,26 @@ class Podcast(Document):
         episode.published_time = item.published_parsed
         episode.save()
         return episode
+
+    def set_duration(self, duration: str) -> int:
+        duration_timedelta = None
+        if duration:
+            if ':' in duration:
+                time = duration.split(':')
+                if len(time) == 3:
+                    duration_timedelta = datetime.timedelta(
+                        hours=int(time[0]),
+                        minutes=int(time[1]),
+                        seconds=int(time[2])
+                    )
+                elif len(time) == 2:
+                    duration_timedelta = datetime.timedelta(
+                        hours=0,
+                        minutes=int(time[0]),
+                        seconds=int(time[1])
+                    )
+            else:
+                duration_timedelta = datetime.timedelta(seconds=int(duration))
+        else:
+            duration_timedelta = datetime.timedelta(seconds=0)
+        return duration_timedelta
