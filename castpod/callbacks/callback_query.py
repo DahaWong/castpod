@@ -116,7 +116,7 @@ def confirm_unsubscribe(update, context):
     user.unsubscribe(podcast)
 
     manage_page = ManagePage(
-        podcasts=Podcast.of_subscriber(user, subsets='name'),
+        podcasts=Podcast.of_subscriber(user, 'name'),
         text=f'`{podcast.name}` 退订成功'
     )
     run_async(query.message.delete)

@@ -78,7 +78,7 @@ def manage(update, context):
     run_async = context.dispatcher.run_async
     user = User.validate_user(update.effective_user)
     message = update.message
-    page = ManagePage(Podcast.objects(subscriber=user))
+    page = ManagePage(Podcast.of_subscriber(user, 'name'))
     run_async(message.delete)
     run_async(
         message.reply_text,

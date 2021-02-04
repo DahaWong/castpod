@@ -84,7 +84,7 @@ def fav_subscription(update, context):
             reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
         manage_page = ManagePage(
-            podcasts=Podcast.of_subscriber(user),
+            podcasts=Podcast.of_subscriber(user, 'name'),
             text=reply
         )
         

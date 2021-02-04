@@ -21,7 +21,7 @@ def handle_inline_query(update, context):
     else:
         try:
             podcast = Podcast.objects.get(
-                Q(name=query_text) & Q(subscriber=user))
+                Q(name=query_text) & Q(subscribers=user))
             results = run_async(show_episodes, podcast).result()
             kwargs.update({"cache_time": 40})
         except:
