@@ -37,7 +37,7 @@ def delete_account(update, context):
     run_async = context.dispatcher.run_async
     bot = context.bot
     message = update.callback_query.message
-    user = User.validate_user(update.callback_query.from_user)
+    user = User.validate_user(update.effective_user)
     deleting_note = run_async(message.edit_text, "注销中…").result()
     user.delete()
     context.user_data.clear()
@@ -58,33 +58,32 @@ def delete_account(update, context):
 # Podcast
 
 
-def save_podcast(update, context):
-    toggle_save_podcast(update, context, to="saved")
+def fav_podcast(update, context):
+    toggle_fav_podcast(update, context, to="fav")
 
 
-def unsave_podcast(update, context):
-    toggle_save_podcast(update, context, to="unsaved")
+def unfav_podcast(update, context):
+    toggle_fav_podcast(update, context, to="unfav")
 
 
-def toggle_save_podcast(update, context, to: str):
+def toggle_fav_podcast(update, context, to: str):
     query = update.callback_query
-    user = User.objects(user_id=query.from_user.id).only('subscriptions').first()
+    user = User.objects(user_id=update.effective_user.id).only(
+        'subscriptions').first()
     podcast_id = re.match(
-        r'(un)?save_podcast_(.+)',
+        r'(un)?fav_podcast_(.+)',
         query.data
     )[2]
     podcast = Podcast.objects.get(id=podcast_id)
     kwargs = {}
 
-    if (to == 'saved'):
+    if (to == 'fav'):
         kwargs = {
-            'save_text': '⭐️',
-            'save_action': "unsave_podcast"
+            'fav_text': '⭐️',
+            'fav_action': "unfav_podcast"
         }
-        user.subscriptions.get(podcast=podcast).is_saved = True
-    else:
-        user.subscriptions.get(podcast=podcast).is_saved = False
 
+    user.toggle_fav(podcast)
     keyboard = PodcastPage(podcast, **kwargs).keyboard()
     context.dispatcher.run_async(
         query.edit_message_reply_markup,
@@ -136,9 +135,9 @@ def back_to_actions(update, context):
     user = User.objects.get(user_id=query.from_user.id)
     podcast_id = re.match(r'(back_to_actions_)(.+)', query.data)[2]
     podcast = Podcast.objects.get(id=podcast_id)
-    if user.subscriptions.get(podcast=podcast).is_saved:
-        page = PodcastPage(podcast, save_text="⭐️",
-                           save_action="unsave_podcast")
+    if user.subscriptions.get(podcast=podcast).is_fav:
+        page = PodcastPage(podcast, fav_text="⭐️",
+                           fav_action="unfav_podcast")
     else:
         page = PodcastPage(podcast)
     context.dispatcher.run_async(
@@ -152,7 +151,7 @@ def back_to_actions(update, context):
 def export(update, context):
     run_async = context.dispatcher.run_async
     # ⚠️ 简化 userid 的获得，也许 update.effective_user 就可以:
-    user = User.validate_user(update.callback_query.from_user)
+    user = User.validate_user(update.effective_user)
     message = update.callback_query.message
     if not user.subscriptions:
         run_async(message.reply_text, '您还没有订阅播客，请先订阅再导出～')

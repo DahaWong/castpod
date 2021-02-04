@@ -16,12 +16,12 @@ def subscribe_feed(update, context):
     )
     subscribing_message = run_async(message.reply_text, f"订阅中，请稍候…").result()
 
-    user = User.validate_user(message.from_user, subsets='subscriptions')
+    user = User.validate_user(update.effective_user)
     podcast = Podcast.validate_feed(feed=message.text)
     user.subscribe(podcast)
     try:
         manage_page = ManagePage(
-            podcasts=Podcast.objects(subscribers=user).only('name'),
+            podcasts=Podcast.of_subscriber(user, 'name'),
             text=f"`{podcast.name}` 订阅成功！"
         )
         run_async(subscribing_message.delete)
@@ -45,11 +45,11 @@ def subscribe_feed(update, context):
         raise e
 
 
-def save_subscription(update, context):
+def fav_subscription(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
     parsing_note = run_async(message.reply_text, "正在解析订阅文件…").result()
-    user = User.validate_user(message.from_user)
+    user = User.validate_user(update.effective_user)
     try:
         feeds = run_async(
             parse_doc, context, user, message.document
@@ -83,7 +83,11 @@ def save_subscription(update, context):
         else:
             reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
-        manage_page = ManagePage(Podcast.objects(subscribers=user), text=reply)
+        manage_page = ManagePage(
+            podcasts=Podcast.of_subscriber(user),
+            text=reply
+        )
+        
         run_async(subscribing_note.delete)
         run_async(
             message.reply_text,
@@ -187,15 +191,15 @@ def exit_reply_keyboard(update, context):
 def show_podcast(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    user = User.validate_user(message.from_user)
+    user = User.validate_user(update.effective_user)
     try:
         podcast = Podcast.objects.get(name=message.text)
         subscription = user.subscriptions.get(podcast=podcast)
-        if subscription.is_saved:
+        if subscription.is_fav:
             page = PodcastPage(
                 podcast,
-                save_text="⭐️",
-                save_action='unsave_podcast'
+                fav_text="⭐️",
+                fav_action='unfav_podcast'
             )
         else:
             page = PodcastPage(podcast)
@@ -203,7 +207,7 @@ def show_podcast(update, context):
                 update.message.reply_text,
                 text=page.text(),
                 reply_markup=InlineKeyboardMarkup(page.keyboard()),
-                parse_mode = "MARKDOWN"
+                parse_mode="MARKDOWN"
             )
     except:
         run_async(message.reply_text, '抱歉，没能理解您的指令。')

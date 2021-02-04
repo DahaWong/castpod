@@ -2,10 +2,10 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 class PodcastPage(object):
-    def __init__(self, podcast, save_text="收藏", save_action="save_podcast"):
+    def __init__(self, podcast, fav_text="收藏", fav_action="fav_podcast"):
         self.podcast = podcast
-        self.save_text = save_text
-        self.save_action = save_action
+        self.fav_text = fav_text
+        self.fav_action = fav_action
 
     def text(self):
         email_info = f'\n✉️  {self.podcast.email}' if self.podcast.email else ''
@@ -19,7 +19,7 @@ class PodcastPage(object):
         return [
             [InlineKeyboardButton("退订", callback_data=f"unsubscribe_podcast_{self.podcast.id}"),
              InlineKeyboardButton("关于", url=self.podcast.website),
-             InlineKeyboardButton(self.save_text, callback_data=f"{self.save_action}_{self.podcast.id}")],
+             InlineKeyboardButton(self.fav_text, callback_data=f"{self.fav_action}_{self.podcast.id}")],
             [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
              InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
         ]

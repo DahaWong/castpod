@@ -1,31 +1,30 @@
+from mongoengine.queryset.visitor import Q
 from castpod.utils import search_itunes
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
 import re
 from config import manifest
-from castpod.models import User
+from castpod.models import User, Podcast
 
 
 def handle_inline_query(update, context):
     run_async = context.dispatcher.run_async
     query = update.inline_query
     query_text = query.query
-    podcasts_match = re.match('^p$', query_text)
-    episodes_match = re.match('^e$', query_text)
     results, kwargs = [], {"auto_pagination": True, "cache_time": 10}
-    user = User.validate_user(query.from_user)
+    user = User.validate_user(update.effective_user)
     if not query_text:
-        results= run_async(show_subscription, user).result()
-    elif podcasts_match:
-        results = run_async(search_saved, 'podcasts', user).result()
-    elif episodes_match:
-        results = run_async(search_saved, 'episodes', user).result()
+        results = run_async(show_subscription, user).result()
+    elif re.match('^p$', query_text):
+        results = run_async(search_fav, 'podcasts', user).result()
+    elif re.match('^e$', query_text):
+        results = run_async(search_fav, 'episodes', user).result()
     else:
         try:
-            podcast = user.subscriptions.get(podcast=query_text)
+            podcast = Podcast.objects.get(
+                Q(name=query_text) & Q(subscriber=user))
             results = run_async(show_episodes, podcast).result()
             kwargs.update({"cache_time": 40})
-        except Exception as e:
-            print(e)
+        except:
             results = run_async(search_podcast, query_text).result()
 
     run_async(query.answer, list(results), **kwargs)
@@ -47,12 +46,12 @@ def show_subscription(user):
     else:
         for index, subscription in enumerate(subscriptions):
             podcast = subscription.podcast
-            saved_flag = ''
-            if subscription.is_saved:
-                saved_flag = '  ⭐️'
+            fav_flag = ''
+            if subscription.is_fav:
+                fav_flag = '  ⭐️'
             result = InlineQueryResultArticle(
                 id=index,
-                title=podcast.name + saved_flag,
+                title=podcast.name + fav_flag,
                 input_message_content=InputTextMessageContent(
                     podcast.name, parse_mode=None),
                 description=podcast.host or podcast.name,
@@ -63,9 +62,9 @@ def show_subscription(user):
             yield result
 
 
-def search_saved(saved_type, user):
+def search_fav(fav_type, user):
     pass
-    # items = context.user_data[f'saved_{saved_type}'].items()
+    # items = context.user_data[f'fav_{fav_type}'].items()
     # if not items:
     #     return [InlineQueryResultArticle(
     #         id=0,

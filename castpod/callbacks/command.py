@@ -7,7 +7,7 @@ from castpod.components import ManagePage, PodcastPage
 def start(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    user = User.validate_user(message.from_user)
+    user = User.validate_user(update.effective_user)
 
     if context.args and context.args[0] != 'login':
         podcast_id = context.args[0]
@@ -76,10 +76,9 @@ def favourites(update, context):
 
 def manage(update, context):
     run_async = context.dispatcher.run_async
-    user = context.user_data['user']
+    user = User.validate_user(update.effective_user)
     message = update.message
-    podcast_names = user.subscription.keys()
-    page = ManagePage(podcast_names)
+    page = ManagePage(Podcast.objects(subscriber=user))
     run_async(message.delete)
     run_async(
         message.reply_text,
@@ -104,10 +103,10 @@ def help(update, context):
     message.reply_text(
         text=(
             f"*{manifest.name} 使用说明*\n\n"
+            "/about - 幕后信息\n"
             "/setting - 偏好设置（开发中）\n"
             "/export - 导出订阅\n"
             "/logout - 注销账号\n"
-            "/about - 幕后信息\n"
         ),
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
@@ -119,7 +118,7 @@ def help(update, context):
 
 
 def export(update, context):
-    user = User.validate_user(update.message.from_user.id)
+    user = User.validate_user(update.effective_user)
     if not user.subscriptions:
         update.message.reply_text('你还没有订阅的播客，请先订阅再导出～')
     else:

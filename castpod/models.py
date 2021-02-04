@@ -17,15 +17,14 @@ from html import unescape
 class Subscription(EmbeddedDocument):
     podcast = ReferenceField(
         'Podcast', required=True)
-    is_saved = BooleanField(default=False)
+    is_fav = BooleanField(default=False)
     is_latest = BooleanField(default=True)
 
 
 class User(Document):
     # meta = {'queryset_class': UserQuerySet}
     user_id = IntField(primary_key=True)
-    username = StringField(unique=True, required=True)
-    name = StringField()
+    username = StringField(required=True)
     subscriptions = EmbeddedDocumentListField(Subscription)
 
     @classmethod
@@ -41,15 +40,18 @@ class User(Document):
             return
         podcast.renew()
         self.subscriptions.append(Subscription(podcast=podcast))
+        self.save()
         podcast.subscribers.append(self)
         podcast.save()
-        print(self)
-        self.save()
 
     def unsubscribe(self, podcast):
         self.subscriptions.get(podcast=podcast).delete()
+        self.save()
         podcast.subscribers.pop(self)
         podcast.save()
+
+    def toggle_fav(self, podcast):
+        self.subscriptions.get(podcast=podcast).is_fav ^= True # use XOR to toggle boolean
         self.save()
 
     def generate_opml(self):

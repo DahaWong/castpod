@@ -30,7 +30,7 @@ handlers.extend([
         Filters.document.mime_type('text/xml') |
         Filters.document.file_extension("opml") |
         Filters.document.file_extension("opm"),
-        message.save_subscription
+        message.fav_subscription
     ),
     MessageHandler(Filters.text, message.show_podcast),
     MessageHandler(Filters.audio, message.handle_audio),
