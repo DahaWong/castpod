@@ -220,7 +220,7 @@ class Podcast(Document):
         episode.summary = unescape(item.get('summary') or '')
         episode.content = item.get('content')[0]['value'] if item.get('content') else episode.summary
         episode.shownotes = Shownotes(content=episode.content)
-        episode.shownotes.set_content(episode.logo)
+        episode.shownotes.set_content(episode.audio.logo)
         episode.shownotes.set_timeline()
         episode.shownotes.set_url()
         episode.published_time = item.published_parsed
