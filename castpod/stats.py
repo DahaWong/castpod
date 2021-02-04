@@ -8,13 +8,10 @@ def register(dispatcher):
     register_stats(
         SimpleStats(
             'text',
-            lambda u: bool(
-                u.message and
-                (Filters.text & ~ Filters.command)(u))
+            lambda u: bool(u.message and (Filters.text & ~ Filters.command)(u))
         )
     )
     register_stats(
         SimpleStats(
-            'inline',
-            lambda u: bool(u.inline_query and u.inline_query.query))
+            'inline', lambda u: bool(u.inline_query and u.inline_query.query))
     )

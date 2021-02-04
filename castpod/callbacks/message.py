@@ -60,12 +60,13 @@ def save_subscription(update, context):
         podcasts_count = 0
         failed_feeds = []
         for feed in feeds:
+            podcast = None
             try:
-                podcast = Podcast.validate_feed(feed=feed['url'])
+                podcast = Podcast.validate_feed(feed['url'])
                 user.subscribe(podcast)
                 podcasts_count += 1
             except Exception as e:
-                print(e)
+                podcast.delete()
                 failed_feeds.append(feed['url'])
                 continue
             run_async(
@@ -194,7 +195,7 @@ def show_podcast(update, context):
     user = User.validate_user(update.effective_user)
     try:
         podcast = Podcast.objects.get(name=message.text)
-        subscription = user.subscriptions.get(podcast=podcast)
+        subscription = user.subscriptions.get(podcast=podcast) # ⚠️ 待优化
         kwargs = {}
         if subscription.is_fav:
             kwargs = {
@@ -205,12 +206,11 @@ def show_podcast(update, context):
         run_async(
             update.message.reply_text,
             text=page.text(),
-            reply_markup=InlineKeyboardMarkup(page.keyboard()),
-            parse_mode="MARKDOWN"
+            reply_markup=InlineKeyboardMarkup(page.keyboard())
         )
+        run_async(update.message.delete)
     except:
         run_async(message.reply_text, '抱歉，没能理解您的指令。')
-    run_async(update.message.delete)
 
 
 def handle_audio(update, context):

@@ -3,7 +3,7 @@ import random
 import socket
 import feedparser
 from mongoengine.document import Document, EmbeddedDocument
-from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentField, EmbeddedDocumentListField, IntField, ListField, ReferenceField, StringField, URLField
+from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentField, EmbeddedDocumentListField, IntField, LazyReferenceField, ListField, ReferenceField, StringField, URLField
 from mongoengine.queryset.base import PULL
 from mongoengine.queryset.manager import queryset_manager
 from telegram.parsemode import ParseMode
@@ -12,6 +12,13 @@ from config import podcast_vault, dev_user_id, manifest
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegraph import Telegraph
 from html import unescape
+
+telegraph = Telegraph()
+telegraph.create_account(
+    short_name=manifest.name,
+    author_name=manifest.name,
+    author_url=f'https://t.me/{manifest.bot_id}'
+)
 
 
 class Subscription(EmbeddedDocument):
@@ -39,19 +46,16 @@ class User(Document):
         if self in podcast.subscribers:
             return
         podcast.renew()
-        self.subscriptions.append(Subscription(podcast=podcast))
-        self.save()
-        podcast.subscribers.append(self)
-        podcast.save()
+        self.update(subscriptions__push=Subscription(podcast=podcast))
+        podcast.update(subscribers__push=self)
 
     def unsubscribe(self, podcast):
-        self.subscriptions.get(podcast=podcast).delete()
-        self.save()
-        podcast.subscribers.pop(self)
-        podcast.save()
+        self.update(subscriptions__pull=self.subscriptions.get(podcast=podcast))
+        podcast.update(subscribers__pull=self)
 
     def toggle_fav(self, podcast):
-        self.subscriptions.get(podcast=podcast).is_fav ^= True # use XOR to toggle boolean
+        # use XOR to toggle boolean
+        self.subscriptions.get(podcast=podcast).is_fav ^= True
         self.save()
 
     def generate_opml(self):
@@ -86,33 +90,32 @@ class Shownotes(EmbeddedDocument):
     url = URLField()
     timeline = StringField()
 
-    def set_url(self):
-        telegraph = Telegraph()
-        telegraph.create_account(
-            short_name=manifest.name,
-            author_name=manifest.name,
-            author_url=f'https://t.me/{manifest.bot_id}'
-        )
-
+    def set_url(self, title, author):
         res = telegraph.create_page(
-            title=f"{self.title}",
-            html_content=self.shownotes,
-            author_name=self.host or self.podcast_name
+            title=f"{title}",
+            html_content=self.content,
+            author_name=author
         )
-        self.url = f"https://telegra.ph/{res['path']}"
-        self.save()
+        self.update(url=f"https://telegra.ph/{res['path']}")
 
-    def set_shownotes(self):
-        shownotes = unescape(
-            self.content[0]['value']) if self.content else self.summary
-        img_content = f"<img src='{self.logo or self.podcast_logo}'>" if 'img' not in shownotes else ''
-        return img_content + self.replace_invalid_tags(shownotes)
+    def set_content(self, logo):
+        content = self.content or self.summary
+        img_content = f"<img src='{logo}'>" if 'img' not in content else ''
+        self.update(content=img_content + self.replace_invalid_tags(content))
 
     def set_timeline(self):
         shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.content)
         pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
         matches = re.finditer(pattern, shownotes)
-        return '\n\n'.join([re.sub(r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches])
+        self.update(timeline='\n\n'.join([re.sub(
+            r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches]))
+
+    def replace_invalid_tags(self, html_content):
+        html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
+        html_content = html_content.replace('cite>', "i>")
+        html_content = re.sub(r'</?(?:div|span|audio).*?>', '', html_content)
+        html_content = html_content.replace('’', "'")
+        return html_content
 
 
 class Audio(EmbeddedDocument):
@@ -180,11 +183,12 @@ class Podcast(Document):
         self.name = unescape(self.name)[:63]
         if len(self.name) == 63:
             self.name += '…'
-        self.logo = feed.get('image')['href']
+        self.logo = feed['image']['href']
         self.episodes = []
         for i, item in enumerate(result['items']):
-            # self.parse_episode(item)
-            self.episodes.append(Episode(index=i))
+            episode = self.parse_episode(item, i)
+            self.update(episodes__push=episode)
+            # self.reload()
         self.host = unescape(feed.author_detail.name or '')
         if self.host == self.name:
             self.host = ''
@@ -198,6 +202,26 @@ class Podcast(Document):
         self.job_group = [i % 48 for i in range(i, i + 41, 8)]
         self.save()
 
-    def parse_episode():
-
-        pass
+    def parse_episode(self, item, i):
+        episode = Episode(index=i)
+        audio = item.enclosures[0]
+        episode.audio = Audio(
+            url=audio.get('href'),
+            size=audio.get('length') or 0,
+            performer=self.name,
+            logo=item.get('image').href if item.get('image') else self.logo,
+            duration=self.set_duration(item.get('itunes_duration'))
+        ).save()
+        episode.title = unescape(item.get('title') or '')
+        episode.subtitle = unescape(item.get('subtitle') or '')
+        if episode.title == episode.subtitle:
+            episode.subtitle = ''
+        episode.content = item.get('content')
+        episode.summary = unescape(item.get('summary') or '')
+        episode.shownotes = Shownotes(self.content).save()
+        episode.shownotes.set_content(episode.logo)
+        episode.shownotes.set_timeline()
+        episode.shownotes.set_url()
+        episode.published_time = item.published_parsed
+        episode.save()
+        return episode
