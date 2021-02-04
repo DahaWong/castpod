@@ -202,13 +202,12 @@ def show_podcast(update, context):
             run_async(
                 update.message.reply_text,
                 text=page.text(),
-                reply_markup=InlineKeyboardMarkup(page.keyboard())
+                reply_markup=InlineKeyboardMarkup(page.keyboard()),
+                parse_mode = "MARKDOWN"
             )
-    except Exception as e:
-        print(e)
+    except:
         run_async(message.reply_text, '抱歉，没能理解您的指令。')
-    finally:
-        run_async(update.message.delete)
+    run_async(update.message.delete)
 
 
 def handle_audio(update, context):
