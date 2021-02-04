@@ -66,7 +66,7 @@ update_info = {
     'token': bot_token,
     'use_context': True,
     'persistence': persistence,
-    'base_url': bot_api,     #build 
+    'base_url': bot_api,
     'defaults': defaults
 }
 
