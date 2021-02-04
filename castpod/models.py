@@ -48,12 +48,12 @@ class User(Document):
         if self in podcast.subscribers:
             return
         podcast.renew()
-        self.update(subscriptions__push=Subscription(podcast=podcast))
-        podcast.update(subscribers__push=self)
+        self.update(push__subscriptions=Subscription(podcast=podcast))
+        podcast.update(push__subscribers=self)
 
     def unsubscribe(self, podcast):
-        self.update(subscriptions__pull=self.subscriptions.get(podcast=podcast))
-        podcast.update(subscribers__pull=self)
+        self.update(pull__subscriptions=self.subscriptions.get(podcast=podcast))
+        podcast.update(pull__subscribers=self)
 
     def toggle_fav(self, podcast):
         # use XOR to toggle boolean
@@ -189,7 +189,7 @@ class Podcast(Document):
         self.episodes = []
         for i, item in enumerate(result['items']):
             episode = self.parse_episode(item, i)
-            self.update(episodes__push=episode)
+            self.update(push__episodes=episode)
             # self.reload()
         self.host = unescape(feed.author_detail.name or '')
         if self.host == self.name:
@@ -248,8 +248,7 @@ class Podcast(Document):
                     ).total_seconds()
                     print(datetime.timedelta)
             else:
-                duration_timedelta = datetime.timedelta(seconds=int(duration))
+                duration_timedelta = duration
         else:
-            duration_timedelta = datetime.timedelta(seconds=0)
-        print(duration_timedelta)
-        return duration_timedelta
+            duration_timedelta = 0
+        return int(duration_timedelta)
