@@ -43,6 +43,7 @@ class User(Document):
         self.subscriptions.append(Subscription(podcast=podcast))
         podcast.subscribers.append(self)
         podcast.save()
+        print(self)
         self.save()
 
     def unsubscribe(self, podcast):
