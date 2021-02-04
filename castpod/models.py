@@ -99,7 +99,8 @@ class Shownotes(EmbeddedDocument):
             author_name=author
         )
         self.url = f"https://telegra.ph/{res['path']}"
-        sleep(2)
+        print(self.url)
+        sleep(1.2)
 
     def set_content(self, logo):
         content = self.content
