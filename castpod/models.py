@@ -135,7 +135,7 @@ class Audio(EmbeddedDocument):
 class Episode(EmbeddedDocument):
     index = IntField(required=True)
     audio = EmbeddedDocumentField(Audio)
-    title = StringField(max_length=64)
+    title = StringField()
     subtitle = StringField()
     content = StringField()
     summary = StringField()
