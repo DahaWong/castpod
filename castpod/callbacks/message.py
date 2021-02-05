@@ -2,7 +2,7 @@ from castpod.models import User, Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
 from castpod.components import PodcastPage, ManagePage
 from config import podcast_vault, manifest, dev_user_id
-from castpod.utils import local_download, parse_doc, delete_manage_starter
+from castpod.utils import delete_update_message, local_download, parse_doc, delete_manage_starter
 import re
 
 
@@ -183,9 +183,14 @@ def download_episode(update, context):
     )
 
 
+@delete_update_message
 def exit_reply_keyboard(update, context):
     run_async = context.dispatcher.run_async
-    run_async(update.message.delete)
+    run_async(
+        update.message.reply(
+            'OK', reply_markup=ReplyKeyboardMarkup(ReplyKeyboardRemove())
+        ).delete
+    )
     run_async(delete_manage_starter, context)
 
 
@@ -207,7 +212,7 @@ def show_podcast(update, context):
             update.message.reply_text,
             text=page.text(),
             reply_markup=InlineKeyboardMarkup(page.keyboard()),
-            parse_mode = ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN
         )
         run_async(update.message.delete)
     except:
