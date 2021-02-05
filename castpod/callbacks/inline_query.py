@@ -4,6 +4,7 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKe
 import re
 from config import manifest
 from castpod.models import User, Podcast
+import datetime
 
 
 def handle_inline_query(update, context):
@@ -103,7 +104,7 @@ def show_episodes(podcast):
                 f"[🎙️]({podcast.logo}) *{podcast.name}* #{episodes.count() - index}"
             )),
             reply_markup=InlineKeyboardMarkup.from_row(buttons),
-            description=f"{episode.audio.duration or podcast.name}\n{episode.subtitle}",
+            description=f"{datetime.timedelta(seconds=episode.audio.duration) or podcast.name}\n{episode.subtitle}",
             thumb_url=episode.audio.logo,
             thumb_width=60,
             thumb_height=60

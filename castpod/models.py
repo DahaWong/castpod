@@ -129,7 +129,7 @@ class Audio(EmbeddedDocument):
     performer = StringField()
     logo = URLField()
     size = IntField()
-    duration = StringField()
+    duration = IntField()
 
 
 class Episode(EmbeddedDocument):
@@ -231,7 +231,7 @@ class Podcast(Document):
             mktime(item.published_parsed))
         return episode
 
-    def set_duration(self, duration: str):
+    def set_duration(self, duration: str) -> int:
         duration_timedelta = None
         if duration:
             if ':' in duration:
@@ -241,16 +241,15 @@ class Podcast(Document):
                         hours=int(time[0]),
                         minutes=int(time[1]),
                         seconds=int(time[2])
-                    )
+                    ).total_seconds()
                 elif len(time) == 2:
                     duration_timedelta = datetime.timedelta(
                         hours=0,
                         minutes=int(time[0]),
                         seconds=int(time[1])
-                    )
+                    ).total_seconds()
             else:
-                duration_timedelta = datetime.timedelta(seconds=duration)
+                duration_timedelta = re.sub(r'\.[0-9]+', '', duration)
         else:
-            duration_timedelta = datetime.timedelta(
-                hours=0, minutes=0, seconds=0)
-        return duration_timedelta
+            duration_timedelta = 0
+        return int(duration_timedelta)
