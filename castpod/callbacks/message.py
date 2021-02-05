@@ -188,7 +188,7 @@ def exit_reply_keyboard(update, context):
     run_async = context.dispatcher.run_async
     run_async(
         update.message.reply_text(
-            'OK', reply_markup=ReplyKeyboardMarkup(ReplyKeyboardRemove())
+            'OK', reply_markup=ReplyKeyboardRemove()
         ).delete
     )
     run_async(delete_manage_starter, context)
