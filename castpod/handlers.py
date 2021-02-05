@@ -20,7 +20,7 @@ handlers.extend([
     CommandHandler('help', command.help, run_async=True),
     CommandHandler('logout', command.logout, run_async=True),
     MessageHandler(
-        Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
+        Filters.chat_type.private & Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
     MessageHandler(
         Filters.regex(r'🎙️ (.+) #([0-9]+)'), message.download_episode, run_async=True),
     MessageHandler(
@@ -30,13 +30,15 @@ handlers.extend([
         run_async=True
     ),
     MessageHandler(
-        Filters.document.mime_type('text/xml') |
-        Filters.document.file_extension("opml") |
-        Filters.document.file_extension("opm"),
+        Filters.chat_type.private &
+        (Filters.document.mime_type('text/xml') |
+         Filters.document.file_extension("opml") |
+         Filters.document.file_extension("opm")),
         message.save_subscription,
         run_async=True
     ),
-    MessageHandler(Filters.text, message.show_podcast),
+    MessageHandler(Filters.chat_type.private &
+                   Filters.text, message.show_podcast),
     MessageHandler(Filters.audio, message.handle_audio),
     InlineQueryHandler(inline_query.handle_inline_query)
 ])

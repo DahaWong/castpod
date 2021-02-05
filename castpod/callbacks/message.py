@@ -124,7 +124,7 @@ def download_episode(update, context):
     index = int(match[2])
     episode = podcast.episodes[-index]
     bot.send_chat_action(
-        update.message.chat_id,
+        chat_id,
         ChatAction.UPLOAD_AUDIO
     )
     if episode.message_id:
@@ -159,7 +159,7 @@ def download_episode(update, context):
             raise e
         finally:
             uploading_note.delete()
-        forwarded_message = audio_message.forward(message.from_user.id)
+        forwarded_message = audio_message.forward(chat_id)
         forward_from_message = audio_message.message_id
         context.user_data.clear()
     update.message.delete()
