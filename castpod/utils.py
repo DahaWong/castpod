@@ -7,7 +7,6 @@ import re
 from functools import wraps
 from castpod.models import User
 from config import bot_token
-import time
 
 def validate_user(func):
     @wraps(func)
@@ -86,7 +85,6 @@ def local_download(episode, context):
         with open(path, 'wb') as f:
             for data in res.iter_content(block_size):
                 progress_bar.update(len(data))
-                time.sleep(0.5)
                 f.write(data)
             message_id = progress_bar.tgio.message_id
         context.bot.delete_message(chat_id, message_id)
