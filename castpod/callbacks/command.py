@@ -39,7 +39,7 @@ def start(update, context):
         welcome_text = (
             f'欢迎使用 {manifest.name}！                                            '
             f'\n\n您可以发送 OPML 文件或 RSS 链接以*导入播客订阅*。\n'
-            f'\n⚠️ 目前还*没有正式上线*，正在接入数据库的功能，测试完毕会在[内测群组](https://t.me/castpodchat)中告知。'
+            f'\n⚠️ 目前还*没有正式上线*，主要的问题是订阅的播客还不能更新。遇到问题或提供建议请移步[内测聊天室](https://t.me/castpodchat)。'
         )
         run_async(
             message.reply_text,
