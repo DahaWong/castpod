@@ -212,7 +212,8 @@ def show_podcast(update, context):
         run_async(
             update.message.reply_text,
             text=page.text(),
-            reply_markup=InlineKeyboardMarkup(page.keyboard())
+            reply_markup=InlineKeyboardMarkup(page.keyboard()),
+            parse_mode = ParseMode.MARKDOWN
         )
         run_async(update.message.delete)
     except:
