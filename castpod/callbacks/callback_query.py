@@ -93,7 +93,8 @@ def toggle_fav_podcast(update, context, to: str):
 def unsubscribe_podcast(update, context):
     run_async = context.dispatcher.run_async
     query = update.callback_query
-    podcast_id = re.match(r'(unsubscribe_podcast_)(.+)', query.data)[2]
+    podcast_id = re.match(r'unsubscribe_podcast_(.+)', query.data)[1]
+    print(podcast_id)
     podcast_name = Podcast.objects(id=podcast_id).only('name').first().name
     run_async(
         query.message.edit_text,
