@@ -3,13 +3,15 @@ from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
 from config import manifest
 import re
-from castpod.utils import save_manage_starter
+from castpod.utils import delete_manage_starter, save_manage_starter
 
 
 def delete_message(update, context):
     context.dispatcher.run_async(update.callback_query.delete_message)
 
 # Account:
+
+
 def logout(update, context):
     context.dispatcher.run_async(
         update.callback_query.edit_message_text,
@@ -30,21 +32,20 @@ def delete_account(update, context):
     user = User.validate_user(update.effective_user)
     deleting_note = run_async(message.edit_text, "注销中…").result()
     user.delete()
-    context.user_data.clear()
     run_async(deleting_note.delete)
-    run_async(bot.send_message,
-              chat_id=user.user_id,
-              text='您的账号已注销～',
-              reply_markup=ReplyKeyboardRemove()
-              )
-    run_async(bot.send_message,
-              chat_id=user.user_id, text="👋️",
-              reply_markup=InlineKeyboardMarkup.from_button(
-                  InlineKeyboardButton(
-                      '重新开始', url=f"https://t.me/{manifest.bot_id}?start=login")
-              )
-              )
-
+    run_async(
+        bot.send_message,
+        chat_id=user.user_id,
+        text='您的账号已注销～',
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton(
+                '重新开始', url=f"https://t.me/{manifest.bot_id}?start=login")
+        )
+    )
+    run_async(delete_manage_starter, context)
+    context.chat_data.clear()
+    context.user_data.clear()
+    
 # Podcast
 
 
