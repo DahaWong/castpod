@@ -202,7 +202,6 @@ def show_podcast(update, context):
     try:
         podcast = Podcast.objects.get(name=message.text)
         subscription = user.subscriptions.get(podcast=podcast)  # ⚠️ 待优化
-        run_async(delete_manage_starter(context))
         kwargs = {}
         if subscription.is_fav:
             kwargs = {
