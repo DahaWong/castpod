@@ -110,7 +110,7 @@ def setting(update, context):
         update.message.reply_text,
         f'已启动设置面板',
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    )
+    ).result()
     save_manage_starter(context.chat_data, msg)
 
 
