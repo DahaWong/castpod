@@ -190,7 +190,7 @@ def exit_reply_keyboard(update, context):
         reply_markup=ReplyKeyboardRemove()
     ).delete()
     message.delete()
-    delete_manage_starter(context.chat_data)
+    delete_manage_starter(context)
 
 
 def show_podcast(update, context):
