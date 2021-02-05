@@ -18,7 +18,7 @@ def subscribe_feed(update, context):
 
     user = User.validate_user(update.effective_user)
     podcast = Podcast.validate_feed(feed=message.text)
-    user.subscribe, podcast
+    user.subscribe(podcast)
     try:
         manage_page = ManagePage(
             podcasts=Podcast.of_subscriber(user, 'name'),
