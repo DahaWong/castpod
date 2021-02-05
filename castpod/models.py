@@ -34,7 +34,8 @@ class Subscription(EmbeddedDocument):
 class User(Document):
     # meta = {'queryset_class': UserQuerySet}
     user_id = IntField(primary_key=True)
-    username = StringField(required=True)
+    username = StringField()
+    name = StringField()
     subscriptions = EmbeddedDocumentListField(Subscription)
 
     @classmethod
@@ -43,7 +44,7 @@ class User(Document):
             user = cls.objects(user_id=from_user.id).only(subsets).first()
         else:
             user = cls.objects(user_id=from_user.id).first()
-        return user or cls(user_id=from_user.id, username=from_user.username).save()
+        return user or cls(user_id=from_user.id, username=from_user.username, name=from_user.first_name).save()
 
     def subscribe(self, podcast):
         if self in podcast.subscribers:
@@ -135,7 +136,7 @@ class Audio(EmbeddedDocument):
 class Episode(EmbeddedDocument):
     index = IntField(required=True)
     audio = EmbeddedDocumentField(Audio)
-    title = StringField(max_length=128)
+    title = StringField()
     subtitle = StringField()
     content = StringField()
     summary = StringField()

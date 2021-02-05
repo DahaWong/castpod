@@ -19,18 +19,22 @@ def start(update, context):
         user.subscribe(podcast)
         subscribing_note.delete()
         page = PodcastPage(podcast)
-        manage_page = ManagePage(Podcast.of_subscriber(
-            user), f'`{podcast.name}` 订阅成功！')
-        run_async(
-            update.message.reply_text,
-            text=manage_page.text,
-            reply_markup=ReplyKeyboardMarkup(manage_page.keyboard())
+        manage_page = ManagePage(
+            Podcast.of_subscriber(user), f'`{podcast.name}` 订阅成功！'
         )
+
         run_async(
             update.message.reply_text,
             text=page.text(),
             reply_markup=InlineKeyboardMarkup(page.keyboard())
         )
+
+        run_async(
+            update.message.reply_text,
+            text=manage_page.text,
+            reply_markup=ReplyKeyboardMarkup(manage_page.keyboard())
+        )
+
     else:
         welcome_text = (
             f'欢迎使用 {manifest.name}！                                            '
