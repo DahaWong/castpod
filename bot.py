@@ -39,10 +39,10 @@ def make_job(i):
     return job
 
 
-for i in range(48):
-    time = datetime.time(hour=i//4, minute=i*30 % 60)
-    dispatcher.job_queue.run_daily(
-        make_job(i), time, name=f'update_podcast_group_{i}')
+# for i in range(48):
+#     time = datetime.time(hour=i//4, minute=i*30 % 60)
+#     dispatcher.job_queue.run_daily(
+#         make_job(i), time, name=f'update_podcast_group_{i}')
 
 register_handlers(dispatcher)
 register_stats(dispatcher)
