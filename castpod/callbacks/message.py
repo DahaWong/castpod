@@ -187,7 +187,7 @@ def download_episode(update, context):
 def exit_reply_keyboard(update, context):
     run_async = context.dispatcher.run_async
     run_async(
-        update.message.reply(
+        update.message.reply_text(
             'OK', reply_markup=ReplyKeyboardMarkup(ReplyKeyboardRemove())
         ).delete
     )
