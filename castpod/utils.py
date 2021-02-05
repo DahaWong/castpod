@@ -122,11 +122,11 @@ def parse_opml(f):
 
 # Manage page
 def delete_update_message(func):
-    @wraps
-    def wrapper(update, context, *args, **kwargs):
+    @wraps(func)
+    def wrapped(update, context, *args, **kwargs):
         func(update, context, *args, **kwargs)
         context.dispatcher.run_async(update.message.delete)
-    return wrapper
+    return wrapped
 
 def save_manage_starter(chat_data, message):
     if chat_data.get('manage_starter'):
