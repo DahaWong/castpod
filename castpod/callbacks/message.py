@@ -18,7 +18,7 @@ def subscribe_feed(update, context):
 
     user = User.validate_user(update.effective_user)
     podcast = Podcast.validate_feed(feed=message.text)
-    user.subscribe(podcast)
+    user.subscribe, podcast
     try:
         manage_page = ManagePage(
             podcasts=Podcast.of_subscriber(user, 'name'),
@@ -63,7 +63,7 @@ def save_subscription(update, context):
             podcast = None
             try:
                 podcast = Podcast.validate_feed(feed['url'])
-                user.subscribe(podcast)
+                run_async(user.subscribe, podcast)
                 podcasts_count += 1
             except Exception as e:
                 podcast.delete()

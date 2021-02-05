@@ -25,12 +25,16 @@ handlers.extend([
         Filters.regex(r'🎙️ (.+) #([0-9]+)'), message.download_episode, run_async=True),
     MessageHandler(
         Filters.regex(r'^╳$') |
-        Filters.regex(r'^订阅列表是空的～$'), message.exit_reply_keyboard, run_async=True),
+        Filters.regex(r'^订阅列表是空的～$'),
+        message.exit_reply_keyboard,
+        run_async=True
+    ),
     MessageHandler(
         Filters.document.mime_type('text/xml') |
         Filters.document.file_extension("opml") |
         Filters.document.file_extension("opm"),
-        message.save_subscription
+        message.save_subscription,
+        run_async=True
     ),
     MessageHandler(Filters.text, message.show_podcast),
     MessageHandler(Filters.audio, message.handle_audio),
