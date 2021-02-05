@@ -30,18 +30,21 @@ def delete_account(update, context):
     bot = context.bot
     message = update.callback_query.message
     user = User.validate_user(update.effective_user)
-    deleting_note = run_async(message.edit_text, "注销中…").result()
-    user.delete()
-    run_async(deleting_note.delete)
-    run_async(
-        bot.send_message,
-        chat_id=user.user_id,
-        text='您的账号已注销～',
-        reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton(
-                '重新开始', url=f"https://t.me/{manifest.bot_id}?start=login")
+    if message:
+        deleting_note = run_async(message.edit_text, "注销中…").result()
+        user.delete()
+        run_async(deleting_note.delete)
+        run_async(
+            bot.send_message,
+            chat_id=user.user_id,
+            text='您的账号已注销～',
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    '重新开始', url=f"https://t.me/{manifest.bot_id}?start=login")
+            )
         )
-    )
+    else:
+        user.delete()
     run_async(delete_manage_starter, context)
     context.chat_data.clear()
     context.user_data.clear()
