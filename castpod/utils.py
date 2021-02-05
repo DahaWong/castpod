@@ -73,9 +73,8 @@ def local_download(episode, context):
             if exc.errno != errno.EEXIST:
                 raise
     if context.user_data:
-        user = context.user_data['user']
-        chat_id = user.user_id
         total = int(res.headers.get('content-length', 0))
+        chat_id = context.user_data('chat_id')
         progress_bar = tqdm(
             total=total,
             unit='iB',
