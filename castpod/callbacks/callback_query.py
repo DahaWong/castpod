@@ -30,7 +30,7 @@ def delete_account(update, context):
     bot = context.bot
     message = update.callback_query.message
     user = User.validate_user(update.effective_user)
-    if message:
+    if message.text:
         deleting_note = run_async(message.edit_text, "注销中…").result()
         user.delete()
         run_async(deleting_note.delete)
