@@ -4,6 +4,7 @@ from castpod.models import User, Podcast
 from castpod.components import ManagePage, PodcastPage
 from castpod.utils import save_manage_starter
 
+
 def start(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
@@ -17,7 +18,8 @@ def start(update, context):
         user.subscribe(podcast)
         subscribing_note.delete()
         page = PodcastPage(podcast)
-        manage_page = ManagePage(Podcast.of_subscriber(user), f'`{podcast.name}` 订阅成功！')
+        manage_page = ManagePage(Podcast.of_subscriber(
+            user), f'`{podcast.name}` 订阅成功！')
         run_async(
             update.message.reply_text,
             text=manage_page.text,
@@ -94,7 +96,6 @@ def manage(update, context):
             page.keyboard(), resize_keyboard=True, one_time_keyboard=True)
     ).result()
     save_manage_starter(context.chat_data, msg)
-    
 
 
 def setting(update, context):
@@ -108,8 +109,10 @@ def setting(update, context):
 
 
 def help(update, context):
+    run_async = context.dispatcher.run_async
     message = update.message
-    message.reply_text(
+    run_async(
+        message.reply_text,
         text=(
             f"*{manifest.name} 使用说明*\n\n"
             "/about - 幕后信息\n"
@@ -124,7 +127,7 @@ def help(update, context):
             )
         )
     )
-    message.delete()
+    run_async(message.delete)
 
 
 def export(update, context):
