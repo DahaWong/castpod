@@ -166,7 +166,7 @@ def download_episode(update, context):
 
     forwarded_message.edit_caption(
         caption=(
-            f"🎙️ <b>{podcast.name}</b>\n\n<a href='{episode.get_shownotes_url() or podcast.website}'>相关链接</a>"
+            f"🎙️ <b>{podcast.name}</b>\n\n<a href='{episode.shownotes.url or podcast.website}'>相关链接</a>"
             f"\n\n{episode.shownotes.timeline or episode.shownotes.set_timeline()}"
         ),
         parse_mode=ParseMode.HTML,
