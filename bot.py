@@ -45,7 +45,7 @@ for i in range(48):
         make_job(i), time, name=f'update_podcast_group_{i}')
 
 register_handlers(dispatcher)
-register_stats(dispatcher)
+# register_stats(dispatcher)
 
 if connection.result():
     print('MongoDB Connected!')
