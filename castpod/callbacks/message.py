@@ -63,7 +63,7 @@ def save_subscription(update, context):
             podcast = None
             try:
                 podcast = Podcast.validate_feed(feed['url'])
-                run_async(user.subscribe, podcast)
+                user.subscribe(podcast)
                 podcasts_count += 1
             except Exception as e:
                 podcast.delete()
