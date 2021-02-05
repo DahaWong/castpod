@@ -2,9 +2,10 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from config import manifest
 from castpod.models import User, Podcast
 from castpod.components import ManagePage, PodcastPage
-from castpod.utils import save_manage_starter
+from castpod.utils import save_manage_starter, delete_update_message
 
 
+@delete_update_message
 def start(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
@@ -47,6 +48,7 @@ def start(update, context):
         )
 
 
+@delete_update_message
 def about(update, context):
     keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
                  InlineKeyboardButton("工作室", url=manifest.author_url)]]
@@ -62,6 +64,7 @@ def about(update, context):
     )
 
 
+@delete_update_message
 def favourites(update, context):
     run_async = context.dispatcher.run_async
     buttons = [
@@ -83,12 +86,12 @@ def favourites(update, context):
     # )
 
 
+@delete_update_message
 def manage(update, context):
     run_async = context.dispatcher.run_async
     user = User.validate_user(update.effective_user)
     message = update.message
     page = ManagePage(Podcast.of_subscriber(user, 'name'))
-    run_async(message.delete)
     msg = run_async(
         message.reply_text,
         text=page.text,
@@ -98,16 +101,20 @@ def manage(update, context):
     save_manage_starter(context.chat_data, msg)
 
 
+@delete_update_message
 def setting(update, context):
     keyboard = [["╳"],
                 ["播客更新频率", "快捷置顶单集", "单集信息显示"],
                 ["播客搜索范围", "快捷置顶播客", "单集排序方式"], ]
-    update.message.reply_text(
-        f'已打开设置面板',
+    msg = context.dispatcher.run_async(
+        update.message.reply_text,
+        f'已启动设置面板',
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     )
+    save_manage_starter(context.chat_data, msg)
 
 
+@delete_update_message
 def help(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
@@ -127,9 +134,9 @@ def help(update, context):
             )
         )
     )
-    run_async(message.delete)
 
 
+@delete_update_message
 def export(update, context):
     user = User.validate_user(update.effective_user)
     if not user.subscriptions:
@@ -141,8 +148,9 @@ def export(update, context):
         )
 
 
+@delete_update_message
 def logout(update, context):
-    keyboard = [[InlineKeyboardButton("返回", callback_data=f"delete_command_context_{update.message.message_id}"),
+    keyboard = [[InlineKeyboardButton("返回", callback_data=f"delete_message"),
                  InlineKeyboardButton("注销", callback_data="logout")]]
 
     update.message.reply_text(

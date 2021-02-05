@@ -121,6 +121,14 @@ def parse_opml(f):
     return feeds
 
 # Manage page
+def delete_update_message(func):
+    @wraps
+    def wrapper(update, context, *args, **kwargs):
+        output = func(update, context, *args, **kwargs)
+        context.dispatcher.run_async(update.message.delete)
+        return output
+    return wrapper
+
 def save_manage_starter(chat_data, message):
     if chat_data.get('manage_starter'):
         chat_data['manage_starter'].append(message)
