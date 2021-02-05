@@ -149,7 +149,7 @@ def export(update, context):
         return
     run_async(
         message.reply_document,
-        filename=f"{user.name} 的 {manifest.name} 订阅.xml",
+        filename=f"{user.username} 的 {manifest.name} 订阅.xml",
         document=user.generate_opml(),
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(

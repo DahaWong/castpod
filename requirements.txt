@@ -4,4 +4,4 @@ feedparser
 tqdm
 telegraph
 mongoengine
-git+https://gitlab.com/HirschHeissIch/ptbstats.git@v1.2
+# git+https://gitlab.com/HirschHeissIch/ptbstats.git@v1.2
