@@ -127,7 +127,8 @@ def save_manage_starter(chat_data, message):
     else:
         chat_data.update({'manage_starter': [message]})
 
-def delete_manage_starter(chat_data):
-    for message in chat_data['manage_starter']:
-        message.delete()
-    chat_data.pop('manage_starter')
+def delete_manage_starter(context):
+    run_async = context.dispatcher.run_async
+    for message in context.chat_data['manage_starter']:
+        run_async(message.delete)
+    context.chat_data['manage_starter']=[]
