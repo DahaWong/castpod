@@ -148,7 +148,7 @@ def download_episode(update, context):
                     f"🎙️ {podcast.name}\n"
                     f"总第 {index} 期"
                     f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={podcast.id})"
-                    f" | [相关链接]({episode.shownotes.url or episode.shownotes.set_url()})"
+                    f" | [相关链接]({episode.shownotes.url or episode.shownotes.set_url(episode.title, podcast.name)})"
                 ),
                 title=episode.title,
                 performer=podcast.name,
