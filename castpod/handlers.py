@@ -22,7 +22,7 @@ handlers.extend([
     MessageHandler(
         Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
     MessageHandler(
-        Filters.regex(r'🎙️ (.+) #([0-9]+)'), message.download_episode, run_async=True),
+        Filters.regex(r'🎙️ (.+) #([0-9]+)'), message.download_episode, run_async=False),
     MessageHandler(
         Filters.regex(r'^╳$') |
         Filters.regex(r'^订阅列表是空的～$'), message.exit_reply_keyboard, run_async=True),
