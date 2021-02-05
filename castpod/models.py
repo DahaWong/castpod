@@ -2,7 +2,7 @@ import re
 import random
 import socket
 import datetime
-from time import mktime,sleep
+from time import mktime, sleep
 import feedparser
 from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentField, EmbeddedDocumentListField, IntField, LazyReferenceField, ListField, ReferenceField, StringField, URLField
@@ -15,7 +15,13 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegraph import Telegraph
 from html import unescape
 
+telegraph = Telegraph()
 
+telegraph.create_account(
+    short_name=manifest.name,
+    author_name=manifest.name,
+    author_url=f'https://t.me/{manifest.bot_id}'
+)
 
 
 class Subscription(EmbeddedDocument):
@@ -88,24 +94,19 @@ class Shownotes(EmbeddedDocument):
     timeline = StringField()
 
     def set_url(self, title, author):
-        telegraph = Telegraph()
-        telegraph.create_account(
-            short_name=manifest.name,
-            author_name=manifest.name,
-            author_url=f'https://t.me/{manifest.bot_id}'
-        )
         res = telegraph.create_page(
             title=f"{title}",
             html_content=self.content,
             author_name=author
         )
         self.url = f"https://telegra.ph/{res['path']}"
-        sleep(0.3)
+        return self.url
 
     def set_content(self, logo):
         content = self.content
         img_content = f"<img src='{logo}'>" if 'img' not in content else ''
         self.content = img_content + self.replace_invalid_tags(content)
+        return self.content
 
     def set_timeline(self):
         shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.content)
@@ -113,6 +114,7 @@ class Shownotes(EmbeddedDocument):
         matches = re.finditer(pattern, shownotes)
         self.timeline = '\n\n'.join([re.sub(
             r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches])
+        return self.timeline
 
     def replace_invalid_tags(self, html_content):
         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
@@ -127,7 +129,7 @@ class Audio(EmbeddedDocument):
     performer = StringField()
     logo = URLField()
     size = IntField()
-    duration = IntField()
+    duration = DateTimeField()
 
 
 class Episode(EmbeddedDocument):
@@ -181,7 +183,6 @@ class Podcast(Document):
             raise Exception(f'Feed open error, status: {result.status}')
         feed = result.feed
         self.name = feed.get('title')
-        print(self.name)
         if not self.name:
             self.delete()
             raise Exception("Cannot parse feed name.")
@@ -222,17 +223,15 @@ class Podcast(Document):
         if episode.title == episode.subtitle:
             episode.subtitle = ''
         episode.summary = unescape(item.get('summary') or '')
-        episode.content = item.get('content')[0]['value'] if item.get(
+        content = item.get('content')[0]['value'] if item.get(
             'content') else episode.summary
-        episode.shownotes = Shownotes(content=episode.content)
+        episode.shownotes = Shownotes(content=content)
         episode.shownotes.set_content(episode.audio.logo)
-        episode.shownotes.set_timeline()
-        episode.shownotes.set_url(episode.title, self.name)
         episode.published_time = datetime.datetime.fromtimestamp(
             mktime(item.published_parsed))
         return episode
 
-    def set_duration(self, duration: str) -> int:
+    def set_duration(self, duration: str):
         duration_timedelta = None
         if duration:
             if ':' in duration:
@@ -242,15 +241,16 @@ class Podcast(Document):
                         hours=int(time[0]),
                         minutes=int(time[1]),
                         seconds=int(time[2])
-                    ).total_seconds()
+                    )
                 elif len(time) == 2:
                     duration_timedelta = datetime.timedelta(
                         hours=0,
                         minutes=int(time[0]),
                         seconds=int(time[1])
-                    ).total_seconds()
+                    )
             else:
-                duration_timedelta = duration
+                duration_timedelta = datetime.timedelta(seconds=duration)
         else:
-            duration_timedelta = 0
-        return int(duration_timedelta)
+            duration_timedelta = datetime.timedelta(
+                hours=0, minutes=0, seconds=0)
+        return duration_timedelta

@@ -94,7 +94,7 @@ def unsubscribe_podcast(update, context):
     run_async = context.dispatcher.run_async
     query = update.callback_query
     podcast_id = re.match(r'(unsubscribe_podcast_)(.+)', query.data)[2]
-    podcast_name = Podcast.objects(id=podcast_id).only('name').name
+    podcast_name = Podcast.objects(id=podcast_id).only('name').first().name
     run_async(
         query.message.edit_text,
         text=f"确认退订 {podcast_name} 吗？",

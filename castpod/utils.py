@@ -1,14 +1,12 @@
-from telegram import InlineKeyboardMarkup
 from tqdm.contrib.telegram import tqdm
-from castpod.components import PodcastPage
 import requests
 from bs4 import BeautifulSoup
 import errno
 import os
 import re
 from functools import wraps
-from castpod.models import Subscription, User
-from config import manifest
+from castpod.models import User
+from config import bot_token
 
 def validate_user(func):
     @wraps(func)
@@ -62,7 +60,7 @@ def search_itunes(keyword: str):
 
 
 def local_download(episode, context):
-    res = requests.get(episode.audio_url, allow_redirects=True, stream=True)
+    res = requests.get(episode.audio.url, allow_redirects=True, stream=True)
     if res.status_code != 200:
         raise Exception(
             f"Error when downloading audio, status: {res.status_code}.")
