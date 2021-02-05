@@ -3,7 +3,6 @@ from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
 from config import manifest
 import re
-from bson import ObjectId
 
 
 def delete_command_context(update, context):
@@ -101,7 +100,7 @@ def unsubscribe_podcast(update, context):
         reply_markup=InlineKeyboardMarkup.from_row([
             InlineKeyboardButton(
                 "返回", callback_data=f"back_to_actions_{podcast_id}"),
-            InlineKeyboardButton("退订", callback_data="confirm_unsubscribe_{podcast_id}")]
+            InlineKeyboardButton("退订", callback_data=f"confirm_unsubscribe_{podcast_id}")]
         )
     )
     run_async(query.answer, f"退订后，您将不会收到 {podcast_name} 的更新。")
@@ -112,7 +111,6 @@ def confirm_unsubscribe(update, context):
     query = update.callback_query
     podcast_id = re.match(r'confirm_unsubscribe_(.+)', query.data)[1]
     user = User.objects.get(user_id=query.from_user.id)
-    print(podcast_id)
     podcast = Podcast.objects.get(id=podcast_id)
     user.unsubscribe(podcast)
 
