@@ -135,7 +135,7 @@ def download_episode(update, context):
         forward_from_message = episode.message_id
     else:
         downloading_note = fetching_note.edit_text("下载中…")
-        context.user_data.update({'podcast_name':podcast.name})
+        context.user_data.update({'podcast':podcast.name})
         audio_file = local_download(episode, context)
         uploading_note = downloading_note.edit_text("正在上传，请稍候…")
         audio_message = None
