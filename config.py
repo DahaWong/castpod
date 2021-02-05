@@ -25,14 +25,14 @@ dev_user_id = config['DEV']['USER_ID']
 webhook_port = int(config['WEBHOOK']['PORT'])
 
 # MongoDB
+
+
 class Mongo(object):
     mongo = config['MONGODB']
     db = mongo['DB_NAME']
     user = mongo['USER']
     pwd = mongo['PWD']
-    remote_host = mongo['REMOTE_HOST'] # test
-
-
+    remote_host = mongo['REMOTE_HOST']  # test
 
 
 webhook_info = {
@@ -60,7 +60,7 @@ webhook_setting = {
 #    'persistence': persistence
 #  }
 
- # Build
+# Build
 persistence = PicklePersistence(filename='persistence')
 update_info = {
     'token': bot_token,
@@ -68,7 +68,7 @@ update_info = {
     'persistence': persistence,
     'base_url': bot_api,
     'defaults': defaults,
-    'workers': 16
+    'workers': 8
 }
 
 
