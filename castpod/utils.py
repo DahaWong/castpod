@@ -66,6 +66,7 @@ def local_download(episode, context):
             f"Error when downloading audio, status: {res.status_code}.")
     block_size = 1024  # 1 Kibibyte
     path = f"public/audio/{context.user_data['podcast']}/{episode.title}.mp3"
+    print(path)
     if not os.path.exists(os.path.dirname(path)):
         try:
             os.makedirs(os.path.dirname(path))

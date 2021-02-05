@@ -155,8 +155,9 @@ def download_episode(update, context):
                 duration=episode.duration.seconds,
                 thumb=podcast.logo
             )
+            print
         except Exception as e:
-            pass  # ⚠️
+            raise e
         finally:
             uploading_note.delete()
         forwarded_message = audio_message.forward(message.from_user.id)
