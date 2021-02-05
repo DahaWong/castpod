@@ -74,7 +74,7 @@ def local_download(episode, context):
                 raise
     if context.user_data:
         total = int(res.headers.get('content-length', 0))
-        chat_id = context.user_data('chat_id')
+        chat_id = context.user_data['chat_id']
         progress_bar = tqdm(
             total=total,
             unit='iB',
