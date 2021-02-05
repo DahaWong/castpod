@@ -120,10 +120,11 @@ def help(update, context):
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
                 "✓",
-                callback_data=f'delete_command_context_{message.message_id}'
+                callback_data=f'delete_message'
             )
         )
     )
+    message.delete()
 
 
 def export(update, context):

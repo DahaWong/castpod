@@ -6,20 +6,10 @@ import re
 from castpod.utils import save_manage_starter
 
 
-def delete_command_context(update, context):
-    run_async = context.dispatcher.run_async
-    query = update.callback_query
-    command_message_id = re.match(r'delete_command_context_([0-9]+)', query.data)[1]
-    run_async(context.bot.delete_message,
-              query.message.chat_id,
-              command_message_id
-              )
-    run_async(query.delete_message)
-
+def delete_message(update, context):
+    context.dispatcher.run_async(update.callback_query.delete_message)
 
 # Account:
-
-
 def logout(update, context):
     context.dispatcher.run_async(
         update.callback_query.edit_message_text,
@@ -129,7 +119,6 @@ def confirm_unsubscribe(update, context):
     ).result()
 
     save_manage_starter(context.chat_data, msg)
-
 
 
 def back_to_actions(update, context):
