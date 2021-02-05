@@ -124,9 +124,8 @@ def parse_opml(f):
 def delete_update_message(func):
     @wraps
     def wrapper(update, context, *args, **kwargs):
-        output = func(update, context, *args, **kwargs)
+        func(update, context, *args, **kwargs)
         context.dispatcher.run_async(update.message.delete)
-        return output
     return wrapper
 
 def save_manage_starter(chat_data, message):
