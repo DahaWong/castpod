@@ -119,8 +119,8 @@ def download_episode(update, context):
     fetching_note = bot.send_message(chat_id, "获取节目中…")
     bot.send_chat_action(chat_id, ChatAction.RECORD_AUDIO)
     match = re.match(r'🎙️ (.+) #([0-9]+)', message.text)
-    podcast = Podcast.objects.get(name=match[1]) # ⚠️ name改成id
-    context.user_data.update({'podcast':podcast.name, 'chat_id':chat_id})
+    podcast = Podcast.objects.get(name=match[1])  # ⚠️ name改成id
+    context.user_data.update({'podcast': podcast.name, 'chat_id': chat_id})
     index = int(match[2])
     episode = podcast.episodes[-index]
     bot.send_chat_action(
@@ -184,13 +184,15 @@ def download_episode(update, context):
 
 
 def exit_reply_keyboard(update, context):
+    run_async = context.dispatcher.run_async
     message = update.message
-    message.reply_text(
-        '已关闭操作面板',
-        reply_markup=ReplyKeyboardRemove()
-    ).delete()
-    message.delete()
-    delete_manage_starter(context)
+    run_async(
+        message.reply_text(
+            '已关闭操作面板',
+            reply_markup=ReplyKeyboardRemove()
+        ).delete)
+    run_async(message.delete)
+    run_async(delete_manage_starter, context)
 
 
 def show_podcast(update, context):
@@ -199,7 +201,7 @@ def show_podcast(update, context):
     user = User.validate_user(update.effective_user)
     try:
         podcast = Podcast.objects.get(name=message.text)
-        subscription = user.subscriptions.get(podcast=podcast) # ⚠️ 待优化
+        subscription = user.subscriptions.get(podcast=podcast)  # ⚠️ 待优化
         kwargs = {}
         if subscription.is_fav:
             kwargs = {
@@ -222,7 +224,7 @@ def handle_audio(update, context):
     if not (message and (message.from_user.id == 777000)):
         return
     match = re.match(r'🎙️ (.+?)\n总第 ([0-9]+) 期', message.caption)
-    name, index = match[1], int(match[2]) # ⚠️ name换成id
+    name, index = match[1], int(match[2])  # ⚠️ name换成id
     podcast = Podcast.objects(name=name).only('episodes').first()
     episode = podcast.episodes[-index]
     episode.message_id = message.forward_from_message_id
