@@ -16,8 +16,14 @@ def start(update, context):
             update.message.reply_text, "正在订阅…").result()
         user.subscribe(podcast)
         page = PodcastPage(podcast)
+        manage_page = ManagePage(Podcast.of_subscriber(user), f'`{podcast.name}`订阅成功')
         run_async(
             subscribing_note.edit_text,
+            text=manage_page.text(),
+            reply_markup=ReplyKeyboardMarkup(manage_page.keyboard())
+        )
+        run_async(
+            update.message.reply_text,
             text=page.text(),
             reply_markup=InlineKeyboardMarkup(page.keyboard())
         )

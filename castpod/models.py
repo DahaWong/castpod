@@ -143,7 +143,7 @@ class Episode(EmbeddedDocument):
     shownotes = EmbeddedDocumentField(Shownotes)
     timeline = StringField()
     published_time = DateTimeField()
-    message_id = IntField()
+    message_id = IntField() # message_id in podcast_vault
     file_id = StringField()
 
 
