@@ -118,7 +118,7 @@ def download_episode(update, context):
     fetching_note = bot.send_message(message.chat_id, "获取节目中…")
     bot.send_chat_action(message.chat_id, ChatAction.RECORD_AUDIO)
     match = re.match(r'🎙️ (.+) #([0-9]+)', message.text)
-    podcast = Podcast.objects.get(name=match[1])
+    podcast = Podcast.objects.get(name=match[1]) # ⚠️ 改成id
     index = int(match[2])
     episode = podcast.episodes[-index]
     bot.send_chat_action(
@@ -128,13 +128,14 @@ def download_episode(update, context):
     if episode.message_id:
         fetching_note.delete()
         forwarded_message = bot.forward_message(
-            chat_id=context.user_data['user'].user_id,
+            chat_id=update.message.chat_id,
             from_chat_id=f"@{podcast_vault}",
             message_id=episode.message_id
         )
         forward_from_message = episode.message_id
     else:
         downloading_note = fetching_note.edit_text("下载中…")
+        context.user_data.update({'podcast_name':podcast.name})
         audio_file = local_download(episode, context)
         uploading_note = downloading_note.edit_text("正在上传，请稍候…")
         audio_message = None
@@ -159,6 +160,7 @@ def download_episode(update, context):
             uploading_note.delete()
         forwarded_message = audio_message.forward(message.from_user.id)
         forward_from_message = audio_message.message_id
+        context.user_data.clear()
     update.message.delete()
 
     forwarded_message.edit_caption(
