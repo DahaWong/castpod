@@ -22,7 +22,7 @@ def register_handlers(dispatcher):
         CommandHandler('help', command.help, run_async=True),
         CommandHandler('logout', command.logout, run_async=True),
         MessageHandler(
-            Filters.via_bot(dispatcher.bot.get_me().id) & Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
+            (Filters.via_bot(dispatcher.bot.get_me().id) | Filters.chat_type.private) & Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
         MessageHandler(
             Filters.regex(r'🎙️ (.+) #([0-9]+)'), message.download_episode, run_async=True),
         MessageHandler(
