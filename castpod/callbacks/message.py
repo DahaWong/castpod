@@ -218,13 +218,11 @@ def show_podcast(update, context):
 
 def handle_audio(update, context):
     message = update.message
-    if not message:
-        return
-    if not message.from_user.id == 777000:
+    if not (message and (message.from_user.id == 777000)):
         return
     match = re.match(r'🎙️ (.+?)\n总第 ([0-9]+) 期', message.caption)
-    podcast_name, index = match[1], int(match[2])
-    podcast = context.bot_data['podcasts'][podcast_name]
+    name, index = match[1], int(match[2]) # ⚠️ name换成id
+    podcast = Podcast.objects(name=name).only('episodes').first()
     episode = podcast.episodes[-index]
     episode.message_id = message.forward_from_message_id
-    # episode.file_id = message.audio.file_id
+    episode.file_id = message.audio.file_id
