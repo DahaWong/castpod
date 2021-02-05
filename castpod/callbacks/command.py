@@ -19,7 +19,7 @@ def start(update, context):
         manage_page = ManagePage(Podcast.of_subscriber(user), f'`{podcast.name}`订阅成功')
         run_async(
             subscribing_note.edit_text,
-            text=manage_page.text(),
+            text=manage_page.text,
             reply_markup=ReplyKeyboardMarkup(manage_page.keyboard())
         )
         run_async(
