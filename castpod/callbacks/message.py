@@ -185,13 +185,7 @@ def download_episode(update, context):
 
 def exit_reply_keyboard(update, context):
     run_async = context.dispatcher.run_async
-    message = update.message
-    run_async(
-        message.reply_text(
-            '已关闭操作面板',
-            reply_markup=ReplyKeyboardRemove()
-        ).delete)
-    run_async(message.delete)
+    run_async(update.message.delete)
     run_async(delete_manage_starter, context)
 
 
