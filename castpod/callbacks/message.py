@@ -160,7 +160,7 @@ def download_episode(update, context):
             uploading_note.delete()
         forwarded_message = audio_message.forward(message.from_user.id)
         forward_from_message = audio_message.message_id
-        context.user_data.clear()
+        context.user_data.pop('podcast')
     update.message.delete()
 
     forwarded_message.edit_caption(
