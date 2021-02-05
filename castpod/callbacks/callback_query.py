@@ -112,7 +112,8 @@ def confirm_unsubscribe(update, context):
     query = update.callback_query
     podcast_id = re.match(r'confirm_unsubscribe_(.+)', query.data)[1]
     user = User.objects.get(user_id=query.from_user.id)
-    podcast = Podcast.objects.get(id=ObjectId(podcast_id))
+    print(podcast_id)
+    podcast = Podcast.objects.get(id=podcast_id)
     user.unsubscribe(podcast)
 
     manage_page = ManagePage(
