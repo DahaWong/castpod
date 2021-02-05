@@ -1,7 +1,7 @@
 from telegram.ext import Updater
 from config import update_info, webhook_info, webhook_setting, Mongo
 from castpod.handlers import register_handlers
-from castpod.stats import register as register_stats
+# from castpod.stats import register as register_stats
 from mongoengine import connect
 import datetime
 
