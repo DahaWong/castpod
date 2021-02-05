@@ -2,7 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from config import manifest
 from castpod.models import User, Podcast
 from castpod.components import ManagePage, PodcastPage
-
+from castpod.utils import save_manage_starter
 
 def start(update, context):
     run_async = context.dispatcher.run_async
@@ -17,7 +17,7 @@ def start(update, context):
         user.subscribe(podcast)
         subscribing_note.delete()
         page = PodcastPage(podcast)
-        manage_page = ManagePage(Podcast.of_subscriber(user), f'`{podcast.name}`订阅成功')
+        manage_page = ManagePage(Podcast.of_subscriber(user), f'`{podcast.name}` 订阅成功！')
         run_async(
             update.message.reply_text,
             text=manage_page.text,
@@ -87,12 +87,14 @@ def manage(update, context):
     message = update.message
     page = ManagePage(Podcast.of_subscriber(user, 'name'))
     run_async(message.delete)
-    run_async(
+    msg = run_async(
         message.reply_text,
         text=page.text,
         reply_markup=ReplyKeyboardMarkup(
             page.keyboard(), resize_keyboard=True, one_time_keyboard=True)
-    )
+    ).result()
+    save_manage_starter(context.chat_data, msg)
+    
 
 
 def setting(update, context):

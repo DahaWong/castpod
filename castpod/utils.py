@@ -8,6 +8,7 @@ from functools import wraps
 from castpod.models import User
 from config import bot_token
 
+
 def validate_user(func):
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
@@ -118,3 +119,15 @@ def parse_opml(f):
         feeds.append({"name": podcast.attrs.get('text'),
                       "url": podcast.attrs.get('xmlurl')})
     return feeds
+
+# Manage page
+def save_manage_starter(chat_data, message):
+    if chat_data.get('manage_starter'):
+        chat_data['manage_starter'].append(message)
+    else:
+        chat_data.update({'manage_starter': [message]})
+
+def delete_manage_starter(chat_data):
+    for message in chat_data['manage_starter']:
+        message.delete()
+    chat_data.pop('manage_starter')

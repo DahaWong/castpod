@@ -2,7 +2,7 @@ from castpod.models import User, Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
 from castpod.components import PodcastPage, ManagePage
 from config import podcast_vault, manifest, dev_user_id
-from castpod.utils import local_download, parse_doc
+from castpod.utils import local_download, parse_doc, delete_manage_starter
 import re
 
 
@@ -190,6 +190,7 @@ def exit_reply_keyboard(update, context):
         reply_markup=ReplyKeyboardRemove()
     ).delete()
     message.delete()
+    delete_manage_starter(context.chat_data)
 
 
 def show_podcast(update, context):

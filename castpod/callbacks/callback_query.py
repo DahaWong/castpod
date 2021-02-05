@@ -3,6 +3,7 @@ from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
 from config import manifest
 import re
+from castpod.utils import save_manage_starter
 
 
 def delete_command_context(update, context):
@@ -119,13 +120,16 @@ def confirm_unsubscribe(update, context):
         text=f'`{podcast.name}` 退订成功'
     )
     run_async(query.message.delete)
-    run_async(
+    msg = run_async(
         context.bot.send_message,
         chat_id=user.id,
         text=manage_page.text,
         reply_markup=ReplyKeyboardMarkup(
             manage_page.keyboard(), resize_keyboard=True, one_time_keyboard=True)
-    )
+    ).result()
+
+    save_manage_starter(context.chat_data, msg)
+
 
 
 def back_to_actions(update, context):
