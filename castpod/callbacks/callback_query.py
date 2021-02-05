@@ -3,13 +3,13 @@ from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
 from config import manifest
 import re
+from bson import ObjectId
 
 
 def delete_command_context(update, context):
     run_async = context.dispatcher.run_async
-    pattern = r'(delete_command_context_)([0-9]+)'
     query = update.callback_query
-    command_message_id = re.match(pattern, query.data)[2]
+    command_message_id = re.match(r'delete_command_context_([0-9]+)', query.data)[1]
     run_async(context.bot.delete_message,
               query.message.chat_id,
               command_message_id
@@ -94,7 +94,6 @@ def unsubscribe_podcast(update, context):
     run_async = context.dispatcher.run_async
     query = update.callback_query
     podcast_id = re.match(r'unsubscribe_podcast_(.+)', query.data)[1]
-    print(podcast_id)
     podcast_name = Podcast.objects(id=podcast_id).only('name').first().name
     run_async(
         query.message.edit_text,
@@ -111,9 +110,9 @@ def unsubscribe_podcast(update, context):
 def confirm_unsubscribe(update, context):
     run_async = context.dispatcher.run_async
     query = update.callback_query
-    podcast_id = re.match(r'(confirm_unsubscribe_)(.+)', query.data)[2]
+    podcast_id = re.match(r'confirm_unsubscribe_(.+)', query.data)[1]
     user = User.objects.get(user_id=query.from_user.id)
-    podcast = Podcast.objects.get(id=podcast_id)
+    podcast = Podcast.objects.get(id=ObjectId(podcast_id))
     user.unsubscribe(podcast)
 
     manage_page = ManagePage(
@@ -133,7 +132,7 @@ def confirm_unsubscribe(update, context):
 def back_to_actions(update, context):
     query = update.callback_query
     user = User.objects.get(user_id=query.from_user.id)
-    podcast_id = re.match(r'(back_to_actions_)(.+)', query.data)[2]
+    podcast_id = re.match(r'back_to_actions_(.+)', query.data)[1]
     podcast = Podcast.objects.get(id=podcast_id)
     if user.subscriptions.get(podcast=podcast).is_fav:
         page = PodcastPage(podcast, fav_text="⭐️",
