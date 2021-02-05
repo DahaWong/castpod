@@ -129,7 +129,7 @@ class Audio(EmbeddedDocument):
     performer = StringField()
     logo = URLField()
     size = IntField()
-    duration = DateTimeField()
+    duration = StringField()
 
 
 class Episode(EmbeddedDocument):
