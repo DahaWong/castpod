@@ -15,9 +15,11 @@ dispatcher = updater.dispatcher
 # updater.bot.delete_webhook()
 # updater.bot.close()
 
+## 部署建议：#webhook 和 #polling 两种方法择其一，建议从 polling 直接上手，无需更多配置。注释掉含 #webhook 的语句、取消注释含 polling 的语句即可。
+
 # Webhook:
-updater.start_webhook(**webhook_info)
-updater.bot.set_webhook(**webhook_setting)
+updater.start_webhook(**webhook_info)  # Webhook
+updater.bot.set_webhook(**webhook_setting) # Webhook
 
 connection = dispatcher.run_async(
     connect,
@@ -53,5 +55,5 @@ else:
     raise Exception('MongoDB Connection Failed.')
 
 # Polling:
-# updater.start_polling() #test
-# updater.idle()     #test
+# updater.start_polling() # polling
+# updater.idle()     # polling

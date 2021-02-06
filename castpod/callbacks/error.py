@@ -21,4 +21,4 @@ def handle_error(update, context):
     text = f"{payload}触发了一个错误：`{context.error}`。\n\n"
     text += f"错误路径如下:\n`{trace}`" if trace else ''
     context.bot.send_message(dev_user_id, text)
-    
+    raise context.error
