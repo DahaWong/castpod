@@ -49,16 +49,16 @@ webhook_setting = {
 }
 
 # Test
-# persistence = PicklePersistence(filename='persistence')
-# update_info = {
-#    'token': bot_token_test,
-#    'use_context': True,
-#    'request_kwargs': {
-#       'proxy_url':proxy  # Use proxy especially when telegram is banned in your country
-#     },
-#    'defaults': defaults,
-#    'persistence': persistence
-#  }
+persistence = PicklePersistence(filename='persistence')
+update_info_test = {
+   'token': bot_token_test,
+   'use_context': True,
+   'request_kwargs': {
+      'proxy_url':proxy  # Use proxy especially when telegram is banned in your country
+    },
+   'defaults': defaults,
+   'persistence': persistence
+ }
 
 # Build
 persistence = PicklePersistence(filename='persistence')
