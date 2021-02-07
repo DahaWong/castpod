@@ -60,12 +60,19 @@ REMOTE_HOST = 服务器IP，用于本地测试（但并不安全），可选
 
 在 `bot.py` 文件中注释掉含 #webhook 的**两条语句**、取消注释含 polling 的**两条语句**即可。
 
+### 运行
+- 直接运行： `python bot.py`
+- 推荐使用进程管理器运行，如 [PM2](https://pm2.keymetrics.io/docs/usage/pm2-doc-single-page/) ：`pm2 start bot.py --name castpod --interpreter python --kill-timeout 3000`
+
 ## 支持本项目
+
 ### 文档支持
-帮助我们填写[资料库](https://github.com/dahawong/castpod/wiki)
+帮助我们填写[资料库](https://github.com/dahawong/castpod/wiki)。文档填写进度详见[文档书写](https://github.com/DahaWong/castpod/projects/5)
+
 ### 技术支持
 > 我们熟悉 Telegram 的生态，但对 Python 特性与数据库相关处理并不熟练，代码亟待优化。欢迎提供建议/学习资源/PR
 
 更多信息请参见[开发行程](https://github.com/DahaWong/castpod/projects/2)、[项目漏洞](https://github.com/DahaWong/castpod/projects/3)
+
 ### 经济支持
 <a href="https://www.buymeacoffee.com/daha"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a Cherry  : )&emoji=🍒&slug=daha&button_colour=FF5F5F&font_colour=ffffff&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00"></a>
