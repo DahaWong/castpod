@@ -64,7 +64,7 @@ REMOTE_HOST = 服务器IP，用于本地测试（但并不安全），可选
 ### 文档支持
 帮助我们填写[资料库](https://github.com/dahawong/castpod/wiki)
 ### 技术支持
-*我们熟悉 Telegram 的生态，但对 Python 特性与数据库相关处理并不熟练，代码亟待优化。欢迎提供建议/学习资源/PR*
+> 我们熟悉 Telegram 的生态，但对 Python 特性与数据库相关处理并不熟练，代码亟待优化。欢迎提供建议/学习资源/PR
 
 更多信息请参见[开发行程](https://github.com/DahaWong/castpod/projects/2)、[项目漏洞](https://github.com/DahaWong/castpod/projects/3)
 ### 经济支持
