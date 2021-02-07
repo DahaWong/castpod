@@ -1,6 +1,6 @@
 from mongoengine.queryset.visitor import Q
 from castpod.utils import search_itunes
-from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup,InlineQueryResultPhoto
 import re
 from config import manifest
 from castpod.models import User, Podcast
@@ -11,7 +11,7 @@ def handle_inline_query(update, context):
     run_async = context.dispatcher.run_async
     query = update.inline_query
     query_text = query.query
-    results, kwargs = [], {"auto_pagination": True, "cache_time": 10}
+    results, kwargs = [], {"auto_pagination": True, "cache_time": 20}
     user = User.validate_user(update.effective_user)
     if not query_text:
         results = run_async(show_subscription, user).result()
@@ -50,15 +50,16 @@ def show_subscription(user):
             fav_flag = ''
             if subscription.is_fav:
                 fav_flag = '  ⭐️'
-            result = InlineQueryResultArticle(
-                id=index,
+            result = InlineQueryResultPhoto(
+                id=str(index),
                 title=podcast.name + fav_flag,
-                input_message_content=InputTextMessageContent(
-                    podcast.name, parse_mode=None),
                 description=podcast.host or podcast.name,
+                photo_url=podcast.logo,
+                input_message_content=InputTextMessageContent(podcast.name),
                 thumb_url=podcast.logo,
-                thumb_width=60,
-                thumb_height=60
+                photo_width=60,
+                photo_height=60,
+                # caption=podcast.name,
             )
             yield result
 
