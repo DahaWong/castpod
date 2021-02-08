@@ -57,8 +57,8 @@ def show_subscription(user):
                     podcast.name, parse_mode=None),
                 description=podcast.host or podcast.name,
                 thumb_url=podcast.logo,
-                thumb_width=60,
-                thumb_height=60
+                thumb_width=80,
+                thumb_height=80
             )
             yield result
 
@@ -82,8 +82,8 @@ def show_fav_podcasts(user):
                     podcast.name, parse_mode=None),
                 description=podcast.host or podcast.name,
                 thumb_url=podcast.logo,
-                thumb_height=60,
-                thumb_width=60
+                thumb_height=80,
+                thumb_width=80
             )
 
 def show_fav_episodes(user):
@@ -106,8 +106,8 @@ def show_episodes(podcast):
             reply_markup=InlineKeyboardMarkup.from_row(buttons),
             description=f"{datetime.timedelta(seconds=episode.audio.duration) or podcast.name}\n{episode.subtitle}",
             thumb_url=episode.audio.logo,
-            thumb_width=60,
-            thumb_height=60
+            thumb_width=80,
+            thumb_height=80
         )
 
 
