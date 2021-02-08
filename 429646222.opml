@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version='1.0'>
+<head>
+<title>Player FM Feeds from All</title>
+<dateCreated>March 26, 2020 08:16</dateCreated>
+<dateModified>March 26, 2020 08:16</dateModified>
+</head>
+<body>
+<outline text="NHKラジオニュース" type="rss" xmlUrl="http://www.nhk.or.jp/r-news/podcast/nhkradionews.xml"  htmlUrl="http://www.nhk.or.jp/r-news/index.html" />
+<outline text="HTML All The Things - Web Development, Web Design, Small Business" type="rss" xmlUrl="https://s3.amazonaws.com/feed.podbean.com/podcast.htmlallthethings.com/feed.xml"  htmlUrl="https://htmlallthethings.podbean.com" />
+<outline text="Syntax - Tasty Web Development Treats" type="rss" xmlUrl="https://feed.syntax.fm/rss"  htmlUrl="https://syntax.fm" />
+<outline text="Design Details" type="rss" xmlUrl="https://rss.simplecast.com/podcasts/1034/rss"  htmlUrl="http://spec.fm/podcasts/design-details" />
+<outline text="Overtime" type="rss" xmlUrl="https://feeds.simplecast.com/ge7lYlnT"  htmlUrl="https://dribbble.com/overtime" />
+<outline text="The CSS Podcast" type="rss" xmlUrl="http://thecsspodcast.googledevelopers.libsynpro.com/rss"  htmlUrl="https://thecsspodcast.libsyn.com" />
+<outline text="UI Breakfast: UI/UX Design and Product Strategy" type="rss" xmlUrl="https://feeds.simplecast.com/4MvgQ73R"  htmlUrl="http://www.uibreakfast.com/podcast" />
+<outline text="Indie Board Game Designers" type="rss" xmlUrl="http://indieboardgamedesigners.libsyn.com/rss"  htmlUrl="http://indieboardgamedesigners.com/" />
+<outline text="翻转电台Flip Radio" type="rss" xmlUrl="http://rss.lizhi.fm/rss/1057263.xml"  htmlUrl="http://www.lizhi.fm" />
+<outline text="Smashing Podcast" type="rss" xmlUrl="https://feeds.transistor.fm/smashing"  htmlUrl="https://podcast.smashingmagazine.com" />
+<outline text="Design Better Podcast" type="rss" xmlUrl="https://designbetter.libsyn.com/rss"  htmlUrl="http://designbetter.co/podcast" />
+<outline text="Design Matters with Debbie Millman" type="rss" xmlUrl="https://designobserver.com/show.designmatters2009-10.xml"  htmlUrl="http://designobserver.com/topic/designmatters/1039" />
+<outline text="日常8點半 (民生．飲食)" type="rss" xmlUrl="http://podcast.rthk.hk/podcast/tv_830mag_10_i.xml"  htmlUrl="https://podcast.rthk.hk/podcast/item.php?pid=1514" />
+<outline text="60 Minutes" type="rss" xmlUrl="https://rss.art19.com/60-minutes"  htmlUrl="https://art19.com/shows/60-minutes" />
+<outline text="日谈公园" type="rss" xmlUrl="http://www.ximalaya.com/album/5574153.xml"  htmlUrl="http://www.ximalaya.com" />
+<outline text="科技島讀" type="rss" xmlUrl="http://feeds.soundcloud.com/users/soundcloud:users:322164009/sounds.rss"  htmlUrl="https://daodu.tech" />
+<outline text="UX Coffee 设计咖" type="rss" xmlUrl="https://uxcoffee.typlog.io/episodes/feed.xml"  htmlUrl="https://uxcoffee.com/" />
+<outline text="生活在别处" type="rss" xmlUrl="http://www.spreaker.com/show/2721510/episodes/feed"  htmlUrl="https://www.spreaker.com/show/lifeiselsewhere" />
+<outline text="不在场" type="rss" xmlUrl="http://buzaichang.xyz/episodes/feed.xml"  htmlUrl="https://buzaichang.xyz/" />
+<outline text="硅谷早知道" type="rss" xmlUrl="http://www.ximalaya.com/album/14233547.xml"  htmlUrl="http://www.ximalaya.com" />
+<outline text="Steve说" type="rss" xmlUrl="http://www.ximalaya.com/album/3385682.xml"  htmlUrl="http://www.ximalaya.com" />
+<outline text="字谈字畅" type="rss" xmlUrl="https://www.thetype.com/typechat/feed/"  htmlUrl="https://www.thetype.com/typechat/" />
+<outline text="MinuteEarth" type="rss" xmlUrl="https://minuteearth.libsyn.com/rss"  htmlUrl="http://minuteearth.com" />
+<outline text="HOTCAST" type="rss" xmlUrl="https://radio.hotcast.info/feed"  htmlUrl="https://radio.hotcast.info" />
+<outline text="看理想电台" type="rss" xmlUrl="http://www.ximalaya.com/album/12608947.xml"  htmlUrl="http://www.ximalaya.com" />
+<outline text="Anyway.FM 设计杂谈" type="rss" xmlUrl="https://anyway.fm/rss.xml"  htmlUrl="https://anyway.fm" />
+<outline text="牛油果烤面包" type="rss" xmlUrl="https://anchor.fm/s/e3e1fd0/podcast/rss"  htmlUrl="https://avocadotoast.live" />
+<outline text="博物志" type="rss" xmlUrl="https://feeds.fireside.fm/museelogue/rss"  htmlUrl="https://bowuzhi.fm" />
+<outline text="The Game Design Round Table" type="rss" xmlUrl="https://tgdrt.libsyn.com/rss"  htmlUrl="http://thegamedesignroundtable.com" />
+<outline text="社会人科技评论" type="rss" xmlUrl="https://feeds.fireside.fm/techreviewsocial/rss"  htmlUrl="http://techreview.social" />
+<outline text="Man立" type="rss" xmlUrl="http://www.ximalaya.com/album/30080989.xml"  htmlUrl="http://www.ximalaya.com" />
+<outline text="独立日" type="rss" xmlUrl="https://riyu.squarespace.com/independenceday?format=rss"  htmlUrl="https://riyu.io/independenceday/" />
+<outline text="WūJīMāChā瞭望台" type="rss" xmlUrl="https://wujimachavalley.typlog.io/episodes/feed.xml"  htmlUrl="https://wujimacha.com/" />
+<outline text="时尚怪物" type="rss" xmlUrl="https://feeds.fireside.fm/fashionmonster/rss"  htmlUrl="http://fashionmonster.fm" />
+<outline text="良人拾號Smart Food" type="rss" xmlUrl="https://anchor.fm/s/54d4748/podcast/rss"  htmlUrl="https://www.facebook.com/Smartfoodntw/" />
+<outline text="infoier | 设计乘数" type="rss" xmlUrl="http://rss.lizhi.fm/rss/3479708.xml"  htmlUrl="http://www.lizhi.fm" />
+<outline text="sayo cast" type="rss" xmlUrl="https://sayo-melu.xyz/podcast.xml"  htmlUrl="https://sayo-melu.xyz/podcast" />
+<outline text="执异" type="rss" xmlUrl="https://zhiyi.life/episodes/feed.xml"  htmlUrl="https://zhiyi.life/" />
+<outline text="海马星球" type="rss" xmlUrl="https://anchor.fm/s/47795d0/podcast/rss"  htmlUrl="https://anchor.fm/seahorseplanet" />
+<outline text="迟早更新" type="rss" xmlUrl="http://rss.lizhi.fm/rss/1728291.xml"  htmlUrl="http://www.lizhi.fm" />
+<outline text="道听途说" type="rss" xmlUrl="http://fakefestival.org/episodes/feed.xml"  htmlUrl="http://fakefestival.org/" />
+<outline text="TED Talks Technology" type="rss" xmlUrl="http://feeds.feedburner.com/itunespodcasttttechnology"  htmlUrl="https://www.ted.com/themes/itunes_podcasts_technology" />
+<outline text="疯投圈" type="rss" xmlUrl="https://crazy.capital/feed"  htmlUrl="https://crazy.capital" />
+<outline text="一时兴起Whim" type="rss" xmlUrl="https://anchor.fm/s/9aa7298/podcast/rss"  htmlUrl="https://anchor.fm/whimfm" />
+<outline text="顷刻" type="rss" xmlUrl="https://feeds.fireside.fm/qingke/rss"  htmlUrl="https://qingke.fireside.fm" />
+<outline text="TEDTalks Health" type="rss" xmlUrl="http://feeds.feedburner.com/itunespodcasttthealth"  htmlUrl="https://www.ted.com/themes/itunes_podcasts_health" />
+<outline text="剩余价值SurplusValue" type="rss" xmlUrl="http://m.ximalaya.com/album/21586925.xml"  htmlUrl="http://www.ximalaya.com" />
+<outline text="大人课" type="rss" xmlUrl="https://growup.rocks/feed/podcast"  htmlUrl="https://growup.rocks/" />
+<outline text="Byte.Coffee" type="rss" xmlUrl="https://feeds.fireside.fm/bytecoffee/rss"  htmlUrl="https://byte.coffee/" />
+<outline text="要不然FM" type="rss" xmlUrl="http://rss.lizhi.fm/rss/127504986.xml"  htmlUrl="http://www.lizhi.fm" />
+<outline text="得意忘形播客" type="rss" xmlUrl="http://rss.lizhi.fm/rss/1959617.xml"  htmlUrl="http://www.lizhi.fm" />
+<outline text="地図から日本を見てみよう-Various JAPAN on maps" type="rss" xmlUrl="http://feeds.feedburner.com/seesaa/wsuc"  htmlUrl="http://chizunichi.seesaa.net/" />
+<outline text="面面相趣" type="rss" xmlUrl="https://rsshub.app/ximalaya/album/23013603"  htmlUrl="http://www.ximalaya.com/renwen/23013603/" />
+<outline text="内核恐慌" type="rss" xmlUrl="https://kernelpanic.fm/feed"  htmlUrl="https://kernelpanic.fm" />
+<outline text="一派·Podcast" type="rss" xmlUrl="http://www.ximalaya.com/album/28131037.xml"  htmlUrl="http://www.ximalaya.com" />
+<outline text="VoicerFM" type="rss" xmlUrl="http://rss.lizhi.fm/rss/1569925.xml"  htmlUrl="http://www.lizhi.fm" />
+<outline text="talich 闲侃" type="rss" xmlUrl="https://feeds.fireside.fm/talich/rss"  htmlUrl="http://talich.fm" />
+<outline text="人间指南" type="rss" xmlUrl="https://renjianzhinan.xyz/podcast.xml"  htmlUrl="http://renjianzhinan.xyz/" />
+<outline text="食见" type="rss" xmlUrl="http://www.ximalaya.com/album/16126437.xml"  htmlUrl="http://www.ximalaya.com" />
+<outline text="考飲考食" type="rss" xmlUrl="http://podcast.rthk.hk/podcast/allaboutfood.xml"  htmlUrl="http://podcast.rthk.hk/podcast/item.php?pid=1350" />
+<outline text="1UP Podcast" type="rss" xmlUrl="https://feeds.fireside.fm/1up/rss"  htmlUrl="https://1up.fireside.fm" />
+<outline text="On Margins" type="rss" xmlUrl="http://onmargins.craigmod.com/rss"  htmlUrl="https://craigmod.com/onmargins/" />
+<outline text="欧罗万象 | EuroScope" type="rss" xmlUrl="https://feeds.fireside.fm/euroscope/rss"  htmlUrl="https://euroscope.fireside.fm" />
+<outline text="Hyperbola" type="rss" xmlUrl="https://feeds.fireside.fm/hyperbola/rss"  htmlUrl="https://hyperbola.link" />
+<outline text="一天世界" type="rss" xmlUrl="https://feeds.fireside.fm/yitianshijie/rss"  htmlUrl="http://yitianshijie.net" />
+<outline text="交差点" type="rss" xmlUrl="https://jiaocha.io/feed.xml"  htmlUrl="https://jiaocha.io" />
+<outline text="科技聚变" type="rss" xmlUrl="https://techfusionfm.com/podcast.xml"  htmlUrl="https://TechFusionFM.com/" />
+<outline text="Teahour.fm" type="rss" xmlUrl="https://teahour.fm/feed.xml"  htmlUrl="http://teahour.fm" />
+<outline text="不会聊" type="rss" xmlUrl="https://feeds.fireside.fm/buhuiliao/rss"  htmlUrl="https://buhuiliao.fireside.fm" />
+<outline text="日语日语" type="rss" xmlUrl="https://riyu.squarespace.com/hibi?format=rss"  htmlUrl="https://riyu.io/hibi/" />
+<outline text="忽左忽右" type="rss" xmlUrl="https://s3.amazonaws.com/feed.podbean.com/huzuohuyou/feed.xml"  htmlUrl="https://huzuohuyou.podbean.com" />
+<outline text="灭茶苦茶" type="rss" xmlUrl="https://feeds.fireside.fm/miechakucha/rss"  htmlUrl="http://miechakucha.com" />
+<outline text="Checked" type="rss" xmlUrl="http://info.smartgslb.com/suspend.html"  htmlUrl="http://checked.fm" />
+<outline text="比特新声" type="rss" xmlUrl="http://banlan.show/bitvoice.rss"  htmlUrl="https://banlan.show/bitvoice" />
+<outline text="A Responsive Web Design Podcast" type="rss" xmlUrl="https://responsivewebdesign.com/podcast/itunes.xml"  htmlUrl="https://responsivewebdesign.com/podcast/" />
+<outline text="太医来了" type="rss" xmlUrl="https://feeds.fireside.fm/taiyilaile/rss"  htmlUrl="http://taiyilaile.com" />
+<outline text="味之天下" type="rss" xmlUrl="http://podcast.rthk.org.hk/podcast/foodculture_i.xml"  htmlUrl="http://podcast.rthk.hk/podcast/item.php?pid=268" />
+</body>
+</opml>

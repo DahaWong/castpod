@@ -2,10 +2,11 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 class PodcastPage(object):
-    def __init__(self, podcast, fav_text="收藏", fav_action="fav_podcast"):
+    def __init__(self, podcast, fav_text="收藏", fav_action="fav_podcast", mode="private"):
         self.podcast = podcast
         self.fav_text = fav_text
         self.fav_action = fav_action
+        self.mode = mode
 
     def text(self):
         email_info = f'\n✉️  {self.podcast.email}' if self.podcast.email else ''
@@ -16,13 +17,19 @@ class PodcastPage(object):
         )
 
     def keyboard(self):
-        return [
-            [InlineKeyboardButton("退订", callback_data=f"unsubscribe_podcast_{self.podcast.id}"),
-             InlineKeyboardButton("关于", url=self.podcast.website),
-             InlineKeyboardButton(self.fav_text, callback_data=f"{self.fav_action}_{self.podcast.id}")],
-            [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
-             InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
-        ]
+        if self.mode == 'private':
+            return [
+                [InlineKeyboardButton("退订", callback_data=f"unsubscribe_podcast_{self.podcast.id}"),
+                InlineKeyboardButton("关于", url=self.podcast.website),
+                InlineKeyboardButton(self.fav_text, callback_data=f"{self.fav_action}_{self.podcast.id}")],
+                [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
+                InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
+            ]
+        elif self.mode == 'group':
+            return [
+                [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
+                InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
+            ]
 
 
 class ManagePage(object):
