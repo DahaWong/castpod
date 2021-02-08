@@ -10,9 +10,9 @@
 
 ### 指令
 点击文本输入框一旁的 `/` 可以唤出主要指令。全部指令如下：
-- `/favorites`：收藏夹
 - `/manage`：管理已订阅的播客
 - `/help`：帮助与指南
+
 - `/about`：关于本机器人与作者
 - `/setting`：偏好设置
 - `/export`：导出订阅文件
@@ -56,9 +56,14 @@ REMOTE_HOST = 服务器IP，用于本地测试（但并不安全），可选
 安装 MongoDB，运行 `mongod`
 
 ### Polling v.s Webhook
-[Webhook](https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks) 和 Polling 两种方法择其一，建议从 Polling 直接上手，无需更多配置。
+[Webhook](https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks) 和 Polling 两种方法择其一，**建议从 Polling 直接上手**，无需更多配置。
 
 在 `bot.py` 文件中注释掉含 #webhook 的**两条语句**、取消注释含 polling 的**两条语句**即可。
+
+### 部署 Telegram Bot API
+得益于近日 Bot API 已经开源，现在我们可以自己部署一个 Bot API 服务器。这是因为播客音频往往比较大，超出了 Telegram 对 Bot 的上传限制，所以我们需要自己部署它。
+
+关于如何部署，请参考 Telegram 的[官方部署指南](https://tdlib.github.io/telegram-bot-api/build.html)。
 
 ### 运行
 - 直接运行： `python bot.py`
