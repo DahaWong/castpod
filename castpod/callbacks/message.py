@@ -5,10 +5,13 @@ from config import podcast_vault, manifest, dev_user_id
 from castpod.utils import delete_update_message, local_download, parse_doc, delete_manage_starter
 import re
 
+# @is_group??
+
 
 def subscribe_feed(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
+    chat_type = update.effective_chat.type
     run_async(
         context.bot.send_chat_action,
         chat_id=message.chat_id,
@@ -19,6 +22,8 @@ def subscribe_feed(update, context):
     user = User.validate_user(update.effective_user)
     podcast = Podcast.validate_feed(feed=message.text)
     user.subscribe(podcast)
+    in_group = (chat_type == 'group') or (chat_type == 'supergroup')
+    kwargs = {'mode': 'group'} if in_group else {}
     try:
         manage_page = ManagePage(
             podcasts=Podcast.of_subscriber(user, 'name'),
@@ -34,7 +39,8 @@ def subscribe_feed(update, context):
                 one_time_keyboard=True
             )
         )
-        podcast_page = PodcastPage(podcast)
+
+        podcast_page = PodcastPage(podcast, **kwargs)
         run_async(message.reply_text,
                   text=podcast_page.text(),
                   reply_markup=InlineKeyboardMarkup(podcast_page.keyboard())
@@ -197,23 +203,23 @@ def exit_reply_keyboard(update, context):
 def show_podcast(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    chat_type = update.effective_chat.type
     if message.reply_to_message and message.reply_to_message.from_user.username != manifest.bot_id:
         return
     user = User.validate_user(update.effective_user)
+    chat_type = update.effective_chat.type
+    in_group = (chat_type == 'group') or (chat_type == 'supergroup')
+    kwargs = {'mode': 'group'} if in_group else {}
     try:
         podcast = Podcast.objects.get(name=message.text)
         subscription = user.subscriptions.get(podcast=podcast)  # ⚠️ 待优化
-        kwargs = {}
 
         if subscription.is_fav:
-            kwargs = {
-                'fav_text': "⭐️",
-                'fav_action': 'unfav_podcast'
-            }
-
-        if (chat_type == 'group') or (chat_type == 'supergroup'):
-            kwargs.update({'mode':'group'})
+            kwargs.update(
+                {
+                    'fav_text': "⭐️",
+                    'fav_action': 'unfav_podcast'
+                }
+            )
 
         page = PodcastPage(podcast, **kwargs)
         run_async(
