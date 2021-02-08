@@ -39,10 +39,18 @@ def register_handlers(dispatcher):
             message.save_subscription,
             run_async=True
         ),
-        MessageHandler((Filters.via_bot(dispatcher.bot.get_me().id) | Filters.chat_type.private) & Filters.text, message.show_podcast),
+        MessageHandler(
+            (
+                Filters.reply |
+                Filters.via_bot(dispatcher.bot.get_me().id) |
+                Filters.chat_type.private
+            ) &
+            Filters.text, message.show_podcast
+        ),
         MessageHandler(Filters.audio, message.handle_audio),
         InlineQueryHandler(inline_query.handle_inline_query)
     ])
+    
     for handler in handlers:
         dispatcher.add_handler(handler)
         dispatcher.add_error_handler(error.handle_error)

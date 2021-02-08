@@ -197,16 +197,24 @@ def exit_reply_keyboard(update, context):
 def show_podcast(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
+    chat_type = update.effective_chat.type
+    if message.reply_to_message and message.reply_to_message.from_user.username != manifest.bot_id:
+        return
     user = User.validate_user(update.effective_user)
     try:
         podcast = Podcast.objects.get(name=message.text)
         subscription = user.subscriptions.get(podcast=podcast)  # ⚠️ 待优化
         kwargs = {}
+
         if subscription.is_fav:
             kwargs = {
                 'fav_text': "⭐️",
                 'fav_action': 'unfav_podcast'
             }
+
+        if (chat_type == 'group') or (chat_type == 'supergroup'):
+            kwargs.update({'mode':'group'})
+
         page = PodcastPage(podcast, **kwargs)
         run_async(
             update.message.reply_text,
