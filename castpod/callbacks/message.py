@@ -222,8 +222,7 @@ def show_podcast(update, context):
             )
 
         page = PodcastPage(podcast, **kwargs)
-        run_async(
-            update.message.reply_text,
+        update.message.reply_text(
             text=page.text(),
             reply_markup=InlineKeyboardMarkup(page.keyboard()),
             parse_mode=ParseMode.MARKDOWN
