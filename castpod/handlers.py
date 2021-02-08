@@ -13,14 +13,14 @@ def register_handlers(dispatcher):
             handlers.append(callback_query_handler)
 
     handlers.extend([
-        CommandHandler('start', command.start, pass_args=True),
+        CommandHandler('start', command.start, filters=Filters.chat_type.private, pass_args=True),
         CommandHandler('about', command.about),
         CommandHandler('favourites', command.favourites),
         CommandHandler('manage', command.manage),
-        CommandHandler('export', command.export, run_async=True),
-        CommandHandler('setting', command.setting, run_async=True),
+        CommandHandler('export', command.export, filters=Filters.chat_type.private, run_async=True),
+        CommandHandler('setting', command.setting, filters=Filters.chat_type.private, run_async=True),
         CommandHandler('help', command.help, run_async=True),
-        CommandHandler('logout', command.logout, run_async=True),
+        CommandHandler('logout', command.logout, filters=Filters.chat_type.private, run_async=True),
         MessageHandler(
             (Filters.via_bot(dispatcher.bot.get_me().id) | Filters.chat_type.private) & Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
         MessageHandler(
@@ -50,7 +50,7 @@ def register_handlers(dispatcher):
         MessageHandler(Filters.audio, message.handle_audio),
         InlineQueryHandler(inline_query.handle_inline_query)
     ])
-    
+
     for handler in handlers:
         dispatcher.add_handler(handler)
         dispatcher.add_error_handler(error.handle_error)
