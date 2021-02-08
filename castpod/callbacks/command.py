@@ -96,7 +96,7 @@ def manage(update, context, privacy_approved = False):
 
     if in_group and not privacy_approved:
         message.reply_text(
-            text='在群组中使用 /manage 将会对群员显示您的订阅列表，您同意吗？',
+            text='在群组中使用 /manage 后，群员均能看到您的订阅列表，是否同意？',
             reply_markup=InlineKeyboardMarkup.from_row(
                 [
                     InlineKeyboardButton('返  回', callback_data='delete_message'),
