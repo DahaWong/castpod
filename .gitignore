@@ -1,6 +1,7 @@
 .vscode/*
 __pycache__/
 *__pycache__*
+castpod/callbacks/__pycache__/
 .DS_Store
 *.ini
 
