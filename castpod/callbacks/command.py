@@ -72,7 +72,8 @@ def about(update, context):
 def favourites(update, context):
     run_async = context.dispatcher.run_async
     buttons = [
-        InlineKeyboardButton('播  客  收  藏', switch_inline_query_current_chat='p'),
+        InlineKeyboardButton(
+            '播  客  收  藏', switch_inline_query_current_chat='p'),
         #  InlineKeyboardButton('单 集', switch_inline_query_current_chat='e')],
         InlineKeyboardButton(
             '订  阅  列  表', switch_inline_query_current_chat='')
@@ -84,25 +85,35 @@ def favourites(update, context):
         reply_markup=InlineKeyboardMarkup.from_column(buttons)
     )
 
-    # tips = (
-    #     "⦿ 前往 Telegram `设置 → 外观 → 大表情 Emoji` 获得更好的显示效果\n"
-    #     f"⦿ 在对话框中输入 `@{manifest.bot_id}` 以唤出管理面板，接着输入关键词即可搜索播客"
-    # )
-
 
 @delete_update_message
-def manage(update, context):
+def manage(update, context, privacy_approved = False):
     run_async = context.dispatcher.run_async
     user = User.validate_user(update.effective_user)
     message = update.message
-    page = ManagePage(Podcast.of_subscriber(user, 'name'))
-    msg = run_async(
-        message.reply_text,
-        text=page.text,
-        reply_markup=ReplyKeyboardMarkup(
-            page.keyboard(), resize_keyboard=True, one_time_keyboard=True)
-    ).result()
-    save_manage_starter(context.chat_data, msg)
+    chat_type = update.effective_chat.type
+    in_group = chat_type == 'group' or chat_type == 'supergroup'
+
+    if in_group and not privacy_approved:
+        message.reply_text(
+            text='在群组中使用 /manage 将会对群员显示您的订阅列表，您同意吗？',
+            reply_markup=InlineKeyboardMarkup.from_row(
+                [
+                    InlineKeyboardButton('返  回', callback_data='delete_message'),
+                    InlineKeyboardButton('同  意', callback_data='approve_privacy')
+                ]
+            )
+        )
+    else:
+        page = ManagePage(Podcast.of_subscriber(user, 'name'))
+        msg = run_async(
+            context.bot.send_message,
+            chat_id=update.effective_chat.id,
+            text=page.text,
+            reply_markup=ReplyKeyboardMarkup(
+                page.keyboard(), resize_keyboard=True, one_time_keyboard=True)
+        ).result()
+        save_manage_starter(context.chat_data, msg)
 
 
 @delete_update_message
@@ -134,7 +145,7 @@ def help(update, context):
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
                 "✓",
-                callback_data=f'delete_message'
+                callback_data='delete_message'
             )
         )
     )

@@ -1,14 +1,18 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, ReplyKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
+from castpod.utils import delete_manage_starter, save_manage_starter
+from castpod.callbacks.command import manage
 from config import manifest
 import re
-from castpod.utils import delete_manage_starter, save_manage_starter
 
 
 def delete_message(update, context):
     context.dispatcher.run_async(update.callback_query.delete_message)
 
+
+def approve_privacy(update, context):
+    manage(update, context, privacy_approved=True)
 # Account:
 
 
@@ -48,7 +52,7 @@ def delete_account(update, context):
     run_async(delete_manage_starter, context)
     context.chat_data.clear()
     context.user_data.clear()
-    
+
 # Podcast
 
 
