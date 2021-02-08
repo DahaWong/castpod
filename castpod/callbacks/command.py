@@ -71,12 +71,12 @@ def about(update, context):
 @delete_update_message
 def favourites(update, context):
     run_async = context.dispatcher.run_async
-    buttons = [
+    buttons = [[
         InlineKeyboardButton('播  客  收  藏', switch_inline_query_current_chat='p'),
         #  InlineKeyboardButton('单 集', switch_inline_query_current_chat='e')],
         InlineKeyboardButton(
             '订  阅  列  表', switch_inline_query_current_chat='')
-    ]
+    ]]
 
     run_async(
         update.message.reply_text,
