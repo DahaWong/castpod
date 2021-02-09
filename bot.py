@@ -12,7 +12,7 @@ dispatcher = updater.dispatcher
 # updater.bot.log_out()
 
 # Use these methods before you move your bot to another local server:
-updater.bot.delete_webhook()
+# updater.bot.delete_webhook()
 # updater.bot.close()
 
 ## 部署建议：#webhook 和 #polling 两种方法择其一，建议从 polling 直接上手，无需更多配置。注释掉含 #webhook 的语句、取消注释含 polling 的语句即可。
