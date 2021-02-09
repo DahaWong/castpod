@@ -20,6 +20,7 @@ dispatcher = updater.dispatcher
 # Webhook:
 updater.start_webhook(**webhook_info)  # Webhook
 updater.bot.set_webhook(**webhook_setting) # Webhook
+updater.idle()     # polling
 
 connection = dispatcher.run_async(
     connect,
@@ -56,4 +57,4 @@ else:
 
 # Polling:
 # updater.start_polling() # polling
-updater.idle()     # polling
+# updater.idle()     # polling
