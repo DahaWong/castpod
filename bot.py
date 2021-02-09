@@ -56,4 +56,4 @@ else:
 
 # Polling:
 # updater.start_polling() # polling
-# updater.idle()     # polling
+updater.idle()     # polling
