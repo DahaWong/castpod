@@ -87,33 +87,19 @@ def favourites(update, context):
 
 
 @delete_update_message
-def manage(update, context, privacy_approved = False):
+def manage(update, context):
     run_async = context.dispatcher.run_async
     user = User.validate_user(update.effective_user)
-    message = update.message
-    chat_type = update.effective_chat.type
-    in_group = chat_type == 'group' or chat_type == 'supergroup'
 
-    if in_group and not privacy_approved:
-        message.reply_text(
-            text='在群组中使用 /manage 后，群员均能看到您的订阅列表，是否同意？',
-            reply_markup=InlineKeyboardMarkup.from_row(
-                [
-                    InlineKeyboardButton('返  回', callback_data='delete_message'),
-                    InlineKeyboardButton('同  意', callback_data='approve_privacy')
-                ]
-            )
-        )
-    else:
-        page = ManagePage(Podcast.of_subscriber(user, 'name'))
-        msg = run_async(
-            context.bot.send_message,
-            chat_id=update.effective_chat.id,
-            text=page.text,
-            reply_markup=ReplyKeyboardMarkup(
-                page.keyboard(), resize_keyboard=True, one_time_keyboard=True)
-        ).result()
-        save_manage_starter(context.chat_data, msg)
+    page = ManagePage(Podcast.of_subscriber(user, 'name'))
+    msg = run_async(
+        context.bot.send_message,
+        chat_id=update.effective_chat.id,
+        text=page.text,
+        reply_markup=ReplyKeyboardMarkup(
+            page.keyboard(), resize_keyboard=True, one_time_keyboard=True, selective=True)
+    ).result()
+    save_manage_starter(context.chat_data, msg)
 
 
 @delete_update_message
