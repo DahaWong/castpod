@@ -85,15 +85,14 @@ def favourites(update, context):
         reply_markup=InlineKeyboardMarkup.from_column(buttons)
     )
 
-
+@delete_update_message
 def manage(update, context):
     run_async = context.dispatcher.run_async
     user = User.validate_user(update.effective_user)
 
     page = ManagePage(Podcast.of_subscriber(user, 'name'))
     msg = run_async(
-        context.bot.send_message,
-        chat_id=update.effective_chat.id,
+        update.effective_message.reply_text,
         text=page.text,
         reply_markup=ReplyKeyboardMarkup(
             page.keyboard(), resize_keyboard=True, one_time_keyboard=True, selective=True)
