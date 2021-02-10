@@ -11,11 +11,6 @@ def delete_message(update, context):
     context.dispatcher.run_async(update.callback_query.delete_message)
 
 
-def approve_privacy(update, context):
-    manage(update, context, privacy_approved=True)
-# Account:
-
-
 def logout(update, context):
     context.dispatcher.run_async(
         update.callback_query.edit_message_text,
