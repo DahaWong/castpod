@@ -85,7 +85,7 @@ def favourites(update, context):
         reply_markup=InlineKeyboardMarkup.from_column(buttons)
     )
 
-
+@delete_update_message
 def manage(update, context):
     run_async = context.dispatcher.run_async
     user = User.validate_user(update.effective_user)
