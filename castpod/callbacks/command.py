@@ -92,8 +92,7 @@ def manage(update, context):
 
     page = ManagePage(Podcast.of_subscriber(user, 'name'))
     msg = run_async(
-        context.bot.send_message,
-        chat_id=update.effective_chat.id,
+        update.effective_message.reply_text,
         text=page.text,
         reply_markup=ReplyKeyboardMarkup(
             page.keyboard(), resize_keyboard=True, one_time_keyboard=True, selective=True)
