@@ -3,6 +3,7 @@
 > v0.1.0
 
 一个 [Telegram 机器人](https://core.telegram.org/bots/api)。点击[链接](https://t.me/castpodbot)开始使用吧！
+（项目仍处于初期阶段，亟待完善。）
 
 ## 基本
 
