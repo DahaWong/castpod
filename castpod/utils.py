@@ -65,7 +65,7 @@ def local_download(episode, context):
     if res.status_code != 200:
         raise Exception(
             f"Error when downloading audio, status: {res.status_code}.")
-    block_size = 1024  # 1 Kibibyte
+    block_size = 1024  # 1 Kb
     path = f"public/audio/{context.user_data['podcast']}/{episode.title}.mp3"
     if not os.path.exists(os.path.dirname(path)):
         try:

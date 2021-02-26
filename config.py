@@ -68,7 +68,7 @@ update_info = {
     'persistence': persistence,
     'base_url': bot_api,
     'defaults': defaults,
-    'workers': 16
+    'workers': 6
 }
 
 
