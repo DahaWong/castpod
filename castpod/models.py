@@ -60,7 +60,7 @@ class User(Document):
     def toggle_fav(self, podcast):
         # use XOR to toggle boolean
         self.subscriptions.get(podcast=podcast).is_fav ^= True
-        self.save()
+        # self.save()
 
     def generate_opml(self):
         body = ''
@@ -195,19 +195,19 @@ class Podcast(Document):
         for i, item in enumerate(result['items']):
             episode = self.parse_episode(item, i)
             self.update(push__episodes=episode)
-            self.save()
+            # self.save()
         self.host = unescape(feed.author_detail.name or '')
         if self.host == self.name:
             self.host = ''
         self.website = feed.get('link')
         self.email = feed.author_detail.get('email') or ''
-        self.save()
+        # self.save()
         return self
 
     def set_job_group(self):
         i = random.randint(0, 47)
         self.job_group = [i % 48 for i in range(i, i + 41, 8)]
-        self.save()
+        # self.save()
 
     def parse_episode(self, item, i):
         episode = Episode(index=i)
