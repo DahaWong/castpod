@@ -4,7 +4,7 @@ __pycache__/
 castpod/callbacks/__pycache__/
 .DS_Store
 *.ini
-
+*.binlog
 # Private:
 persistence
 public/*
