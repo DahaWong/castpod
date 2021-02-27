@@ -8,6 +8,8 @@ castpod/callbacks/__pycache__/
 # Private:
 persistence
 public/*
+*.xml
+*.opml
 
 # Dev
 test.py
