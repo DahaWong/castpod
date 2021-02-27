@@ -31,6 +31,11 @@ logger = logging.getLogger(__name__)
 
 
 def handle_error(update, context):
+    if not update:
+        return
+    if update.effective_message:
+        text = f"刚刚的操作触发了一个错误，报告已抄送给[开发者](https://t.me/{manifest.author_id})。"
+        update.effective_message.reply_text(text)
     """Log the error and send a telegram message to notify the developer."""
     # Log the error before we do anything else, so we can see it even if something breaks.
     logger.error(msg="Exception while handling an update:",

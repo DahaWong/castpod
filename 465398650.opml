@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<opml version="1.0">
+	<head>
+		<title>Pocket Casts Feeds</title>
+	</head>
+	<body>
+		<outline text="feeds">
+			<outline xmlUrl="https://feeds.buzzsprout.com/258327.rss" type="rss" text="Loud Murmurs 小声喧哗" />
+			<outline xmlUrl="https://feeds.fireside.fm/stovol/rss" text="随机波动StochasticVolatility" type="rss" />
+			<outline xmlUrl="https://feeds.simplecast.com/wgl4xEgL" text="EconTalk" type="rss" />
+			<outline xmlUrl="https://rss.acast.com/theintelligencepodcast" type="rss" text="The Intelligence" />
+			<outline text="Merriam-Webster&apos;s Word of the Day" type="rss" xmlUrl="https://www.merriam-webster.com/wotd/feed/rss2" />
+			<outline text="IMF Podcasts" xmlUrl="https://imfpodcast.libsyn.com/rss" type="rss" />
+			<outline xmlUrl="http://feeds.soundcloud.com/users/soundcloud:users:281317235/sounds.rss" text="ROCKING OUR PRIORS" type="rss" />
+			<outline text="a16z Podcast" xmlUrl="https://feeds.simplecast.com/JGE3yC0V" type="rss" />
+			<outline text="Probable Causation" xmlUrl="https://feed.podbean.com/probablecausation/feed.xml" type="rss" />
+			<outline text="In Machines We Trust" xmlUrl="https://feeds.megaphone.fm/inmachineswetrust" type="rss" />
+			<outline xmlUrl="https://feeds.megaphone.fm/deepbackground" type="rss" text="Deep Background with Noah Feldman" />
+			<outline text="RandomWalk Theory" xmlUrl="https://anchor.fm/s/473e5930/podcast/rss" type="rss" />
+			<outline text="二维无码" xmlUrl="http://www.ximalaya.com/album/44299765.xml" type="rss" />
+		</outline>
+	</body>
+</opml>

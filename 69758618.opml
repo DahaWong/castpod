@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<opml version="1.0">
+	<head>
+		<title>Pocket Casts Feeds</title>
+	</head>
+	<body>
+		<outline text="feeds">
+			<outline xmlUrl="http://www.ximalaya.com/album/203355.xml" type="rss" text="段子来了" />
+			<outline text="万事污" xmlUrl="http://www.ximalaya.com/album/15303926.xml" type="rss" />
+			<outline text="蕊希电台" xmlUrl="http://www.ximalaya.com/album/321787.xml" type="rss" />
+			<outline type="rss" text="缘昔🐱" xmlUrl="http://rss.lizhi.fm/rss/29985.xml" />
+			<outline type="rss" xmlUrl="http://www.ximalaya.com/album/338590.xml" text="欢乐江湖" />
+			<outline xmlUrl="http://www.ximalaya.com/album/276477.xml" text="两个人，一些事" type="rss" />
+			<outline xmlUrl="http://www.ximalaya.com/album/250609.xml" type="rss" text="八卦江湖" />
+			<outline type="rss" text="怪兽来了| 天津兽爆笑笑话" xmlUrl="http://www.ximalaya.com/album/319434.xml" />
+			<outline text="情感治愈系" type="rss" xmlUrl="http://rss.kaolafm.com/MZ_RSS/rss/1100000000747/album.xml" />
+			<outline text="短发桃子" xmlUrl="http://rss.lizhi.fm/rss/20124.xml" type="rss" />
+			<outline xmlUrl="http://www.ximalaya.com/album/3545715.xml" type="rss" text="女王有药" />
+			<outline type="rss" text="TED Talks Daily" xmlUrl="http://feeds.feedburner.com/TEDTalks_audio" />
+			<outline text="为你读英语美文" xmlUrl="http://www.ximalaya.com/album/4258477.xml" type="rss" />
+			<outline type="rss" text="睡前故事：一千零一夜" xmlUrl="http://www.ximalaya.com/album/257813.xml" />
+			<outline type="rss" text="每晚一个睡前故事" xmlUrl="http://www.ximalaya.com/album/15000.xml" />
+			<outline text="萌神带你飞" xmlUrl="http://www.ximalaya.com/album/2732742.xml" type="rss" />
+			<outline text="万万妹想到 | 李小妹呐" xmlUrl="http://www.ximalaya.com/album/276721.xml" type="rss" />
+			<outline xmlUrl="http://www.ximalaya.com/album/16264.xml" type="rss" text="教会你爱与被爱" />
+			<outline text="萌妹Q谈" xmlUrl="http://www.ximalaya.com/album/277883.xml" type="rss" />
+			<outline type="rss" text="了了电台" xmlUrl="http://www.ximalaya.com/album/19068869.xml" />
+			<outline type="rss" text="语瞳的直播录音" xmlUrl="http://www.ximalaya.com/album/6186021.xml" />
+			<outline type="rss" text="甜心主播的爆笑现场" xmlUrl="http://www.ximalaya.com/album/2741704.xml" />
+			<outline text="散文诗歌荐读" xmlUrl="http://www.ximalaya.com/album/218560.xml" type="rss" />
+			<outline text="兽的直播回听丨兽言兽语" xmlUrl="http://www.ximalaya.com/album/9906862.xml" type="rss" />
+			<outline text="非常溜佳期" xmlUrl="http://www.ximalaya.com/album/249020.xml" type="rss" />
+			<outline xmlUrl="http://huodong.kugou.com/topic/fmfeed/static/xml/audio/2650.xml" text="酷狗新歌榜" type="rss" />
+			<outline type="rss" text="怀旧金曲" xmlUrl="http://www.ximalaya.com/album/268926.xml" />
+			<outline text="剩余价值SurplusValue" xmlUrl="https://www.surplusvalue.club/rss" type="rss" />
+			<outline type="rss" text="双份的阳光" xmlUrl="http://www.ximalaya.com/album/348.xml" />
+			<outline text="小七的私房歌" xmlUrl="http://www.ximalaya.com/album/237771.xml" type="rss" />
+			<outline xmlUrl="http://www.ximalaya.com/album/350999.xml" type="rss" text="内涵段子" />
+			<outline xmlUrl="http://m.ximalaya.com/album/322217.xml" text="百思女神秀2015" type="rss" />
+		</outline>
+	</body>
+</opml>
