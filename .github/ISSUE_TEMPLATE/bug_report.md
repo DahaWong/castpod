@@ -1,38 +1,23 @@
 ---
-name: Bug report
-about: Create a report to help us improve
+name: 问题报告
+about: 创建一个议题来帮助我们知晓项目存在的问题
 title: ''
-labels: ''
+labels: 'Bug'
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**描述问题**
+发生了什么？
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+**如何复现**
+我在进行如下操作的时候，机器人出错了：
+1. 第一步
+2. 第二步
+3. 第三步，此时发生了错误
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**结果说明**
+应该看到……，但是却发生了……
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
-
-**Additional context**
-Add any other context about the problem here.
+**错误截图**
+<请上传图片>
