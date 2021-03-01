@@ -1,6 +1,6 @@
 ---
 name: 问题报告
-about: 创建一个议题来帮助我们知晓项目存在的问题
+about: 帮助我们知晓项目存在的问题
 title: ''
 labels: 'Bug'
 assignees: ''
