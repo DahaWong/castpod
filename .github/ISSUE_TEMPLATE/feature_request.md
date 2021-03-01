@@ -1,20 +1,24 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: 优化建议
+about: 为 Castpod 提出改进建议
 title: ''
-labels: ''
+labels: 'enhancement'
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+**功能描述**
+这是一个新功能还是现有功能的优化建议？它解决了什么问题？
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+**实现方式**
+你希望怎么实现它？比如提供一些可能的操作步骤：
+1. 
+2. 
+3. 
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+如果您是开发者，可以提供相关的技术细节以供我们参考学习：
+1. []()
+2. []()
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+**其他信息**
+（可选）
