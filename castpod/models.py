@@ -8,6 +8,8 @@ from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentField, EmbeddedDocumentListField, IntField, LazyReferenceField, ListField, ReferenceField, StringField, URLField
 from mongoengine.queryset.base import PULL
 from mongoengine.queryset.manager import queryset_manager
+from mongoengine.errors import DoesNotExist
+
 from telegram.parsemode import ParseMode
 # from castpod.utils import local_download
 from config import podcast_vault, dev_user_id, manifest
@@ -65,7 +67,12 @@ class User(Document):
     def generate_opml(self):
         body = ''
         for subscription in self.subscriptions:
-            podcast = subscription.podcast
+            try:
+                podcast = subscription.podcast
+            except DoesNotExist:
+                self.subscriptions.remove(subscription)
+                self.update(set__subscriptions=self.subscriptions)
+                continue
             outline = f'\t\t\t\t<outline type="rss" text="{podcast.name}" xmlUrl="{podcast.feed}"/>\n'
             body += outline
         head = (

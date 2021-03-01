@@ -66,6 +66,10 @@ def about(update, context):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
     )
+    # podcast = Podcast.objects.get(name='科技島讀')
+    # podcast.update(unset__episodes__0=1)
+    # podcast.update(unset__episodes__1=1)
+    # print('done')
 
 
 @delete_update_message

@@ -125,7 +125,7 @@ def download_episode(update, context):
     fetching_note = bot.send_message(chat_id, "获取节目中…")
     bot.send_chat_action(chat_id, ChatAction.RECORD_AUDIO)
     match = re.match(r'🎙️ (.+) #([0-9]+)', message.text)
-    podcast = Podcast.objects.get(name=match[1])  # ⚠️ name改成id
+    podcast = Podcast.objects.get(name=match[1])  # ⚠️ name改成id，且这一段代码与 handle_audio 重复
     context.user_data.update({'podcast': podcast.name, 'chat_id': chat_id})
     index = int(match[2])
     episode = podcast.episodes[-index]
@@ -133,7 +133,9 @@ def download_episode(update, context):
         chat_id,
         ChatAction.UPLOAD_AUDIO
     )
+
     if episode.message_id:
+        print('in!')
         fetching_note.delete()
         forwarded_message = bot.forward_message(
             chat_id=chat_id,
@@ -168,8 +170,6 @@ def download_episode(update, context):
         forwarded_message = audio_message.forward(chat_id)
         forward_from_message = audio_message.message_id
         context.user_data.clear()
-    update.message.delete()
-
     forwarded_message.edit_caption(
         caption=(
             f"🎙️ <b>{podcast.name}</b>\n\n<a href='{episode.shownotes.url or podcast.website}'>相关链接</a>"
@@ -187,6 +187,7 @@ def download_episode(update, context):
                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
         ]])
     )
+    update.message.delete()
 
 
 @delete_update_message
@@ -209,26 +210,26 @@ def show_podcast(update, context):
     chat_type = update.effective_chat.type
     in_group = (chat_type == 'group') or (chat_type == 'supergroup')
     kwargs = {'mode': 'group'} if in_group else {}
-    try:
-        podcast = Podcast.objects.get(name=message.text)
-        subscription = user.subscriptions.get(podcast=podcast)  # ⚠️ 待优化
+    # try:
+    podcast = Podcast.objects.get(name=message.text)
+    subscription = user.subscriptions.get(podcast=podcast)  # ⚠️ 待优化
 
-        if subscription.is_fav:
-            kwargs.update(
-                {
-                    'fav_text': "⭐️",
-                    'fav_action': 'unfav_podcast'
-                }
-            )
-
-        page = PodcastPage(podcast, **kwargs)
-        update.message.reply_text(
-            text=page.text(),
-            reply_markup=InlineKeyboardMarkup(page.keyboard())
+    if subscription.is_fav:
+        kwargs.update(
+            {
+                'fav_text': "⭐️",
+                'fav_action': 'unfav_podcast'
+            }
         )
-        run_async(update.message.delete)
-    except:
-        run_async(message.reply_text, '抱歉，没能理解您的指令。')
+
+    page = PodcastPage(podcast, **kwargs)
+    update.message.reply_text(
+        text=page.text(),
+        reply_markup=InlineKeyboardMarkup(page.keyboard())
+    )
+    run_async(update.message.delete)
+    # except Exception as e:
+        # run_async(message.reply_text, '抱歉，没能理解您的指令。')
 
 
 def handle_audio(update, context):
@@ -241,3 +242,5 @@ def handle_audio(update, context):
     episode = podcast.episodes[-index]
     episode.message_id = message.forward_from_message_id
     episode.file_id = message.audio.file_id
+    kwargs = {f'set__episodes__{len(podcast.episodes)-index}':episode}
+    podcast.update(**kwargs)

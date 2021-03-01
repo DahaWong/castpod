@@ -1,11 +1,11 @@
 from mongoengine.queryset.visitor import Q
+from mongoengine.errors import DoesNotExist
 from castpod.utils import search_itunes
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup,InlineQueryResultPhoto
 import re
 from config import manifest
 from castpod.models import User, Podcast
 import datetime
-
 
 def handle_inline_query(update, context):
     run_async = context.dispatcher.run_async
@@ -17,8 +17,8 @@ def handle_inline_query(update, context):
         results = run_async(show_subscription, user).result()
     elif re.match('^p$', query_text):
         results = run_async(show_fav_podcasts, user).result()
-    elif re.match('^e$', query_text):
-        results = run_async(show_fav_episodes, user).result()
+    # elif re.match('^e$', query_text):
+    #     results = run_async(show_fav_episodes, user).result()
     else:
         try:
             podcast = Podcast.objects.get(
@@ -46,8 +46,13 @@ def show_subscription(user):
         )
     else:
         for index, subscription in enumerate(subscriptions):
-            podcast = subscription.podcast
             fav_flag = ''
+            try:
+                podcast = subscription.podcast
+            except DoesNotExist:
+                subscriptions.pop(index)
+                user.update(set__subscriptions=subscriptions)
+                continue
             if subscription.is_fav:
                 fav_flag = '  ⭐️'
             result = InlineQueryResultPhoto(

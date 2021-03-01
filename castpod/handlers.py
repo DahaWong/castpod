@@ -47,7 +47,7 @@ def register_handlers(dispatcher):
             ) &
             Filters.text, message.show_podcast
         ),
-        MessageHandler(Filters.audio, message.handle_audio),
+        MessageHandler(Filters.chat(username="podcast_vault_chat") & Filters.audio, message.handle_audio),
         InlineQueryHandler(inline_query.handle_inline_query)
     ])
 
