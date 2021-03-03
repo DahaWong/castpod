@@ -88,4 +88,7 @@ REMOTE_HOST = 服务器IP，用于本地测试（但并不安全），可选。
 更多信息请参见[开发行程](https://github.com/DahaWong/castpod/projects/2)、[项目漏洞](https://github.com/DahaWong/castpod/projects/3)
 
 ### 经济支持
+1. [爱发电](https://afdian.net/@castpodbot)
+2. [Buy me a coffee](https://www.buymeacoffee.com/daha)
+
 <a href="https://www.buymeacoffee.com/daha"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a Cherry  : )&emoji=🍒&slug=daha&button_colour=FF5F5F&font_colour=ffffff&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00"></a>
