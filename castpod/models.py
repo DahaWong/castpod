@@ -121,7 +121,8 @@ class Shownotes(EmbeddedDocument):
 
     def set_timeline(self):
         shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.content)
-        pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
+        # pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
+        pattern = r'.+(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9].+'
         matches = re.finditer(pattern, shownotes)
         self.timeline = '\n\n'.join([re.sub(
             r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches])
