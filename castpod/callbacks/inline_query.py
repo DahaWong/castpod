@@ -52,6 +52,7 @@ def show_subscription(user):
             except DoesNotExist:
                 subscriptions.pop(index)
                 user.update(set__subscriptions=subscriptions)
+                # user.reload()
                 continue
             if subscription.is_fav:
                 fav_flag = '  ⭐️'

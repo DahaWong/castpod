@@ -3,6 +3,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from castpod.components import PodcastPage, ManagePage
 from config import podcast_vault, manifest, dev_user_id
 from castpod.utils import delete_update_message, local_download, parse_doc, delete_manage_starter
+from mongoengine.queryset.visitor import Q
 import re
 
 # @is_group??
@@ -20,7 +21,7 @@ def subscribe_feed(update, context):
     subscribing_message = run_async(message.reply_text, f"订阅中，请稍候…").result()
 
     user = User.validate_user(update.effective_user)
-    podcast = Podcast.validate_feed(feed=message.text)
+    podcast = Podcast.validate_feed(feed=message.text.lower())
     user.subscribe(podcast)
     in_group = (chat_type == 'group') or (chat_type == 'supergroup')
     kwargs = {'mode': 'group'} if in_group else {}
@@ -68,7 +69,7 @@ def save_subscription(update, context):
         for feed in feeds:
             podcast = None
             try:
-                podcast = Podcast.validate_feed(feed['url'])
+                podcast = Podcast.validate_feed(feed['url'].lower())
                 user.subscribe(podcast)
                 podcasts_count += 1
             except Exception as e:
@@ -125,7 +126,10 @@ def download_episode(update, context):
     fetching_note = bot.send_message(chat_id, "获取节目中…")
     bot.send_chat_action(chat_id, ChatAction.RECORD_AUDIO)
     match = re.match(r'🎙️ (.+) #([0-9]+)', message.text)
-    podcast = Podcast.objects.get(name=match[1])  # ⚠️ name改成id，且这一段代码与 handle_audio 重复
+    user = User.validate_user(update.effective_user)
+    # podcast = Podcast.objects.get(name=match[1]) 
+    podcast = Podcast.objects.get(
+                Q(name=match[1]) & Q(subscribers=user))  # ⚠️ name改成id，且这一段代码与 handle_audio 重复
     context.user_data.update({'podcast': podcast.name, 'chat_id': chat_id})
     index = int(match[2])
     episode = podcast.episodes[-index]
@@ -211,7 +215,8 @@ def show_podcast(update, context):
     in_group = (chat_type == 'group') or (chat_type == 'supergroup')
     kwargs = {'mode': 'group'} if in_group else {}
     # try:
-    podcast = Podcast.objects.get(name=message.text)
+    podcast = Podcast.objects.get(
+                Q(name=message.text) & Q(subscribers=user))
     subscription = user.subscriptions.get(podcast=podcast)  # ⚠️ 待优化
 
     if subscription.is_fav:
@@ -244,3 +249,4 @@ def handle_audio(update, context):
     episode.file_id = message.audio.file_id
     kwargs = {f'set__episodes__{len(podcast.episodes)-index}':episode}
     podcast.update(**kwargs)
+    # podcast.reload()

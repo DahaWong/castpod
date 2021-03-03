@@ -51,14 +51,16 @@ class User(Document):
     def subscribe(self, podcast):
         if self in podcast.subscribers:
             return
-        podcast.renew()
+        if not podcast.name:
+            podcast.renew()
         self.update(push__subscriptions=Subscription(podcast=podcast))
+        # self.reload()
         podcast.update(push__subscribers=self)
+        # podcast.reload()
 
     def unsubscribe(self, podcast):
         self.update(pull__subscriptions=self.subscriptions.get(podcast=podcast))
         podcast.update(pull__subscribers=self)
-
     def toggle_fav(self, podcast):
         # use XOR to toggle boolean
         self.subscriptions.get(podcast=podcast).is_fav ^= True
@@ -72,6 +74,7 @@ class User(Document):
             except DoesNotExist:
                 self.subscriptions.remove(subscription)
                 self.update(set__subscriptions=self.subscriptions)
+                # self.reload()
                 continue
             outline = f'\t\t\t\t<outline type="rss" text="{podcast.name}" xmlUrl="{podcast.feed}"/>\n'
             body += outline
@@ -112,7 +115,7 @@ class Shownotes(EmbeddedDocument):
 
     def set_content(self, logo):
         content = self.content
-        img_content = f"<img src='{logo}'>" if 'img' not in content else ''
+        img_content = f"<img src='{logo}'>" if logo and ('img' not in content) else ''
         self.content = img_content + self.replace_invalid_tags(content)
         return self.content
 
@@ -201,8 +204,9 @@ class Podcast(Document):
         self.episodes = []
         for i, item in enumerate(result['items']):
             episode = self.parse_episode(item, i)
-            self.update(push__episodes=episode)
-            self.save()
+            if episode:
+                self.update(push__episodes=episode)
+            # self.reload()
         self.host = unescape(feed.author_detail.name or '')
         if self.host == self.name:
             self.host = ''
@@ -217,15 +221,17 @@ class Podcast(Document):
         self.save()
 
     def parse_episode(self, item, i):
-        episode = Episode(index=i)
+        if not item.enclosures:
+            return
         audio = item.enclosures[0]
+        episode = Episode(index=i)
         episode.audio = Audio(
-            url=audio.get('href'),
-            size=audio.get('length') or 0,
-            performer=self.name,
-            logo=item.get('image').href if item.get('image') else self.logo,
-            duration=self.set_duration(item.get('itunes_duration'))
-        )
+                url=audio.get('href'),
+                size=audio.get('length') or 0,
+                performer=self.name,
+                logo=item.get('image').href if item.get('image') else self.logo,
+                duration=self.set_duration(item.get('itunes_duration'))
+            )
         episode.title = unescape(item.get('title') or '')
         episode.subtitle = unescape(item.get('subtitle') or '')
         if episode.title == episode.subtitle:
