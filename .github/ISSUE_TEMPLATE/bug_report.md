@@ -2,7 +2,7 @@
 name: 问题报告
 about: 帮助我们知晓项目存在的问题
 title: ''
-labels: 'Bug'
+labels: 'bug'
 assignees: ''
 
 ---
