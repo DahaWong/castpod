@@ -52,7 +52,7 @@ class User(Document):
         if self in podcast.subscribers:
             return
         if not podcast.name:
-            podcast.renew()
+            podcast.initialize()
         self.update(push__subscriptions=Subscription(podcast=podcast))
         # self.reload()
         podcast.update(push__subscribers=self)
@@ -145,6 +145,8 @@ class Audio(EmbeddedDocument):
 
 class Episode(EmbeddedDocument):
     index = IntField(required=True)
+    episode_id = StringField(primary_key=True)
+    link = URLField()
     audio = EmbeddedDocumentField(Audio)
     title = StringField()
     subtitle = StringField()
@@ -154,6 +156,7 @@ class Episode(EmbeddedDocument):
     shownotes = EmbeddedDocumentField(Shownotes)
     timeline = StringField()
     published_time = DateTimeField()
+    updated_time = DateTimeField()
     message_id = IntField()  # message_id in podcast_vault
     file_id = StringField()
 
@@ -168,7 +171,7 @@ class Podcast(Document):
     email = StringField()
     episodes = EmbeddedDocumentListField(Episode)
     subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
-    # update_time = DateTimeField()
+    updated_time = DateTimeField()
     job_group = ListField(IntField(min_value=0, max_value=47))
 
     @classmethod
@@ -186,18 +189,17 @@ class Podcast(Document):
         else:
             return queryset(subscribers=user)
 
-    def renew(self):
+    def initialize(self):
         self.set_job_group()
-        socket.setdefaulttimeout(5)
+        socket.setdefaulttimeout(7)
         result = feedparser.parse(self.feed)
         if str(result.status)[0] != '2' and str(result.status)[0] != '3':
             raise Exception(f'Feed open error, status: {result.status}')
         feed = result.feed
-        self.name = feed.get('title')
-        if not self.name:
+        if not feed.get('title'):
             self.delete()
             raise Exception("Cannot parse feed name.")
-        self.name = unescape(self.name)[:63]
+        self.name = unescape(feed.title)[:63]
         if len(self.name) == 63:
             self.name += '…'
         self.logo = feed['image']['href']
@@ -207,13 +209,26 @@ class Podcast(Document):
             if episode:
                 self.update(push__episodes=episode)
             # self.reload()
-        self.host = unescape(feed.author_detail.name or '')
+        self.host = unescape(feed.author_detail.get('name') or '')
         if self.host == self.name:
             self.host = ''
         self.website = feed.get('link')
         self.email = feed.author_detail.get('email') or ''
         self.save()
         return self
+    
+    def renew(self):
+        pass
+        # result = feedparser.parse(self.feed)
+        # if str(result.status)[0] != '2' and str(result.status)[0] != '3':
+        #     raise Exception(f'Feed open error, status: {result.status}')
+        # feed = result.feed
+
+    def check_update(self):
+        if self.episodes[0].updated_time != self.updated_time:
+            self.renew()
+            self.updated_time = self.episodes[0].updated_time
+            self.save()
 
     def set_job_group(self):
         i = random.randint(0, 47)
@@ -224,7 +239,7 @@ class Podcast(Document):
         if not item.enclosures:
             return
         audio = item.enclosures[0]
-        episode = Episode(index=i)
+        episode = Episode(index=i, episode_id=item.get('id'))
         episode.audio = Audio(
                 url=audio.get('href'),
                 size=audio.get('length') or 0,
@@ -232,6 +247,7 @@ class Podcast(Document):
                 logo=item.get('image').href if item.get('image') else self.logo,
                 duration=self.set_duration(item.get('itunes_duration'))
             )
+        episode.link = item.get('link')
         episode.title = unescape(item.get('title') or '')
         episode.subtitle = unescape(item.get('subtitle') or '')
         if episode.title == episode.subtitle:
