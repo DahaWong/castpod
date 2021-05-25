@@ -2,8 +2,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from config import manifest
 from castpod.models import User, Podcast
 from castpod.components import ManagePage, PodcastPage
-from castpod.utils import save_manage_starter, delete_update_message
-
+from castpod.utils import save_manage_starter, delete_update_message, generate_opml
+from manifest import manifest
 
 @delete_update_message
 def start(update, context):
@@ -14,19 +14,24 @@ def start(update, context):
     if context.args and context.args[0] != 'login':
         podcast_id = context.args[0]
         podcast = Podcast.objects(id=podcast_id).first()
-        subscribing_note = run_async(
-            update.message.reply_text, "正在订阅…").result()
-        user.subscribe(podcast)
-        run_async(subscribing_note.delete)
+        if not podcast: 
+            update.reply_message(f'抱歉，该播客不存在。如需订阅，请尝试在对话框输入 `@{manifest.bot_id} 播客关键词` 检索。')
+            return
+        if not user in podcast.subscribers:
+            subscribing_note = run_async(
+                update.message.reply_text, "正在订阅…").result()
+            user.subscribe(podcast)
+            run_async(subscribing_note.delete)
         page = PodcastPage(podcast)
         manage_page = ManagePage(
-            Podcast.of_subscriber(user), f'`{podcast.name}` 订阅成功！'
+            Podcast.subscribe_by(user), f'`{podcast.name}` 订阅成功！'
         )
 
         run_async(
             update.message.reply_text,
             text=page.text(),
-            reply_markup=InlineKeyboardMarkup(page.keyboard())
+            reply_markup=InlineKeyboardMarkup(page.keyboard()),
+            parse_mode = "HTML"
         )
 
         run_async(
@@ -51,7 +56,6 @@ def start(update, context):
             )
         )
 
-
 @delete_update_message
 def about(update, context):
     keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
@@ -70,7 +74,6 @@ def about(update, context):
     # podcast.update(unset__episodes__0=1)
     # podcast.update(unset__episodes__1=1)
     # print('done')
-
 
 @delete_update_message
 def favourites(update, context):
@@ -94,7 +97,7 @@ def manage(update, context):
     run_async = context.dispatcher.run_async
     user = User.validate_user(update.effective_user)
 
-    page = ManagePage(Podcast.of_subscriber(user, 'name'))
+    page = ManagePage(Podcast.subscribe_by(user, 'name'))
     msg = run_async(
         update.effective_message.reply_text,
         text=page.text,
@@ -102,7 +105,6 @@ def manage(update, context):
             page.keyboard(), resize_keyboard=True, one_time_keyboard=True, selective=True)
     ).result()
     save_manage_starter(context.chat_data, msg)
-
 
 @delete_update_message
 def setting(update, context):
@@ -115,7 +117,6 @@ def setting(update, context):
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     ).result()
     save_manage_starter(context.chat_data, msg)
-
 
 @delete_update_message
 def help(update, context):
@@ -138,18 +139,17 @@ def help(update, context):
         )
     )
 
-
 @delete_update_message
 def export(update, context):
     user = User.validate_user(update.effective_user)
-    if not user.subscriptions:
-        update.message.reply_text('你还没有订阅的播客，请先订阅再导出～')
+    podcasts = Podcast.objects(subscribers__in=[user])
+    if not podcasts:
+        update.message.reply_text('还没有订阅播客，请先订阅再导出 :)')
     else:
         update.message.reply_document(
-            document=user.generate_opml(),
+            document=generate_opml(user),
             # thumb = ""
         )
-
 
 @delete_update_message
 def logout(update, context):

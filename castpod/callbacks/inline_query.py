@@ -30,13 +30,12 @@ def handle_inline_query(update, context):
 
     run_async(query.answer, list(results), **kwargs)
 
-
 def show_subscription(user):
-    subscriptions = user.subscriptions
-    if not subscriptions:
+    podcasts = Podcast.objects(subscribers__in=[user])
+    if not podcasts:
         yield InlineQueryResultArticle(
             id=0,
-            title='订阅列表还是空的 🥡',
+            title='订阅列表还是空的',
             description=f'试着在 @{manifest.bot_id} 后面输入关键词，寻找喜欢的播客吧',
             input_message_content=InputTextMessageContent('🔍️'),
             reply_markup=InlineKeyboardMarkup.from_button(
@@ -45,33 +44,25 @@ def show_subscription(user):
             )
         )
     else:
-        for index, subscription in enumerate(subscriptions):
+        # podcasts = sorted(podcasts, key=lambda x: x.podcast.updated_time, reverse=True)
+        for index, podcast in enumerate(podcasts):
             fav_flag = ''
-            try:
-                podcast = subscription.podcast
-            except DoesNotExist:
-                subscriptions.pop(index)
-                user.update(set__subscriptions=subscriptions)
-                # user.reload()
-                continue
-            if subscription.is_fav:
+            if user in podcast.fav_subscribers:
                 fav_flag = '  ⭐️'
-            result = InlineQueryResultPhoto(
+            yield InlineQueryResultPhoto(
                 id=str(index),
-                title=podcast.name + fav_flag,
+                title=str(podcast.name) + fav_flag,
                 description=podcast.host or podcast.name,
                 photo_url=podcast.logo,
                 input_message_content=InputTextMessageContent(podcast.name),
                 thumb_url=podcast.logo,
-                # caption=podcast.name,
+                caption=podcast.name,
                 thumb_width=80,
                 thumb_height=80
             )
-            yield result
-
 
 def show_fav_podcasts(user):
-    favs = user.subscriptions.filter(is_fav=True)
+    favs = Podcast.objects(fav_subscribers__in = [user])
     if not favs:
         yield InlineQueryResultArticle(
             id=0,
@@ -97,26 +88,25 @@ def show_fav_episodes(user):
     pass
 
 def show_episodes(podcast):
-    episodes = podcast.episodes
+    # episodes = sorted(podcast.episodes, key=lambda x: x.published_time, reverse=True)
     buttons = [
         InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
         InlineKeyboardButton(
             "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
     ]
-    for index, episode in enumerate(episodes):
+    for index, episode in enumerate(podcast.episodes):
         yield InlineQueryResultArticle(
             id=index,
             title=episode.title,
             input_message_content=InputTextMessageContent((
-                f"[🎙️]({podcast.logo}) *{podcast.name}* #{episodes.count() - index}"
+                f"[🎙️]({podcast.logo}) *{podcast.name}* #{len(podcast.episodes) - index}"
             )),
             reply_markup=InlineKeyboardMarkup.from_row(buttons),
-            description=f"{datetime.timedelta(seconds=episode.audio.duration) or podcast.name}\n{episode.subtitle}",
-            thumb_url=episode.audio.logo,
+            description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",
+            thumb_url=episode.logo,
             thumb_width=80,
             thumb_height=80
         )
-
 
 def search_podcast(keyword):
     searched_results = search_itunes(keyword)

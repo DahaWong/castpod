@@ -5,22 +5,7 @@ import errno
 import os
 import re
 from functools import wraps
-from castpod.models import User
 from config import bot_token
-
-
-def validate_user(func):
-    @wraps(func)
-    def wrapped(update, context, *args, **kwargs):
-        user = User.objects(user_id=update.message.from_user.id).first()
-        if not user:
-            user = User(
-                user_id=update.message.from_user.id,
-                name=update.message.from_user.first_name,
-                username=update.message.from_user.username
-            ).save()
-        return func(update, context, *args, **kwargs)
-    return wrapped
 
 
 # iTunes Search API
@@ -58,22 +43,23 @@ def search_itunes(keyword: str):
 
 
 # Local Download
-
-
-def local_download(episode, context):
-    res = requests.get(episode.audio.url, allow_redirects=True, stream=True)
-    if res.status_code != 200:
-        raise Exception(
-            f"Error when downloading audio, status: {res.status_code}.")
-    block_size = 1024  # 1 Kb
-    path = f"public/audio/{context.user_data['podcast']}/{episode.title}.mp3"
+def validate_path(path):
     if not os.path.exists(os.path.dirname(path)):
         try:
             os.makedirs(os.path.dirname(path))
         except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
+
+def local_download(episode, context):
+    res = requests.get(episode.url, allow_redirects=True, stream=True)
+    if res.status_code != 200:
+        raise Exception(
+            f"Error when downloading audio, status: {res.status_code}.")
+    block_size = 1024  # 1 Kb
     if context.user_data:
+        path = f"public/audio/{context.user_data['podcast']}/{episode.title}.mp3"
+        validate_path(path)
         total = int(res.headers.get('content-length', 0))
         chat_id = context.user_data['chat_id']
         progress_bar = tqdm(
@@ -81,7 +67,7 @@ def local_download(episode, context):
             unit='iB',
             token=bot_token,
             chat_id=chat_id,
-            bar_format='{percentage:3.0f}% |{bar:8}|'
+            bar_format='{percentage:3.0f}% |{bar:6}|'
         )
         with open(path, 'wb') as f:
             for data in res.iter_content(block_size):
@@ -93,6 +79,14 @@ def local_download(episode, context):
         if total != 0 and progress_bar.n != total:
             raise Exception("ERROR: something went wrong with progress bar.")
     else:
+        path = f"public/audio/new/{episode.title}.mp3"
+        validate_path(path)
+        if not os.path.exists(os.path.dirname(path)):
+            try:
+                os.makedirs(os.path.dirname(path))
+            except OSError as exc:  # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
         with open(path, 'wb') as f:
             for data in res.iter_content(block_size):
                 f.write(data)
@@ -106,7 +100,8 @@ def parse_doc(context, user, doc):
     doc_file = context.bot.getFile(doc['file_id'])
     doc_name = re.sub(r'.+(?=\.xml|\.opml?)',
                       str(user.user_id), doc['file_name'])
-    path = doc_file.download(doc_name)
+    path = f'public/import/{doc_name}'
+    doc_file.download(path)
     with open(path, 'r') as f:
         feeds = parse_opml(f)
         return feeds
@@ -139,3 +134,29 @@ def delete_manage_starter(context):
     for message in context.chat_data['manage_starter']:
         run_async(message.delete)
     context.chat_data['manage_starter']=[]
+
+def generate_opml(user):
+    body = ''
+    podcasts = Podcast.subscribe_by(user, ('name', 'feed'))
+    for podcast in podcasts:
+        outline = f'\t\t\t\t<outline type="rss" text="{podcast.name}" xmlUrl="{podcast.feed}"/>\n'
+        body += outline
+    head = (
+        "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
+        "\t<opml version='1.0'>\n"
+        "\t\t<head>\n"
+        f"\t\t\t<title>{manifest.name} 订阅源</title>\n"
+        "\t\t</head>\n"
+        "\t\t<body>\n"
+        "\t\t\t<outline text='feeds'>\n"
+    )
+    tail = (
+        "\t\t\t</outline>\n"
+        "\t\t</body>\n"
+        "\t</opml>\n"
+    )
+    opml = head + body + tail
+    path = f"./public/subscriptions/{self.user_id}.xml"
+    with open(path, 'w+') as f:
+        f.write(opml)
+    return path
