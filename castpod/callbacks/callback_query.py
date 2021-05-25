@@ -1,8 +1,8 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
-from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml
-from castpod.callbacks.command import manage
+from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml, delete_update_message
+from castpod.callbacks.command import help
 from config import manifest
 import re
 
@@ -139,7 +139,7 @@ def back_to_actions(update, context):
         text=page.text(),
         reply_markup=InlineKeyboardMarkup(
             page.keyboard()),
-        parse_mode = "HTML"
+        parse_mode="HTML"
     )
 
 
@@ -151,12 +151,65 @@ def export(update, context):
     if not podcasts:
         run_async(message.reply_text, '还没有订阅播客，请先订阅再导出')
         return
+    subscribed_podcasts = Podcast.subscribe_by(user)
     run_async(
         message.reply_document,
         filename=f"{user.username} 的 {manifest.name} 订阅.xml",
-        document=generate_opml(user),
+        document=generate_opml(user, subscribed_podcasts),
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
                 '注销账号', callback_data='delete_account')
         )
+    )
+
+# Help
+def logout(update, context):
+    keyboard = [[InlineKeyboardButton("返回", callback_data=f"back_to_help"),
+                 InlineKeyboardButton("注销", callback_data="logout")]]
+
+    update.callback_query.edit_message_text(
+        "确认注销账号吗？\n",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+    # Tips('logout', "⦿ 这将清除所有存储在后台的个人数据。").send(update, context)
+
+
+def settings(update, context):
+    keyboard = [[InlineKeyboardButton('显示设置', callback_data="display_setting")], [
+        InlineKeyboardButton('返回', callback_data="back_to_help")]]
+    msg = context.dispatcher.run_async(
+        update.callback_query.edit_message_text,
+        text=f'已启动设置面板',
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    ).result()
+    save_manage_starter(context.chat_data, msg)
+
+
+def about(update, context):
+    keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
+                 InlineKeyboardButton("工作室", url=manifest.author_url)],
+                [InlineKeyboardButton('返回', callback_data="back_to_help")]
+                ]
+    context.dispatcher.run_async(
+        update.callback_query.edit_message_text,
+        text=(
+            f"*{manifest.name}*  "
+            f"`{manifest.version}`"
+            f"\nby [{manifest.author}](https://t.me/{manifest.author_id})\n"
+        ),
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+
+def back_to_help(update, context):
+    context.dispatcher.run_async(
+        update.callback_query.edit_message_text,
+        text=f"*{manifest.name} 使用说明*\n\n",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("导出播客", callback_data="export"),
+             InlineKeyboardButton('偏好设置', callback_data="settings")],
+            [InlineKeyboardButton('注销账号', callback_data="logout"),
+             InlineKeyboardButton('更多信息', callback_data="about")]
+        ])
     )

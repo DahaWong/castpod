@@ -5,8 +5,7 @@ import errno
 import os
 import re
 from functools import wraps
-from config import bot_token
-
+from config import bot_token, manifest
 
 # iTunes Search API
 
@@ -50,6 +49,7 @@ def validate_path(path):
         except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
+
 
 def local_download(episode, context):
     res = requests.get(episode.url, allow_redirects=True, stream=True)
@@ -116,6 +116,8 @@ def parse_opml(f):
     return feeds
 
 # Manage page
+
+
 def delete_update_message(func):
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
@@ -123,21 +125,23 @@ def delete_update_message(func):
         context.dispatcher.run_async(update.effective_message.delete)
     return wrapped
 
+
 def save_manage_starter(chat_data, message):
     if chat_data.get('manage_starter'):
         chat_data['manage_starter'].append(message)
     else:
         chat_data.update({'manage_starter': [message]})
 
+
 def delete_manage_starter(context):
     run_async = context.dispatcher.run_async
     for message in context.chat_data['manage_starter']:
         run_async(message.delete)
-    context.chat_data['manage_starter']=[]
+    context.chat_data['manage_starter'] = []
 
-def generate_opml(user):
+
+def generate_opml(user, podcasts):
     body = ''
-    podcasts = Podcast.subscribe_by(user, ('name', 'feed'))
     for podcast in podcasts:
         outline = f'\t\t\t\t<outline type="rss" text="{podcast.name}" xmlUrl="{podcast.feed}"/>\n'
         body += outline
@@ -156,7 +160,7 @@ def generate_opml(user):
         "\t</opml>\n"
     )
     opml = head + body + tail
-    path = f"./public/subscriptions/{self.user_id}.xml"
+    path = f"./public/subscriptions/{user.user_id}.xml"
     with open(path, 'w+') as f:
         f.write(opml)
     return path
