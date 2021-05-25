@@ -14,20 +14,20 @@ def register_handlers(dispatcher):
 
     handlers.extend([
         CommandHandler('start', command.start, filters=Filters.chat_type.private, pass_args=True),
-        CommandHandler('about', command.about),
+        # CommandHandler('about', command.about),
         CommandHandler('favourites', command.favourites),
         CommandHandler('manage', command.manage),
-        CommandHandler('export', command.export, filters=Filters.chat_type.private, run_async=True),
-        CommandHandler('setting', command.setting, filters=Filters.chat_type.private, run_async=True),
+        # CommandHandler('export', command.export, filters=Filters.chat_type.private, run_async=True),
+        # CommandHandler('setting', command.setting, filters=Filters.chat_type.private, run_async=True),
         CommandHandler('help', command.help, run_async=True),
-        CommandHandler('logout', command.logout, filters=Filters.chat_type.private, run_async=True),
+        # CommandHandler('logout', command.logout, filters=Filters.chat_type.private, run_async=True),
         MessageHandler(
             (Filters.via_bot(dispatcher.bot.get_me().id) | Filters.chat_type.private) & Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
         MessageHandler(
             Filters.regex(r'🎙️ (.+) #([0-9]+)'), message.download_episode, run_async=True),
         MessageHandler(
             Filters.regex(r'^╳$') |
-            Filters.regex(r'^订阅列表是空的～$'),
+            Filters.regex(r'^订阅列表是空的$'),
             message.exit_reply_keyboard,
             run_async=True
         ),

@@ -2,8 +2,9 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from config import manifest
 from castpod.models import User, Podcast
 from castpod.components import ManagePage, PodcastPage
-from castpod.utils import save_manage_starter, delete_update_message, generate_opml
+from castpod.utils import save_manage_starter, delete_update_message
 from manifest import manifest
+
 
 @delete_update_message
 def start(update, context):
@@ -14,8 +15,9 @@ def start(update, context):
     if context.args and context.args[0] != 'login':
         podcast_id = context.args[0]
         podcast = Podcast.objects(id=podcast_id).first()
-        if not podcast: 
-            update.reply_message(f'抱歉，该播客不存在。如需订阅，请尝试在对话框输入 `@{manifest.bot_id} 播客关键词` 检索。')
+        if not podcast:
+            update.reply_message(
+                f'抱歉，该播客不存在。如需订阅，请尝试在对话框输入 `@{manifest.bot_id} 播客关键词` 检索。')
             return
         if not user in podcast.subscribers:
             subscribing_note = run_async(
@@ -31,7 +33,7 @@ def start(update, context):
             update.message.reply_text,
             text=page.text(),
             reply_markup=InlineKeyboardMarkup(page.keyboard()),
-            parse_mode = "HTML"
+            parse_mode="HTML"
         )
 
         run_async(
@@ -56,24 +58,6 @@ def start(update, context):
             )
         )
 
-@delete_update_message
-def about(update, context):
-    keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
-                 InlineKeyboardButton("工作室", url=manifest.author_url)]]
-    context.dispatcher.run_async(
-        update.message.reply_text(
-            text=(
-                f"*{manifest.name}*  "
-                f"`{manifest.version}`"
-                f"\nby [{manifest.author}](https://t.me/{manifest.author_id})\n"
-            ),
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-    )
-    # podcast = Podcast.objects.get(name='科技島讀')
-    # podcast.update(unset__episodes__0=1)
-    # podcast.update(unset__episodes__1=1)
-    # print('done')
 
 @delete_update_message
 def favourites(update, context):
@@ -92,6 +76,7 @@ def favourites(update, context):
         reply_markup=InlineKeyboardMarkup.from_column(buttons)
     )
 
+
 @delete_update_message
 def manage(update, context):
     run_async = context.dispatcher.run_async
@@ -107,58 +92,18 @@ def manage(update, context):
     save_manage_starter(context.chat_data, msg)
 
 @delete_update_message
-def setting(update, context):
-    keyboard = [["╳"],
-                ["播客更新频率", "快捷置顶单集", "单集信息显示"],
-                ["播客搜索范围", "快捷置顶播客", "单集排序方式"], ]
-    msg = context.dispatcher.run_async(
-        update.message.reply_text,
-        f'已启动设置面板',
-        reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    ).result()
-    save_manage_starter(context.chat_data, msg)
-
-@delete_update_message
 def help(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
     run_async(
         message.reply_text,
-        text=(
-            f"*{manifest.name} 使用说明*\n\n"
-            "/about - 幕后信息\n"
-            "/setting - 偏好设置（开发中）\n"
-            "/export - 导出订阅\n"
-            "/logout - 注销账号\n"
-        ),
-        reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton(
-                "✓",
-                callback_data='delete_message'
-            )
-        )
+        text=f"*{manifest.name} 使用说明*\n\n",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("导出播客", callback_data="export"),
+             InlineKeyboardButton('偏好设置', callback_data="settings")],
+            [InlineKeyboardButton('注销账号', callback_data="logout"),
+             InlineKeyboardButton('更多信息', callback_data="about")]
+        ])
     )
 
-@delete_update_message
-def export(update, context):
-    user = User.validate_user(update.effective_user)
-    podcasts = Podcast.objects(subscribers__in=[user])
-    if not podcasts:
-        update.message.reply_text('还没有订阅播客，请先订阅再导出 :)')
-    else:
-        update.message.reply_document(
-            document=generate_opml(user),
-            # thumb = ""
-        )
 
-@delete_update_message
-def logout(update, context):
-    keyboard = [[InlineKeyboardButton("返回", callback_data=f"delete_message"),
-                 InlineKeyboardButton("注销", callback_data="logout")]]
-
-    update.message.reply_text(
-        "确认注销账号吗？\n",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-
-    # Tips('logout', "⦿ 这将清除所有存储在后台的个人数据。").send(update, context)
