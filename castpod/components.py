@@ -9,11 +9,11 @@ class PodcastPage(object):
         self.mode = mode
 
     def text(self):
-        email_info = f'\n✉️  {self.podcast.email}' if self.podcast.email else ''
+        email = f'\n✉️  {self.podcast.email}' if self.podcast.email else ''
         return (
-            f'*{self.podcast.name}*'
-            f'\n[🎙️]({self.podcast.logo})  {self.podcast.host or self.podcast.name}'
-            f'{email_info}'
+            f'<b>{self.podcast.name}</b>'
+            f'\n<a href="{self.podcast.logo}">🎙️</a> {self.podcast.host or self.podcast.name}'
+            f'{email}'
         )
 
     def keyboard(self):
@@ -45,7 +45,7 @@ class ManagePage(object):
     def keyboard(self):
         podcasts_count = self.podcasts.count()
         if not podcasts_count:
-            return [['订阅列表是空的～']]
+            return [['订阅列表还是空的']]
         rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
         return [['╳']]+[self.row(i) for i in range(rows_count)]
 

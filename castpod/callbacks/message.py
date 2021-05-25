@@ -4,15 +4,15 @@ from castpod.components import PodcastPage, ManagePage
 from config import podcast_vault, manifest, dev_user_id
 from castpod.utils import delete_update_message, local_download, parse_doc, delete_manage_starter
 from mongoengine.queryset.visitor import Q
+from mongoengine.errors import DoesNotExist
 import re
-
 # @is_group??
 
 
 def subscribe_feed(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    chat_type = update.effective_chat.type
+    chat_type = update.effective_chat.type # !应该用filter
     run_async(
         context.bot.send_chat_action,
         chat_id=message.chat_id,
@@ -27,7 +27,7 @@ def subscribe_feed(update, context):
     kwargs = {'mode': 'group'} if in_group else {}
     try:
         manage_page = ManagePage(
-            podcasts=Podcast.of_subscriber(user, 'name'),
+            podcasts=Podcast.subscribe_by(user, 'name'),
             text=f"`{podcast.name}` 订阅成功！"
         )
         run_async(subscribing_message.delete)
@@ -44,8 +44,9 @@ def subscribe_feed(update, context):
         podcast_page = PodcastPage(podcast, **kwargs)
         run_async(message.reply_text,
                   text=podcast_page.text(),
-                  reply_markup=InlineKeyboardMarkup(podcast_page.keyboard())
-                  )
+                  reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
+                  parse_mode = "HTML"
+        )
         run_async(message.delete)
     except Exception as e:
         run_async(subscribing_message.edit_text, "订阅失败，可能是因为订阅源损坏 :(")
@@ -92,7 +93,7 @@ def save_subscription(update, context):
             reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
 
         manage_page = ManagePage(
-            podcasts=Podcast.of_subscriber(user, 'name'),
+            podcasts=Podcast.subscribe_by(user, 'name'),
             text=reply
         )
 
@@ -139,7 +140,6 @@ def download_episode(update, context):
     )
 
     if episode.message_id:
-        print('in!')
         fetching_note.delete()
         forwarded_message = bot.forward_message(
             chat_id=chat_id,
@@ -157,14 +157,15 @@ def download_episode(update, context):
                 chat_id=f'@{podcast_vault}',
                 audio=audio_file,
                 caption=(
-                    f"🎙️ {podcast.name}\n"
-                    f"总第 {index} 期"
-                    f"\n\n[订阅](https://t.me/{manifest.bot_id}?start={podcast.id})"
-                    f" | [相关链接]({episode.shownotes.url or episode.shownotes.set_url(episode.title, podcast.name)})"
+                    f"🎙️ *{podcast.name}*\n"
+                    f"总第 {index} 期\n\n"
+                    f"[订阅](https://t.me/{manifest.bot_id}?start={podcast.id})"
+                    f" | [相关链接]({episode.shownotes_url or episode.set_shownotes_url(episode.title, podcast.name)})\n\n"
+                    f"#{podcast.id}"
                 ),
                 title=episode.title,
                 performer=podcast.name,
-                duration=episode.audio.duration,
+                duration=episode.duration,
                 thumb=podcast.logo
             )
         except Exception as e:
@@ -176,20 +177,18 @@ def download_episode(update, context):
         context.user_data.clear()
     forwarded_message.edit_caption(
         caption=(
-            f"🎙️ <b>{podcast.name}</b>\n\n<a href='{episode.shownotes.url or podcast.website}'>相关链接</a>"
-            f"\n\n{episode.shownotes.timeline or episode.shownotes.set_timeline()}"
+            f"🎙️ <b>{podcast.name}</b>\n\n"
+            f"<a href='{episode.shownotes_url or podcast.website}'>相关链接</a>  |  "
+            f"<a href='https://t.me/{podcast_vault}/{forward_from_message}'>留言区</a>\n\n"
+            f"{episode.timeline or episode.set_timeline()}"
         ),
         parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton(
-                text="评论区",
-                url=f"https://t.me/{podcast_vault}/{forward_from_message}")
-        ], [
+        reply_markup=InlineKeyboardMarkup.from_row([
             InlineKeyboardButton(
                 "订阅列表", switch_inline_query_current_chat=""),
             InlineKeyboardButton(
                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
-        ]])
+        ])
     )
     update.message.delete()
 
@@ -214,39 +213,44 @@ def show_podcast(update, context):
     chat_type = update.effective_chat.type
     in_group = (chat_type == 'group') or (chat_type == 'supergroup')
     kwargs = {'mode': 'group'} if in_group else {}
-    # try:
-    podcast = Podcast.objects.get(
-                Q(name=message.text) & Q(subscribers=user))
-    subscription = user.subscriptions.get(podcast=podcast)  # ⚠️ 待优化
+    podcast = None
+    try:
+        podcast = Podcast.objects.get(
+                    Q(name=message.text) & Q(subscribers=user))
+    except Exception as e:
+        podcast = Podcast.objects(subscribers=user).search_text(message.text).first()
+    finally:
+        if not podcast:
+            run_async(message.reply_text, '抱歉，没能理解这条指令。')
+            return
 
-    if subscription.is_fav:
-        kwargs.update(
-            {
-                'fav_text': "⭐️",
-                'fav_action': 'unfav_podcast'
-            }
+        if user in podcast.fav_subscribers:
+            kwargs.update(
+                {
+                    'fav_text': "⭐️",
+                    'fav_action': 'unfav_podcast'
+                }
+            )
+
+        page = PodcastPage(podcast, **kwargs)
+        update.message.reply_text(
+            text=page.text(),
+            reply_markup=InlineKeyboardMarkup(page.keyboard()),
+            parse_mode = "HTML"
         )
-
-    page = PodcastPage(podcast, **kwargs)
-    update.message.reply_text(
-        text=page.text(),
-        reply_markup=InlineKeyboardMarkup(page.keyboard())
-    )
-    run_async(update.message.delete)
-    # except Exception as e:
-        # run_async(message.reply_text, '抱歉，没能理解您的指令。')
+        run_async(update.message.delete)
 
 
 def handle_audio(update, context):
     message = update.message
     if not (message and (message.from_user.id == 777000)):
         return
-    match = re.match(r'🎙️ (.+?)\n总第 ([0-9]+) 期', message.caption)
-    name, index = match[1], int(match[2])  # ⚠️ name换成id
-    podcast = Podcast.objects(name=name).only('episodes').first()
-    episode = podcast.episodes[-index]
-    episode.message_id = message.forward_from_message_id
-    episode.file_id = message.audio.file_id
-    kwargs = {f'set__episodes__{len(podcast.episodes)-index}':episode}
-    podcast.update(**kwargs)
-    # podcast.reload()
+    match = re.match(r'🎙️ .+?\n总第 ([0-9]+) 期', message.caption)
+    index = int(match[1])
+    podcast_id = list(message.parse_caption_entities().values())[-1].replace('#', '')
+    podcast = Podcast.objects(id=podcast_id).only('episodes').first()
+    episodes = podcast.episodes
+    episodes[-index].message_id = message.forward_from_message_id
+    episodes[-index].file_id = message.audio.file_id
+    podcast.update(set__episodes=episodes)
+    podcast.reload()

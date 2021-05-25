@@ -1,10 +1,10 @@
 from telegram.ext import Updater
 from config import update_info, webhook_info, webhook_setting, Mongo, dev_user_id
 from castpod.handlers import register_handlers
+from castpod.models import Podcast
 # from castpod.stats import register as register_stats
 from mongoengine import connect
 import datetime
-
 updater = Updater(**update_info)
 dispatcher = updater.dispatcher
 
@@ -14,8 +14,6 @@ dispatcher = updater.dispatcher
 # Use these methods before you move your bot to another local server:
 # updater.bot.delete_webhook()
 # updater.bot.close()
-
-## 部署建议：#webhook 和 #polling 两种方法择其一，建议从 polling 直接上手，无需更多配置。注释掉含 #webhook 的语句、取消注释含 polling 的语句即可。
 
 # Webhook:
 updater.start_webhook(**webhook_info)  # Webhook
@@ -29,23 +27,23 @@ connection = dispatcher.run_async(
     # host=Mongo.remote_host # for remote test
 )
 
+register_handlers(dispatcher)
+# register_stats(dispatcher)
+
 def make_job(i):
     def job(context):
         context.bot.send_message(dev_user_id, 'job started')
-        podcasts = Podcast.objects.all().only('_id')
-        context.bot.send_message(dev_user_id, f'`{podcasts}`')
+        podcasts = Podcast.objects(job_group=i)
+        # context.bot.send_message(dev_user_id, f'`{podcasts}`')
         for podcast in podcasts:
-            if i in podcast.job_group:
-                podcast.check_update()
+            podcast.check_update(context)
     return job
 
 for i in range(48):
-    time = datetime.time(hour=i//2, minute=i*30 % 60)
-    dispatcher.job_queue.run_daily(
-        make_job(i), time, name=f'update_podcast_group_{i}')
-
-register_handlers(dispatcher)
-# register_stats(dispatcher)
+    interval = 15
+    time = datetime.time(hour=i // (60 // interval), minute=i * interval % 60)
+    # dispatcher.job_queue.run_daily(
+    #     make_job(i), time, name=f'update_podcast_group_{i}')
 
 if connection.result():
     print('MongoDB Connected!')

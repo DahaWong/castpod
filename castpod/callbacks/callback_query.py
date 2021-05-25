@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
-from castpod.utils import delete_manage_starter, save_manage_starter
+from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml
 from castpod.callbacks.command import manage
 from config import manifest
 import re
@@ -14,7 +14,7 @@ def delete_message(update, context):
 def logout(update, context):
     context.dispatcher.run_async(
         update.callback_query.edit_message_text,
-        text="注销账号之前，您可能希望导出订阅数据？",
+        text="注销账号之前，也许希望先导出订阅数据？",
         reply_markup=InlineKeyboardMarkup.from_row([
             InlineKeyboardButton(
                 "直接注销", callback_data="delete_account"),
@@ -36,7 +36,7 @@ def delete_account(update, context):
         run_async(
             bot.send_message,
             chat_id=user.user_id,
-            text='您的账号已注销～',
+            text='账号已注销，感谢这段时间的使用',
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
                     '重新开始', url=f"https://t.me/{manifest.bot_id}?start=login")
@@ -97,7 +97,7 @@ def unsubscribe_podcast(update, context):
             InlineKeyboardButton("退订", callback_data=f"confirm_unsubscribe_{podcast_id}")]
         )
     )
-    run_async(query.answer, f"退订后，您将不会收到 {podcast_name} 的更新。")
+    run_async(query.answer, f"退订后，未来将不会收到 {podcast_name} 的更新。")
 
 
 def confirm_unsubscribe(update, context):
@@ -109,7 +109,7 @@ def confirm_unsubscribe(update, context):
     user.unsubscribe(podcast)
 
     manage_page = ManagePage(
-        podcasts=Podcast.of_subscriber(user, 'name'),
+        podcasts=Podcast.subscribe_by(user, 'name'),
         text=f'`{podcast.name}` 退订成功'
     )
     run_async(query.message.delete)
@@ -129,7 +129,7 @@ def back_to_actions(update, context):
     user = User.objects.get(user_id=query.from_user.id)
     podcast_id = re.match(r'back_to_actions_(.+)', query.data)[1]
     podcast = Podcast.objects.get(id=podcast_id)
-    if user.subscriptions.get(podcast=podcast).is_fav:
+    if user in podcast.fav_subscribers:
         page = PodcastPage(podcast, fav_text="⭐️",
                            fav_action="unfav_podcast")
     else:
@@ -138,22 +138,23 @@ def back_to_actions(update, context):
         query.edit_message_text,
         text=page.text(),
         reply_markup=InlineKeyboardMarkup(
-            page.keyboard())
+            page.keyboard()),
+        parse_mode = "HTML"
     )
 
 
 def export(update, context):
     run_async = context.dispatcher.run_async
-    # ⚠️ 简化 userid 的获得，也许 update.effective_user 就可以:
     user = User.validate_user(update.effective_user)
     message = update.callback_query.message
-    if not user.subscriptions:
-        run_async(message.reply_text, '您还没有订阅播客，请先订阅再导出～')
+    podcasts = Podcast.objects(subscribers__in=[user])
+    if not podcasts:
+        run_async(message.reply_text, '还没有订阅播客，请先订阅再导出')
         return
     run_async(
         message.reply_document,
         filename=f"{user.username} 的 {manifest.name} 订阅.xml",
-        document=user.generate_opml(),
+        document=generate_opml(user),
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
                 '注销账号', callback_data='delete_account')
