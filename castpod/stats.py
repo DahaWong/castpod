@@ -13,5 +13,5 @@
 #     )
 #     register_stats(
 #         SimpleStats(
-#             'inline', lambda u: bool(u.inline_query and u.inline_query.query))
+#             'ilq', lambda u: bool(u.inline_query and u.inline_query.query))
 #     )

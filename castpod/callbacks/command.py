@@ -60,24 +60,6 @@ def start(update, context):
 
 
 @delete_update_message
-def favourites(update, context):
-    run_async = context.dispatcher.run_async
-    buttons = [
-        InlineKeyboardButton(
-            '播  客  收  藏', switch_inline_query_current_chat='p'),
-        #  InlineKeyboardButton('单 集', switch_inline_query_current_chat='e')],
-        InlineKeyboardButton(
-            '订  阅  列  表', switch_inline_query_current_chat='')
-    ]
-
-    run_async(
-        update.message.reply_text,
-        text='⭐️',
-        reply_markup=InlineKeyboardMarkup.from_column(buttons)
-    )
-
-
-@delete_update_message
 def manage(update, context):
     run_async = context.dispatcher.run_async
     user = User.validate_user(update.effective_user)
@@ -91,19 +73,19 @@ def manage(update, context):
     ).result()
     save_manage_starter(context.chat_data, msg)
 
+
 @delete_update_message
-def help(update, context):
+def help_(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
     run_async(
         message.reply_text,
-        text=f"*{manifest.name} 使用说明*\n\n",
+        text=f"[{manifest.name} 入门指南](https://github.com/DahaWong/castpod/wiki/%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97)\n\n",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("导出播客", callback_data="export"),
-             InlineKeyboardButton('偏好设置', callback_data="settings")],
             [InlineKeyboardButton('注销账号', callback_data="logout"),
-             InlineKeyboardButton('更多信息', callback_data="about")]
+             InlineKeyboardButton("更多信息", callback_data="about"),
+             InlineKeyboardButton('偏好设置', callback_data="settings")],
+            [InlineKeyboardButton('关闭', callback_data="delete_message"),
+             InlineKeyboardButton('导出订阅', callback_data="export")]
         ])
     )
-
-

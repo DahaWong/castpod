@@ -28,7 +28,7 @@ connection = dispatcher.run_async(
 )
 
 register_handlers(dispatcher)
-# register_stats(dispatcher)
+# register_stats(dispatcher) # stats
 
 def make_job(i):
     def job(context):
@@ -42,8 +42,8 @@ def make_job(i):
 for i in range(48):
     interval = 15
     time = datetime.time(hour=i // (60 // interval), minute=i * interval % 60)
-    # dispatcher.job_queue.run_daily(
-    #     make_job(i), time, name=f'update_podcast_group_{i}')
+    dispatcher.job_queue.run_daily(
+        make_job(i), time, name=f'update_podcast_group_{i}')
 
 if connection.result():
     print('MongoDB Connected!')

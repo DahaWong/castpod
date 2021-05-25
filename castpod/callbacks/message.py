@@ -12,7 +12,7 @@ import re
 def subscribe_feed(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
-    chat_type = update.effective_chat.type # !应该用filter
+    chat_type = update.effective_chat.type  # !应该用filter
     run_async(
         context.bot.send_chat_action,
         chat_id=message.chat_id,
@@ -45,8 +45,8 @@ def subscribe_feed(update, context):
         run_async(message.reply_text,
                   text=podcast_page.text(),
                   reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
-                  parse_mode = "HTML"
-        )
+                  parse_mode="HTML"
+                  )
         run_async(message.delete)
     except Exception as e:
         run_async(subscribing_message.edit_text, "订阅失败，可能是因为订阅源损坏 :(")
@@ -128,12 +128,12 @@ def download_episode(update, context):
     bot.send_chat_action(chat_id, ChatAction.RECORD_AUDIO)
     match = re.match(r'🎙️ (.+) #([0-9]+)', message.text)
     user = User.validate_user(update.effective_user)
-    # podcast = Podcast.objects.get(name=match[1]) 
+    # podcast = Podcast.objects.get(name=match[1])
     podcast = Podcast.objects.get(
-                Q(name=match[1]) & Q(subscribers=user))  # ⚠️ name改成id，且这一段代码与 handle_audio 重复
+        Q(name=match[1]) & Q(subscribers=user))  # ⚠️ name改成id，且这一段代码与 handle_audio 重复
     context.user_data.update({'podcast': podcast.name, 'chat_id': chat_id})
     index = int(match[2])
-    episode = podcast.episodes[-index]
+    episode = podcast.episodes[index-1]
     bot.send_chat_action(
         chat_id,
         ChatAction.UPLOAD_AUDIO
@@ -216,11 +216,12 @@ def show_podcast(update, context):
     podcast = None
     try:
         podcast = Podcast.objects.get(
-                    Q(name=message.text) & Q(subscribers=user))
+            Q(name=message.text) & Q(subscribers=user))
     except Exception as e:
-        podcast = Podcast.objects(subscribers=user).search_text(message.text).first()
+        podcast = Podcast.objects(
+            subscribers=user).search_text(message.text).first()
     finally:
-        if not podcast:
+        if not podcast and message != '🔍': #！！！！！！
             run_async(message.reply_text, '抱歉，没能理解这条指令。')
             return
 
@@ -236,7 +237,7 @@ def show_podcast(update, context):
         update.message.reply_text(
             text=page.text(),
             reply_markup=InlineKeyboardMarkup(page.keyboard()),
-            parse_mode = "HTML"
+            parse_mode="HTML"
         )
         run_async(update.message.delete)
 
@@ -247,10 +248,20 @@ def handle_audio(update, context):
         return
     match = re.match(r'🎙️ .+?\n总第 ([0-9]+) 期', message.caption)
     index = int(match[1])
-    podcast_id = list(message.parse_caption_entities().values())[-1].replace('#', '')
+    podcast_id = list(message.parse_caption_entities().values()
+                      )[-1].replace('#', '')
     podcast = Podcast.objects(id=podcast_id).only('episodes').first()
     episodes = podcast.episodes
-    episodes[-index].message_id = message.forward_from_message_id
-    episodes[-index].file_id = message.audio.file_id
+    episodes[index-1].message_id = message.forward_from_message_id
+    episodes[index-1].file_id = message.audio.file_id
     podcast.update(set__episodes=episodes)
     podcast.reload()
+
+def search_podcast(update, context):
+    update.message.reply_text(
+        text="🔎",
+        reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    '搜索播客', switch_inline_query_current_chat='')
+            )
+    )

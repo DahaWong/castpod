@@ -1,8 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
-from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml, delete_update_message
-from castpod.callbacks.command import help
+from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml
 from config import manifest
 import re
 
@@ -14,13 +13,15 @@ def delete_message(update, context):
 def logout(update, context):
     context.dispatcher.run_async(
         update.callback_query.edit_message_text,
-        text="注销账号之前，也许希望先导出订阅数据？",
-        reply_markup=InlineKeyboardMarkup.from_row([
+        text="注销账号之前，也许您希望先导出订阅数据？",
+        reply_markup=InlineKeyboardMarkup([[
             InlineKeyboardButton(
-                "直接注销", callback_data="delete_account"),
+                "不，直接注销", callback_data="confirm_delete_account"),
             InlineKeyboardButton(
-                "导出订阅", callback_data="export")
-        ])
+                "导出订阅", callback_data="export_before_logout")], [
+            InlineKeyboardButton(
+                "返回", callback_data="back_to_help")
+        ]])
     )
 
 
@@ -36,7 +37,7 @@ def delete_account(update, context):
         run_async(
             bot.send_message,
             chat_id=user.user_id,
-            text='账号已注销，感谢这段时间的使用',
+            text='账号已注销，感谢您这段时间的使用！',
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
                     '重新开始', url=f"https://t.me/{manifest.bot_id}?start=login")
@@ -143,32 +144,52 @@ def back_to_actions(update, context):
     )
 
 
-def export(update, context):
+def export_before_logout(update, context):
     run_async = context.dispatcher.run_async
     user = User.validate_user(update.effective_user)
     message = update.callback_query.message
     podcasts = Podcast.objects(subscribers__in=[user])
     if not podcasts:
-        run_async(message.reply_text, '还没有订阅播客，请先订阅再导出')
+        run_async(message.reply_text, '还没有订阅播客，请先订阅后导出~')
         return
     subscribed_podcasts = Podcast.subscribe_by(user)
     run_async(
         message.reply_document,
         filename=f"{user.username} 的 {manifest.name} 订阅.xml",
         document=generate_opml(user, subscribed_podcasts),
-        reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton(
-                '注销账号', callback_data='delete_account')
-        )
+        reply_markup=InlineKeyboardMarkup.from_column(
+            [InlineKeyboardButton("继续注销账号", callback_data="confirm_delete_account"),
+             InlineKeyboardButton(
+                 "返回帮助界面", callback_data="back_to_help")
+             ])
+    )
+    message.delete()
+
+
+def export(update, context):
+    run_async = context.dispatcher.run_async
+    user = User.validate_user(update.effective_user)
+    message = update.callback_query.message
+    podcasts = Podcast.objects(subscribers__in=[user])
+    if not podcasts:
+        run_async(message.reply_text, '还没有订阅播客，请先订阅后导出~')
+        return
+    subscribed_podcasts = Podcast.subscribe_by(user)
+    run_async(
+        message.reply_document,
+        filename=f"{user.username} 的 {manifest.name} 订阅.xml",
+        document=generate_opml(user, subscribed_podcasts)
     )
 
 # Help
-def logout(update, context):
-    keyboard = [[InlineKeyboardButton("返回", callback_data=f"back_to_help"),
-                 InlineKeyboardButton("注销", callback_data="logout")]]
+
+
+def confirm_delete_account(update, context):
+    keyboard = [[InlineKeyboardButton("注销", callback_data="delete_account"),
+                 InlineKeyboardButton("返回", callback_data=f"back_to_help")]]
 
     update.callback_query.edit_message_text(
-        "确认注销账号吗？\n",
+        "确认注销账号吗？该操作将会*清除您的全部数据*\n",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -176,11 +197,15 @@ def logout(update, context):
 
 
 def settings(update, context):
-    keyboard = [[InlineKeyboardButton('显示设置', callback_data="display_setting")], [
-        InlineKeyboardButton('返回', callback_data="back_to_help")]]
+    keyboard = [
+        [InlineKeyboardButton('外观设置', callback_data="display_setting"),
+         InlineKeyboardButton('推送设置', callback_data="feed_setting"),
+         InlineKeyboardButton('主播设置', callback_data="host_setting"),
+         ],
+        [InlineKeyboardButton('返回', callback_data="back_to_help")]]
     msg = context.dispatcher.run_async(
         update.callback_query.edit_message_text,
-        text=f'已启动设置面板',
+        text=f'请选择想要编辑的偏好设置：',
         reply_markup=InlineKeyboardMarkup(keyboard)
     ).result()
     save_manage_starter(context.chat_data, msg)
@@ -205,11 +230,52 @@ def about(update, context):
 def back_to_help(update, context):
     context.dispatcher.run_async(
         update.callback_query.edit_message_text,
-        text=f"*{manifest.name} 使用说明*\n\n",
+        text=f"[{manifest.name} 入门指南](https://github.com/DahaWong/castpod/wiki/%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97)\n\n",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("导出播客", callback_data="export"),
-             InlineKeyboardButton('偏好设置', callback_data="settings")],
             [InlineKeyboardButton('注销账号', callback_data="logout"),
-             InlineKeyboardButton('更多信息', callback_data="about")]
+             InlineKeyboardButton("更多信息", callback_data="about"),
+             InlineKeyboardButton('偏好设置', callback_data="settings")],
+            [InlineKeyboardButton('关闭', callback_data="delete_message"),
+             InlineKeyboardButton('导出订阅', callback_data="export")]
         ])
+    )
+
+# settings
+
+
+def display_setting(update, context):
+    context.dispatcher.run_async(
+        update.callback_query.edit_message_text,
+        text=f"点击修改外观设置：",
+        reply_markup=InlineKeyboardMarkup.from_column(
+            [InlineKeyboardButton("显示时间线    ✓", callback_data="toggle_timeline"),
+             InlineKeyboardButton(
+                 '倒序显示单集    ✓', callback_data="toggle_episodes_order"),
+             InlineKeyboardButton(
+                 '返回', callback_data="settings"),
+             ]
+        )
+    )
+
+
+def feed_setting(update, context):
+    context.dispatcher.run_async(
+        update.callback_query.edit_message_text,
+        text=f"点击修改推送设置：",
+        reply_markup=InlineKeyboardMarkup.from_column(
+            [InlineKeyboardButton("更新频率    60 分钟", callback_data="feed_freq"),
+             InlineKeyboardButton('返回', callback_data="settings")
+             ])
+    )
+
+
+def host_setting(update, context):
+    context.dispatcher.run_async(
+        update.callback_query.edit_message_text,
+        text=f"*主播设置*",
+        reply_markup=InlineKeyboardMarkup.from_column(
+            [InlineKeyboardButton("申请主播认证", callback_data="request_host"),
+             InlineKeyboardButton('返回', callback_data="settings")
+             ]
+        )
     )
