@@ -1,10 +1,11 @@
 from castpod.models import User, Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
 from castpod.components import PodcastPage, ManagePage
-from config import podcast_vault, manifest, dev_user_id
+from config import podcast_vault, manifest, dev
 from castpod.utils import delete_update_message, local_download, parse_doc, delete_manage_starter
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
+from ..constants import SPEAKER_MARK
 import re
 # @is_group??
 
@@ -114,7 +115,7 @@ def save_subscription(update, context):
             message.reply_text, (
                 f"订阅失败 :(\n"
                 f"请检查订阅文件是否完好无损；"
-                f"若文件没有问题，请私信[开发者](tg://user?id={dev_user_id})。"
+                f"若文件没有问题，请私信[开发者](tg://user?id={dev})。"
             )
         )
         raise e
@@ -126,7 +127,7 @@ def download_episode(update, context):
     chat_id = message.chat_id
     fetching_note = bot.send_message(chat_id, "获取节目中…")
     bot.send_chat_action(chat_id, ChatAction.RECORD_AUDIO)
-    match = re.match(r'🎙️ (.+) #([0-9]+)', message.text)
+    match = re.match(f'{SPEAKER_MARK} (.+) #([0-9]+)', message.text)
     user = User.validate_user(update.effective_user)
     # podcast = Podcast.objects.get(name=match[1])
     podcast = Podcast.objects.get(
@@ -157,7 +158,7 @@ def download_episode(update, context):
                 chat_id=f'@{podcast_vault}',
                 audio=audio_file,
                 caption=(
-                    f"🎙️ *{podcast.name}*\n"
+                    f"{SPEAKER_MARK} *{podcast.name}*\n"
                     f"总第 {index} 期\n\n"
                     f"[订阅](https://t.me/{manifest.bot_id}?start={podcast.id})"
                     f" | [相关链接]({episode.shownotes_url or episode.set_shownotes_url(episode.title, podcast.name)})\n\n"
@@ -177,7 +178,7 @@ def download_episode(update, context):
         context.user_data.clear()
     forwarded_message.edit_caption(
         caption=(
-            f"🎙️ <b>{podcast.name}</b>\n\n"
+            f"{SPEAKER_MARK} <b>{podcast.name}</b>\n\n"
             f"<a href='{episode.shownotes_url or podcast.website}'>相关链接</a>  |  "
             f"<a href='https://t.me/{podcast_vault}/{forward_from_message}'>留言区</a>\n\n"
             f"{episode.timeline or episode.set_timeline()}"
@@ -221,7 +222,7 @@ def show_podcast(update, context):
         podcast = Podcast.objects(
             subscribers=user).search_text(message.text).first()
     finally:
-        if not podcast and message != '🔍': #！！！！！！
+        if not podcast:
             run_async(message.reply_text, '抱歉，没能理解这条指令。')
             return
 
@@ -246,7 +247,7 @@ def handle_audio(update, context):
     message = update.message
     if not (message and (message.from_user.id == 777000)):
         return
-    match = re.match(r'🎙️ .+?\n总第 ([0-9]+) 期', message.caption)
+    match = re.match(f'{SPEAKER_MARK} .+?\n总第 ([0-9]+) 期', message.caption)
     index = int(match[1])
     podcast_id = list(message.parse_caption_entities().values()
                       )[-1].replace('#', '')
@@ -257,11 +258,12 @@ def handle_audio(update, context):
     podcast.update(set__episodes=episodes)
     podcast.reload()
 
+
 def search_podcast(update, context):
     update.message.reply_text(
         text="🔎",
         reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton(
-                    '搜索播客', switch_inline_query_current_chat='')
-            )
+            InlineKeyboardButton(
+                '搜索播客', switch_inline_query_current_chat='')
+        )
     )

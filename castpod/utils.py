@@ -5,7 +5,7 @@ import errno
 import os
 import re
 from functools import wraps
-from config import bot_token, manifest
+from config import bot_token, manifest, dev
 
 # iTunes Search API
 

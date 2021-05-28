@@ -1,4 +1,5 @@
 from castpod.callbacks import *
+from .constants import QUIT_MARK, SPEAKER_MARK
 from telegram.ext import MessageHandler, Filters, InlineQueryHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 import inspect
 
@@ -22,9 +23,9 @@ def register_handlers(dispatcher):
         MessageHandler(
             (Filters.via_bot(dispatcher.bot.get_me().id) | Filters.chat_type.private) & Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
         MessageHandler(
-            Filters.regex(r'🎙️ (.+) #([0-9]+)'), message.download_episode, run_async=True),
+            Filters.regex(f'{SPEAKER_MARK} (.+) #([0-9]+)'), message.download_episode, run_async=True),
         MessageHandler(
-            Filters.regex(r'^╳$'),
+            Filters.regex(f'^{QUIT_MARK}$'),
             message.exit_reply_keyboard,
             run_async=True
         ),
@@ -41,22 +42,23 @@ def register_handlers(dispatcher):
             message.save_subscription,
             run_async=True
         ),
-        MessageHandler(
-            (
-                Filters.reply |
-                Filters.via_bot(dispatcher.bot.get_me().id) |
-                Filters.chat_type.private
-            ) &
-            Filters.text, message.show_podcast
-        ),
+        # MessageHandler(
+        #     (
+        #         Filters.reply |
+        #         Filters.via_bot(dispatcher.bot.get_me().id) |
+        #         Filters.chat_type.private
+        #     ) &
+        #     Filters.text, message.show_podcast
+        # ),
         MessageHandler(Filters.chat(username="podcast_vault_chat")
                        & Filters.audio, message.handle_audio),
         InlineQueryHandler(inline_query.handle_inline_query),
         ConversationHandler(
             entry_points=[conversation.request_host_handler],
             states={
-                RSS: conversation.parse_rss_handler,
-                PHOTO: conversation.verify_info_handler
+                RSS: [conversation.rss_handler, conversation.explain_rss_handler],
+                CONFIRM: [conversation.confirm_podcast_handler, conversation.deny_confirm_handler],
+                PHOTO: [conversation.photo_handler]
             },
             fallbacks=[conversation.fallback_handler],
             allow_reentry=True,

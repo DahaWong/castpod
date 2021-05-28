@@ -1,7 +1,6 @@
 import re
 import random
 import datetime
-import uuid
 from time import mktime
 import feedparser
 from mongoengine import PULL, NULLIFY
@@ -10,9 +9,10 @@ from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentFiel
 from mongoengine.queryset.manager import queryset_manager
 from telegram.error import TimedOut
 from castpod.utils import local_download
-from config import podcast_vault, dev_user_id, manifest
+from config import podcast_vault, dev, manifest
 from telegraph import Telegraph
 from html import unescape
+from .constants import SPEAKER_MARK
 
 telegraph = Telegraph()
 telegraph.create_account(
@@ -21,10 +21,12 @@ telegraph.create_account(
     author_url=f'https://t.me/{manifest.bot_id}'
 )
 
+
 class Setting(EmbeddedDocument):
     timeline_displayed = BooleanField(default=True)
     episodes_order_reversed = BooleanField(default=True)
-    feed_freq = IntField(default=60) # minutes
+    feed_freq = IntField(default=60)  # minutes
+
 
 class User(Document):
     # meta = {'queryset_class': UserQuerySet}
@@ -44,9 +46,10 @@ class User(Document):
     def subscribe(self, podcast):
         if self in podcast.subscribers:
             return
-        if not podcast.name: # if podcast never been initialized, ..
+        if not podcast.name:  # if podcast never been initialized, ..
             result = podcast.parse_feed()
-            if not result: return
+            if not result:
+                return
             podcast.update_feed(result, init=True)
         podcast.update(push__subscribers=self)
 
@@ -93,8 +96,10 @@ class Episode(Document):
         return self.shownotes_url
 
     def set_content(self, logo):
-        img_content = f"<img src='{logo}'>" if logo and ('img' not in self.shownotes) else ''
-        self.shownotes = img_content + self.replace_invalid_tags(self.shownotes)
+        img_content = f"<img src='{logo}'>" if logo and (
+            'img' not in self.shownotes) else ''
+        self.shownotes = img_content + \
+            self.replace_invalid_tags(self.shownotes)
         return self.shownotes
 
     def set_timeline(self):
@@ -113,6 +118,7 @@ class Episode(Document):
         html_content = html_content.replace('’', "'")
         return html_content
 
+
 class Podcast(Document):
     # meta = {'queryset_class': PodcastQuerySet}
     feed = StringField(required=True, unique=True)
@@ -120,14 +126,15 @@ class Podcast(Document):
     logo = StringField()
     host = StringField()
     website = StringField()
-    email = StringField() # !!!
-    channel = IntField() # 播客绑定的单独分发频道，由认证主播控制
-    group = IntField() # 播客绑定的群组
-    admin = ReferenceField(User, reverse_delete_rule=NULLIFY) # 认证的主播，暨 telegram 管理员
+    email = StringField()  # !!!
+    channel = IntField()  # 播客绑定的单独分发频道，由认证主播控制
+    group = IntField()  # 播客绑定的群组
+    # 认证的主播，暨 telegram 管理员
+    admin = ReferenceField(User, reverse_delete_rule=NULLIFY)
     episodes = ListField(ReferenceField(Episode, reverse_delete_rule=PULL))
     subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
     fav_subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
-    updated_time = DateTimeField(default=datetime.datetime(1970,1,1))
+    updated_time = DateTimeField(default=datetime.datetime(1970, 1, 1))
     last_updated_time = DateTimeField()
     job_group = ListField(IntField(min_value=0, max_value=47))
 
@@ -135,7 +142,7 @@ class Podcast(Document):
         {'fields': ['$name', "$host"],
          'default_language': 'english',
          'weights': {'name': 10, 'host': 2}
-        }
+         }
     ]}
 
     @classmethod
@@ -165,37 +172,42 @@ class Podcast(Document):
         if str(result.status)[0] != '2' and str(result.status)[0] != '3':
             self.delete()
             raise Exception(f'Feed open error, status: {result.status}')
-        if not result.entries: 
+        if not result.entries:
             self.delete()
             print('feed has no entries!')
             # raise Exception(f'Feed has no entries.')
             return
-        updated_time = result.feed.get('updated_parsed') or result.entries[0].updated_parsed
-        self.updated_time = datetime.datetime.fromtimestamp(mktime(updated_time))
+        updated_time = result.feed.get(
+            'updated_parsed') or result.entries[0].updated_parsed
+        self.updated_time = datetime.datetime.fromtimestamp(
+            mktime(updated_time))
         self.save()
         return result
 
     def check_update(self, context):
         result = self.parse_feed()
-        if not result : return
+        if not result:
+            return
         self.last_updated_time = self.episodes[-1].published_time
         if self.last_updated_time < self.updated_time:
-            context.bot.send_message(dev_user_id, f'`{self.name}` 有更新：\n\n上次发布\n`{self.last_updated_time}`\n\n最近发布\n`{self.updated_time}`')
+            context.bot.send_message(
+                dev, f'`{self.name}` 有更新：\n\n上次发布\n`{self.last_updated_time}`\n\n最近发布\n`{self.updated_time}`')
             self.update_feed(result, init=False)
-            context.bot.send_message(dev_user_id, '更新结束，进入下载阶段')
+            context.bot.send_message(dev, '更新结束，进入下载阶段')
         else:
-            context.bot.send_message(dev_user_id, f'`{self.name}：未检测到更新`')
+            context.bot.send_message(dev, f'`{self.name}：未检测到更新`')
         for i, episode in enumerate(self.episodes):
             if episode.is_downloaded:
                 continue
-            context.bot.send_message(dev_user_id, f'开始下载 `{self.name}`：`{episode.title}`…')
+            context.bot.send_message(
+                dev, f'开始下载 `{self.name}`：`{episode.title}`…')
             try:
                 audio_file = local_download(episode, context)
                 context.bot.send_audio(
                     chat_id=f'@{podcast_vault}',
                     audio=audio_file,
                     caption=(
-                        f"🎙️ *{self.name}*\n"
+                        f"{SPEAKER_MARK} *{self.name}*\n"
                         f"总第 {len(self.episodes) - i} 期\n\n"
                         f"[订阅](https://t.me/{manifest.bot_id}?start={self.id})"
                         f" | [相关链接]({episode.shownotes_url or episode.set_shownotes_url(episode.title, self.name)})\n\n"
@@ -216,7 +228,7 @@ class Podcast(Document):
             episode.is_new = True
             episode.save()
         self.save()
-    
+
     def update_feed(self, result, init):
         feed = result.feed
         if not feed.get('title'):
@@ -251,10 +263,10 @@ class Podcast(Document):
                 # self.update(set__episodes=self.episodes)
                 self.update(push__episodes__0=episode)
                 self.save()
-            elif not init: # 一旦发现没有更新，就停止检测
+            elif not init:  # 一旦发现没有更新，就停止检测
                 break
         self.save()
-    
+
     def set_job_group(self):
         i = random.randint(0, 47)
         self.job_group = [i % 48 for i in range(i, i + 41, 8)]
@@ -264,14 +276,14 @@ class Podcast(Document):
         published_time = datetime.datetime.fromtimestamp(
             mktime(item.published_parsed))
 
-        if not item.get('enclosures'): 
+        if not item.get('enclosures'):
             return
 
         if not init:
             if (published_time <= self.last_updated_time):
                 print(published_time)
                 return
-            episode = Episode(is_downloaded=False, is_new = True)
+            episode = Episode(is_downloaded=False, is_new=True)
         else:
             episode = Episode()
 
@@ -283,12 +295,13 @@ class Podcast(Document):
         #     if match:
         #         size = match[1]
 
-        episode.url=audio.get('href')
+        episode.url = audio.get('href')
         episode.size = audio.get('length') or 0
         episode.size = int(episode.size)
-        episode.performer=self.name
-        episode.logo=item.get('image').href if item.get('image') else self.logo
-        episode.duration=self.set_duration(item.get('itunes_duration'))
+        episode.performer = self.name
+        episode.logo = item.get('image').href if item.get(
+            'image') else self.logo
+        episode.duration = self.set_duration(item.get('itunes_duration'))
 
         episode.link = item.get('link')
         episode.title = unescape(item.get('title') or '')
@@ -296,7 +309,8 @@ class Podcast(Document):
         if episode.title == episode.subtitle:
             episode.subtitle = ''
         episode.summary = unescape(item.get('summary') or '')
-        episode.shownotes = item.get('content')[0]['value'] if item.get('content') else episode.summary
+        episode.shownotes = item.get('content')[0]['value'] if item.get(
+            'content') else episode.summary
         episode.set_content(episode.logo)
         episode.published_time = datetime.datetime.fromtimestamp(
             mktime(item.published_parsed))

@@ -3,6 +3,7 @@ from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
 from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml
 from config import manifest
+from ..constants import TICK_MARK
 import re
 
 
@@ -248,9 +249,9 @@ def display_setting(update, context):
         update.callback_query.edit_message_text,
         text=f"点击修改外观设置：",
         reply_markup=InlineKeyboardMarkup.from_column(
-            [InlineKeyboardButton("显示时间线    ✓", callback_data="toggle_timeline"),
+            [InlineKeyboardButton(f"显示时间线    {TICK_MARK}", callback_data="toggle_timeline"),
              InlineKeyboardButton(
-                 '倒序显示单集    ✓', callback_data="toggle_episodes_order"),
+                 f'倒序显示单集    {TICK_MARK}', callback_data="toggle_episodes_order"),
              InlineKeyboardButton(
                  '返回', callback_data="settings"),
              ]
@@ -279,3 +280,22 @@ def host_setting(update, context):
              ]
         )
     )
+
+
+def confirm_host(update, context):
+    # re.match ...
+    # context.bot.send_message(
+    #   chat_id =
+    #   text = '恭喜，您已成功通过认证主播的初步审核！\n\n\n\n我们将发送一条最终确认消息到您在其他平台留下的官方联络地址，得到您的回复后即可完成主播认证。请留意您的信箱 :)
+    # )
+    pass
+
+
+def deny_host(update, context):
+    # re.match ...
+    # context.bot.send_message(
+    #   chat_id =
+    #   text = f'我们没能通过收到的图片资料核实您的主播身份，您可以重新发送资料或联系我们：\n\n{dev_email}',
+    #   reply_markup = InlineKeyboardMarkup.from_button('重新申请主播认证',callback_data='request_host')
+    # )
+    pass

@@ -19,7 +19,9 @@ defaults = Defaults(
 )
 
 # Dev
-dev_user_id = config['DEV']['USER_ID']
+dev = config['DEV']['USER_ID']
+dev_name = config['DEV']['USER_NAME']
+dev_email = config['DEV']['EMAIL']
 
 # Server
 webhook_port = int(config['WEBHOOK']['PORT'])
@@ -68,7 +70,7 @@ update_info = {
     'persistence': persistence,
     'base_url': bot_api,
     'defaults': defaults,
-    'workers':6
+    'workers': 6
 }
 
 

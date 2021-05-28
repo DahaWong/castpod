@@ -1,4 +1,4 @@
-from config import dev_user_id, manifest
+from config import dev, manifest
 import sys
 import html
 import traceback
@@ -23,7 +23,7 @@ import json
 #     trace = "".join(traceback.format_tb(sys.exc_info()[2]))
 #     text = f"{payload}触发了一个错误：`{context.error}`。\n\n"
 #     text += f"错误路径如下:\n`{trace}`" if trace else ''
-#     context.bot.send_message(dev_user_id, text)
+#     context.bot.send_message(dev, text)
 #     raise context.error
 
 import logging
@@ -59,5 +59,5 @@ def handle_error(update, context):
     )
 
     # Finally, send the message
-    context.bot.send_message(chat_id=dev_user_id,
+    context.bot.send_message(chat_id=dev,
                              text=message, parse_mode=ParseMode.HTML)

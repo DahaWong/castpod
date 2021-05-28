@@ -1,4 +1,5 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from .constants import QUIT_MARK, TICK_MARK, SPEAKER_MARK
 
 
 class PodcastPage(object):
@@ -12,7 +13,7 @@ class PodcastPage(object):
         email = f'\n✉️  {self.podcast.email}' if self.podcast.email else ''
         return (
             f'<b>{self.podcast.name}</b>'
-            f'\n<a href="{self.podcast.logo}">🎙️</a> {self.podcast.host or self.podcast.name}'
+            f'\n<a href="{self.podcast.logo}">{SPEAKER_MARK}</a> {self.podcast.host or self.podcast.name}'
             f'{email}'
         )
 
@@ -20,15 +21,15 @@ class PodcastPage(object):
         if self.mode == 'private':
             return [
                 [InlineKeyboardButton("退订", callback_data=f"unsubscribe_podcast_{self.podcast.id}"),
-                InlineKeyboardButton("关于", url=self.podcast.website),
-                InlineKeyboardButton(self.fav_text, callback_data=f"{self.fav_action}_{self.podcast.id}")],
+                 InlineKeyboardButton("关于", url=self.podcast.website),
+                 InlineKeyboardButton(self.fav_text, callback_data=f"{self.fav_action}_{self.podcast.id}")],
                 [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
-                InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
+                 InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
             ]
         elif self.mode == 'group':
             return [
                 [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
-                InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
+                 InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
             ]
 
 
@@ -47,7 +48,7 @@ class ManagePage(object):
         if not podcasts_count:
             return [['尚未开始订阅，点击出发寻找播客']]
         rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
-        return [['╳']]+[self.row(i) for i in range(rows_count)]
+        return [[QUIT_MARK]]+[self.row(i) for i in range(rows_count)]
 
 
 class Tips(object):
@@ -58,7 +59,7 @@ class Tips(object):
     def keyboard(self):
         return InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
-                "✓", callback_data=f'close_tips_{self.command}')
+                TICK_MARK, callback_data=f'close_tips_{self.command}')
         )
 
     def send(self, update, context):
