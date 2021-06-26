@@ -5,7 +5,7 @@ import errno
 import os
 import re
 from functools import wraps
-from config import bot_token, manifest
+from config import bot_token, manifest, dev
 
 # iTunes Search API
 
@@ -122,7 +122,8 @@ def delete_update_message(func):
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
         func(update, context, *args, **kwargs)
-        context.dispatcher.run_async(update.effective_message.delete)
+        if update.message:
+            context.dispatcher.run_async(update.effective_message.delete)
     return wrapped
 
 

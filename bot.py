@@ -1,5 +1,5 @@
 from telegram.ext import Updater
-from config import update_info, webhook_info, webhook_setting, Mongo, dev_user_id
+from config import update_info, webhook_info, webhook_setting, Mongo, dev
 from castpod.handlers import register_handlers
 from castpod.models import Podcast
 # from castpod.stats import register as register_stats
@@ -17,7 +17,7 @@ dispatcher = updater.dispatcher
 
 # Webhook:
 updater.start_webhook(**webhook_info)  # Webhook
-updater.bot.set_webhook(**webhook_setting) # Webhook
+updater.bot.set_webhook(**webhook_setting)  # Webhook
 
 connection = dispatcher.run_async(
     connect,
@@ -30,14 +30,16 @@ connection = dispatcher.run_async(
 register_handlers(dispatcher)
 # register_stats(dispatcher) # stats
 
+
 def make_job(i):
     def job(context):
-        context.bot.send_message(dev_user_id, 'job started')
+        context.bot.send_message(dev, 'job started')
         podcasts = Podcast.objects(job_group=i)
-        # context.bot.send_message(dev_user_id, f'`{podcasts}`')
+        # context.bot.send_message(dev, f'`{podcasts}`')
         for podcast in podcasts:
             podcast.check_update(context)
     return job
+
 
 for i in range(48):
     interval = 15

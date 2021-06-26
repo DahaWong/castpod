@@ -6,6 +6,7 @@ import re
 from config import manifest
 from castpod.models import User, Podcast
 import datetime
+from ..constants import SPEAKER_MARK
 
 
 def handle_inline_query(update, context):
@@ -106,7 +107,7 @@ def show_episodes(podcast):
             id=index,
             title=episode.title,
             input_message_content=InputTextMessageContent((
-                f"[🎙️]({podcast.logo}) *{podcast.name}* #{len(podcast.episodes)-index}"
+                f"[{SPEAKER_MARK}]({podcast.logo}) *{podcast.name}* #{len(podcast.episodes)-index}"
             )),
             reply_markup=InlineKeyboardMarkup.from_row(buttons),
             description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",

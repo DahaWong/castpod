@@ -2,7 +2,9 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
 from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml
+from .command import settings as command_settings
 from config import manifest
+from ..constants import TICK_MARK
 import re
 
 
@@ -196,37 +198,6 @@ def confirm_delete_account(update, context):
     # Tips('logout', "⦿ 这将清除所有存储在后台的个人数据。").send(update, context)
 
 
-def settings(update, context):
-    keyboard = [
-        [InlineKeyboardButton('外观设置', callback_data="display_setting"),
-         InlineKeyboardButton('推送设置', callback_data="feed_setting"),
-         InlineKeyboardButton('主播设置', callback_data="host_setting"),
-         ],
-        [InlineKeyboardButton('返回', callback_data="back_to_help")]]
-    msg = context.dispatcher.run_async(
-        update.callback_query.edit_message_text,
-        text=f'请选择想要编辑的偏好设置：',
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    ).result()
-    save_manage_starter(context.chat_data, msg)
-
-
-def about(update, context):
-    keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
-                 InlineKeyboardButton("工作室", url=manifest.author_url)],
-                [InlineKeyboardButton('返回', callback_data="back_to_help")]
-                ]
-    context.dispatcher.run_async(
-        update.callback_query.edit_message_text,
-        text=(
-            f"*{manifest.name}*  "
-            f"`{manifest.version}`"
-            f"\nby [{manifest.author}](https://t.me/{manifest.author_id})\n"
-        ),
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-
-
 def back_to_help(update, context):
     context.dispatcher.run_async(
         update.callback_query.edit_message_text,
@@ -241,16 +212,17 @@ def back_to_help(update, context):
     )
 
 # settings
-
+def settings(update, context):
+    command_settings(update, context)
 
 def display_setting(update, context):
     context.dispatcher.run_async(
         update.callback_query.edit_message_text,
         text=f"点击修改外观设置：",
         reply_markup=InlineKeyboardMarkup.from_column(
-            [InlineKeyboardButton("显示时间线    ✓", callback_data="toggle_timeline"),
+            [InlineKeyboardButton(f"显示时间线    {TICK_MARK}", callback_data="toggle_timeline"),
              InlineKeyboardButton(
-                 '倒序显示单集    ✓', callback_data="toggle_episodes_order"),
+                 f'倒序显示单集    {TICK_MARK}', callback_data="toggle_episodes_order"),
              InlineKeyboardButton(
                  '返回', callback_data="settings"),
              ]
@@ -279,3 +251,22 @@ def host_setting(update, context):
              ]
         )
     )
+
+
+def confirm_host(update, context):
+    # re.match ...
+    # context.bot.send_message(
+    #   chat_id =
+    #   text = '恭喜，您已成功通过认证主播的初步审核！\n\n\n\n我们将发送一条最终确认消息到您在其他平台留下的官方联络地址，得到您的回复后即可完成主播认证。请留意您的信箱 :)
+    # )
+    pass
+
+
+def deny_host(update, context):
+    # re.match ...
+    # context.bot.send_message(
+    #   chat_id =
+    #   text = f'我们没能通过收到的图片资料核实您的主播身份，您可以重新发送资料或联系我们：\n\n{dev_email}',
+    #   reply_markup = InlineKeyboardMarkup.from_button('重新申请主播认证',callback_data='request_host')
+    # )
+    pass

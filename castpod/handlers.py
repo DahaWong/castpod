@@ -1,6 +1,9 @@
 from castpod.callbacks import *
-from telegram.ext import MessageHandler, Filters, InlineQueryHandler, CommandHandler, CallbackQueryHandler
+from .constants import QUIT_MARK, SPEAKER_MARK
+from telegram.ext import MessageHandler, Filters, InlineQueryHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 import inspect
+
+RSS, CONFIRM, PHOTO = range(3)
 
 
 def register_handlers(dispatcher):
@@ -13,24 +16,25 @@ def register_handlers(dispatcher):
             handlers.append(callback_query_handler)
 
     handlers.extend([
-        CommandHandler('start', command.start, filters=Filters.chat_type.private, pass_args=True),
-        # CommandHandler('about', command.about),
+        CommandHandler('start', command.start,
+                       filters=Filters.chat_type.private, pass_args=True),
         CommandHandler('manage', command.manage),
-        # CommandHandler('export', command.export, filters=Filters.chat_type.private, run_async=True),
-        # CommandHandler('setting', command.setting, filters=Filters.chat_type.private, run_async=True),
+        CommandHandler('favorite', command.favorite),
+        CommandHandler('wander', command.wander),
+        CommandHandler('settings', command.settings),
         CommandHandler('help', command.help_, run_async=True),
-        # CommandHandler('logout', command.logout, filters=Filters.chat_type.private, run_async=True),
+        CommandHandler('about', command.about, run_async=True),
         MessageHandler(
             (Filters.via_bot(dispatcher.bot.get_me().id) | Filters.chat_type.private) & Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
         MessageHandler(
-            Filters.regex(r'🎙️ (.+) #([0-9]+)'), message.download_episode, run_async=True),
+            Filters.regex(f'{SPEAKER_MARK} (.+) #([0-9]+)'), message.download_episode, run_async=True),
         MessageHandler(
-            Filters.regex(r'^╳$'),
+            Filters.regex(f'^{QUIT_MARK}$'),
             message.exit_reply_keyboard,
             run_async=True
         ),
         MessageHandler(
-            Filters.regex(r'^尚未开始订阅，点击出发寻找播客$'),
+            Filters.regex(r'^您尚未开始订阅，点击出发寻找播客$'),
             message.search_podcast,
             run_async=True
         ),
@@ -42,16 +46,28 @@ def register_handlers(dispatcher):
             message.save_subscription,
             run_async=True
         ),
-        MessageHandler(
-            (
-                Filters.reply |
-                Filters.via_bot(dispatcher.bot.get_me().id) |
-                Filters.chat_type.private
-            ) &
-            Filters.text, message.show_podcast
-        ),
-        MessageHandler(Filters.chat(username="podcast_vault_chat") & Filters.audio, message.handle_audio),
-        InlineQueryHandler(inline_query.handle_inline_query)
+        # MessageHandler(
+        #     (
+        #         Filters.reply |
+        #         Filters.via_bot(dispatcher.bot.get_me().id) |
+        #         Filters.chat_type.private
+        #     ) &
+        #     Filters.text, message.show_podcast
+        # ),
+        MessageHandler(Filters.chat(username="podcast_vault_chat")
+                       & Filters.audio, message.handle_audio),
+        InlineQueryHandler(inline_query.handle_inline_query),
+        ConversationHandler(
+            entry_points=[conversation.request_host_handler],
+            states={
+                RSS: [conversation.rss_handler, conversation.explain_rss_handler],
+                CONFIRM: [conversation.confirm_podcast_handler, conversation.deny_confirm_handler],
+                PHOTO: [conversation.photo_handler]
+            },
+            fallbacks=[conversation.fallback_handler],
+            allow_reentry=True,
+            conversation_timeout=900
+        )
     ])
 
     for handler in handlers:
