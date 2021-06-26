@@ -2,6 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
 from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml
+from .command import settings as command_settings
 from config import manifest
 from ..constants import TICK_MARK
 import re
@@ -197,37 +198,6 @@ def confirm_delete_account(update, context):
     # Tips('logout', "⦿ 这将清除所有存储在后台的个人数据。").send(update, context)
 
 
-def settings(update, context):
-    keyboard = [
-        [InlineKeyboardButton('外观设置', callback_data="display_setting"),
-         InlineKeyboardButton('推送设置', callback_data="feed_setting"),
-         InlineKeyboardButton('主播设置', callback_data="host_setting"),
-         ],
-        [InlineKeyboardButton('返回', callback_data="back_to_help")]]
-    msg = context.dispatcher.run_async(
-        update.callback_query.edit_message_text,
-        text=f'请选择想要编辑的偏好设置：',
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    ).result()
-    save_manage_starter(context.chat_data, msg)
-
-
-def about(update, context):
-    keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
-                 InlineKeyboardButton("工作室", url=manifest.author_url)],
-                [InlineKeyboardButton('返回', callback_data="back_to_help")]
-                ]
-    context.dispatcher.run_async(
-        update.callback_query.edit_message_text,
-        text=(
-            f"*{manifest.name}*  "
-            f"`{manifest.version}`"
-            f"\nby [{manifest.author}](https://t.me/{manifest.author_id})\n"
-        ),
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-
-
 def back_to_help(update, context):
     context.dispatcher.run_async(
         update.callback_query.edit_message_text,
@@ -242,7 +212,8 @@ def back_to_help(update, context):
     )
 
 # settings
-
+def settings(update, context):
+    command_settings(update, context)
 
 def display_setting(update, context):
     context.dispatcher.run_async(

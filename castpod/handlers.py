@@ -19,7 +19,11 @@ def register_handlers(dispatcher):
         CommandHandler('start', command.start,
                        filters=Filters.chat_type.private, pass_args=True),
         CommandHandler('manage', command.manage),
+        CommandHandler('favorite', command.favorite),
+        CommandHandler('wander', command.wander),
+        CommandHandler('settings', command.settings),
         CommandHandler('help', command.help_, run_async=True),
+        CommandHandler('about', command.about, run_async=True),
         MessageHandler(
             (Filters.via_bot(dispatcher.bot.get_me().id) | Filters.chat_type.private) & Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
         MessageHandler(
