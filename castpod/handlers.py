@@ -34,7 +34,7 @@ def register_handlers(dispatcher):
             run_async=True
         ),
         MessageHandler(
-            Filters.regex(r'^您尚未开始订阅，点击出发寻找播客$'),
+            Filters.regex(r'^探索播客世界$'),
             message.search_podcast,
             run_async=True
         ),
@@ -46,14 +46,14 @@ def register_handlers(dispatcher):
             message.save_subscription,
             run_async=True
         ),
-        # MessageHandler(
-        #     (
-        #         Filters.reply |
-        #         Filters.via_bot(dispatcher.bot.get_me().id) |
-        #         Filters.chat_type.private
-        #     ) &
-        #     Filters.text, message.show_podcast
-        # ),
+        MessageHandler(
+            (
+                Filters.reply |
+                Filters.via_bot(dispatcher.bot.get_me().id) |
+                Filters.chat_type.private
+            ) &
+            Filters.text, message.show_podcast
+        ),
         MessageHandler(Filters.chat(username="podcast_vault_chat")
                        & Filters.audio, message.handle_audio),
         InlineQueryHandler(inline_query.handle_inline_query),

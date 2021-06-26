@@ -91,14 +91,16 @@ def about(update, context):
     )
 
 
-@delete_update_message
+# @delete_update_message
 def favorite(update, context):
-    update.message.reply_text('该功能正在开发，敬请等待 ^_^')
+    update.message.reply_text(
+        '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
 
 
-@delete_update_message
+# @delete_update_message
 def wander(update, context):
-    update.message.reply_text('该功能正在开发，敬请等待 ^_^')
+    update.message.reply_text(
+        '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
 
 
 @delete_update_message
@@ -121,13 +123,13 @@ def settings(update, context):
 @delete_update_message
 def help_(update, context):
     run_async = context.dispatcher.run_async
+    text_handler = update.message.reply_text if update.message else update.callback_query.edit_message_text
     run_async(
-        update.message.reply_text,
+        text_handler,
         text=f"[{manifest.name} 入门指南](https://github.com/DahaWong/castpod/wiki/%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97)\n\n",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton('注销账号', callback_data="logout"),
              InlineKeyboardButton('导出订阅', callback_data="export")],
-            InlineKeyboardButton('关闭', callback_data="delete_message"),
-        ]
+            [InlineKeyboardButton('关闭', callback_data="delete_message")]]
         )
     )

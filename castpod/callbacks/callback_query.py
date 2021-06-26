@@ -3,6 +3,7 @@ from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast
 from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml
 from .command import settings as command_settings
+from .command import help_ as command_help
 from config import manifest
 from ..constants import TICK_MARK
 import re
@@ -199,17 +200,7 @@ def confirm_delete_account(update, context):
 
 
 def back_to_help(update, context):
-    context.dispatcher.run_async(
-        update.callback_query.edit_message_text,
-        text=f"[{manifest.name} 入门指南](https://github.com/DahaWong/castpod/wiki/%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97)\n\n",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton('注销账号', callback_data="logout"),
-             InlineKeyboardButton("更多信息", callback_data="about"),
-             InlineKeyboardButton('偏好设置', callback_data="settings")],
-            [InlineKeyboardButton('关闭', callback_data="delete_message"),
-             InlineKeyboardButton('导出订阅', callback_data="export")]
-        ])
-    )
+    command_help(update, context)
 
 # settings
 def settings(update, context):
