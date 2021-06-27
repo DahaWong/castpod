@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from castpod.components import PodcastPage, ManagePage
-from castpod.models import User, Podcast
+from castpod.models import User, Podcast, Episode
 from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml
 from .command import settings as command_settings
 from .command import help_ as command_help
@@ -53,6 +53,52 @@ def delete_account(update, context):
     context.user_data.clear()
 
 # Podcast
+
+
+def fav_ep(update, context):
+    query = update.callback_query
+    print(query.data)
+    episode_id = re.match(
+        r'fav_ep_(.+)',
+        query.data
+    )[1]
+    print(episode_id)
+    episode = Episode.objects.get(id=episode_id)
+    podcast = episode.from_podcast
+    user = User.objects.get(user_id=update.effective_user.id)
+    user.fav_ep(episode)
+    print(episode.fav_subscribers)
+    context.dispatcher.run_async(
+        query.edit_message_reply_markup,
+        InlineKeyboardMarkup([[InlineKeyboardButton('❤️', callback_data=f'unfav_ep_{episode_id}')], [
+            InlineKeyboardButton(
+                "订阅列表", switch_inline_query_current_chat=""),
+            InlineKeyboardButton(
+                "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
+        ]])
+    )
+
+
+def unfav_ep(update, context):
+    query = update.callback_query
+    episode_id = re.match(
+        r'unfav_ep_(.+)',
+        query.data
+    )[1]
+    episode = Episode.objects.get(id=episode_id)
+    podcast = episode.from_podcast
+    user = User.objects.get(user_id=update.effective_user.id)
+    user.unfav_ep(episode)
+    print(episode.fav_subscribers)
+    context.dispatcher.run_async(
+        query.edit_message_reply_markup,
+        InlineKeyboardMarkup([[InlineKeyboardButton('收藏', callback_data=f'fav_ep_{episode_id}')], [
+            InlineKeyboardButton(
+                "订阅列表", switch_inline_query_current_chat=""),
+            InlineKeyboardButton(
+                "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
+        ]])
+    )
 
 
 def fav_podcast(update, context):
@@ -203,8 +249,11 @@ def back_to_help(update, context):
     command_help(update, context)
 
 # settings
+
+
 def settings(update, context):
     command_settings(update, context)
+
 
 def display_setting(update, context):
     context.dispatcher.run_async(

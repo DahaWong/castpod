@@ -5,7 +5,7 @@ from config import podcast_vault, manifest, dev
 from castpod.utils import delete_update_message, local_download, parse_doc, delete_manage_starter
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
-from ..constants import SPEAKER_MARK
+from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK
 import re
 # @is_group??
 
@@ -160,17 +160,15 @@ def download_episode(update, context):
                 caption=(
                     f"{SPEAKER_MARK} *{podcast.name}*\n"
                     f"总第 {index} 期\n\n"
+                    f"[订阅](https://t.me/{manifest.bot_id}?start={podcast.id})"
+                    f" | [相关链接]({episode.shownotes_url or episode.set_shownotes_url(episode.title, podcast.name)})\n\n"
                     f"#{podcast.id}"
                 ),
-                reply_markup = InlineKeyboardMarkup.from_row(
-                    [InlineKeyboardButton('订阅', f'https://t.me/{manifest.bot_id}?start={podcast.id})'),
-                     InlineKeyboardButton('相关链接', episode.shownotes_url or episode.set_shownotes_url(episode.title, podcast.name))
-                    ]),
                 title=episode.title,
                 performer=podcast.name,
                 duration=episode.duration,
                 # thumb=podcast.logo.read()
-                thumb = episode.logo
+                thumb=episode.logo
             )
         except Exception as e:
             raise e
@@ -178,7 +176,9 @@ def download_episode(update, context):
             uploading_note.delete()
         forwarded_message = audio_message.forward(chat_id)
         forward_from_message = audio_message.message_id
-        context.user_data.clear()
+        episode.update(set__message_id=audio_message.message_id)
+        episode.update(set__file_id=audio_message.audio.file_id)
+        context.user_data.clear()  # !!!
     forwarded_message.edit_caption(
         caption=(
             f"{SPEAKER_MARK} <b>{podcast.name}</b>\n\n"
@@ -187,12 +187,12 @@ def download_episode(update, context):
             f"{episode.timeline or episode.set_timeline()}"
         ),
         parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup.from_row([
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('收藏', callback_data=f'fav_ep_{episode.id}')], [
             InlineKeyboardButton(
                 "订阅列表", switch_inline_query_current_chat=""),
             InlineKeyboardButton(
                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
-        ])
+        ]])
     )
     update.message.delete()
 
@@ -256,15 +256,16 @@ def handle_audio(update, context):
                       )[-1].replace('#', '')
     podcast = Podcast.objects(id=podcast_id).only('episodes').first()
     episodes = podcast.episodes
-    episodes[index-1].message_id = message.forward_from_message_id
-    episodes[index-1].file_id = message.audio.file_id
+    episodes[index-1].update(set__message_id=message.forward_from_message_id)
+    episodes[index-1].update(set__file_id=message.audio.file_id)
     podcast.update(set__episodes=episodes)
+    episodes[index-1].reload()
     podcast.reload()
 
 
 def search_podcast(update, context):
     update.message.reply_text(
-        text="🔎",
+        text=RIGHT_SEARCH_MARK,
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
                 '搜索播客', switch_inline_query_current_chat='')

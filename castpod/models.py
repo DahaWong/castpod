@@ -67,8 +67,14 @@ class User(Document):
         else:
             podcast.update(push__fav_subscribers=self)
 
+    def fav_ep(self, episode):
+        episode.update(push__fav_subscribers=self)
+
+    def unfav_ep(self, episode):
+        episode.update(pull__fav_subscribers=self)
 
 class Episode(Document):
+    from_podcast = ReferenceField('Podcast') # reverse delete rule = ??? !!!
     title = StringField(unique=True)
     link = StringField()
     subtitle = StringField()
@@ -345,7 +351,7 @@ class Podcast(Document):
         #     match = re.match(r'([0-9]+)\..*',size)
         #     if match:
         #         size = match[1]
-
+        episode.from_podcast = self
         episode.url = audio.get('href')
         episode.size = audio.get('length') or 0
         episode.size = int(episode.size)

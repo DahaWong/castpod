@@ -1,9 +1,10 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, InputMediaAudio
 from config import manifest
-from castpod.models import User, Podcast
+from castpod.models import User, Podcast, Episode
 from castpod.components import ManagePage, PodcastPage
 from castpod.utils import save_manage_starter, delete_update_message
 from manifest import manifest
+from ..constants import RIGHT_SEARCH_MARK
 
 
 @delete_update_message
@@ -75,6 +76,16 @@ def manage(update, context):
 
 
 @delete_update_message
+def search(update, context):
+    context.dispatcher.run_async(
+        update.message.reply_text,
+        text=RIGHT_SEARCH_MARK,
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton('搜索播客', switch_inline_query_current_chat=''))
+    )
+
+
+@delete_update_message
 def about(update, context):
     keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
                  InlineKeyboardButton("工作室", url=manifest.author_url)],
@@ -91,12 +102,31 @@ def about(update, context):
     )
 
 
-# @delete_update_message
+@delete_update_message
 def favorite(update, context):
+    # update.message.reply_text(
+    #     '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
+    user = User.validate_user(update.effective_user)
+    fav_episodes = Episode.objects(fav_subscribers=user)
+    if len(fav_episodes) == 1:
+        update.message.reply_audio(
+            audio=fav_episodes.first().file_id
+        )
+    elif len(fav_episodes) >= 2:
+        update.message.reply_media_group(
+            media=list(map(lambda x: InputMediaAudio(x.file_id), fav_episodes))
+        )
+    else:
+        update.message.reply_text(
+            text='还没有收藏的单集～',
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton('订阅列表', switch_inline_query_current_chat=''))
+        )
+
+@delete_update_message
+def recent(update, context):
     update.message.reply_text(
         '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
-
-
 # @delete_update_message
 def wander(update, context):
     update.message.reply_text(
