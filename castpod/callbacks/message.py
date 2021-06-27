@@ -167,7 +167,8 @@ def download_episode(update, context):
                 title=episode.title,
                 performer=podcast.name,
                 duration=episode.duration,
-                thumb=podcast.logo
+                # thumb=podcast.logo.read()
+                thumb = episode.logo
             )
         except Exception as e:
             raise e
