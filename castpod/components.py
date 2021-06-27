@@ -13,7 +13,7 @@ class PodcastPage(object):
         email = f'\n✉️  {self.podcast.email}' if self.podcast.email else ''
         return (
             f'<b>{self.podcast.name}</b>'
-            f'\n<a href="{self.podcast.logo}">{SPEAKER_MARK}</a> {self.podcast.host or self.podcast.name}'
+            f'\n<a href="{self.podcast.logo_url}">{SPEAKER_MARK}</a> {self.podcast.host or self.podcast.name}'
             f'{email}'
         )
 

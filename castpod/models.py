@@ -1,11 +1,14 @@
 import re
+import io
+import os
 import random
 import datetime
+import requests
 from time import mktime
 import feedparser
 from mongoengine import PULL, NULLIFY
 from mongoengine.document import Document, EmbeddedDocument
-from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentField, IntField, ListField, ReferenceField, StringField, URLField
+from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentField, FileField, ImageField, IntField, ListField, ReferenceField, StringField, URLField
 from mongoengine.queryset.manager import queryset_manager
 from telegram.error import TimedOut
 from castpod.utils import local_download
@@ -13,6 +16,7 @@ from config import podcast_vault, dev, manifest
 from telegraph import Telegraph
 from html import unescape
 from .constants import SPEAKER_MARK
+from PIL import Image
 
 telegraph = Telegraph()
 telegraph.create_account(
@@ -55,6 +59,7 @@ class User(Document):
 
     def unsubscribe(self, podcast):
         podcast.update(pull__subscribers=self)
+        podcast.update(pull__fav_subscribers=self)
 
     def toggle_fav(self, podcast):
         if self in podcast.fav_subscribers:
@@ -81,10 +86,33 @@ class Episode(Document):
     is_new = BooleanField(default=False)
     url = StringField()
     performer = StringField()
-    logo = StringField()
+    logo_url = StringField()
+    _logo = StringField()  # local path
     size = IntField()
     duration = IntField()
     fav_subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
+
+    @property
+    def logo(self):
+        path = f'public/logo/sub/{self.title}.jpeg' #!!!!
+        if not self._logo:
+            data = io.BytesIO(requests.get(self.logo_url).content)
+            with Image.open(data) as im:
+                # then process image to fit restriction:
+                # 1. jpeg format
+                im = im.convert('RGB')
+                # 2. < 320*320
+                size = (80, 80)
+                im = im.resize(size, Image.ANTIALIAS)
+                # 3. less than 200 kB
+                im.save(path, "JPEG")
+                # print(os.stat(path).st_size)
+            # with open(path, 'rb') as fr:
+                # self._logo.put(fr, content_type='image/jpeg')
+                # self.save()
+        # return self._logo
+        self._logo = path
+        return self._logo
 
     def set_shownotes_url(self, title, author):
         res = telegraph.create_page(
@@ -95,8 +123,8 @@ class Episode(Document):
         self.shownotes_url = f"https://telegra.ph/{res['path']}"
         return self.shownotes_url
 
-    def set_content(self, logo):
-        img_content = f"<img src='{logo}'>" if logo and (
+    def set_content(self, logo_url):
+        img_content = f"<img src='{logo_url}'>" if logo_url and (
             'img' not in self.shownotes) else ''
         self.shownotes = img_content + \
             self.replace_invalid_tags(self.shownotes)
@@ -122,14 +150,15 @@ class Episode(Document):
 class Podcast(Document):
     # meta = {'queryset_class': PodcastQuerySet}
     feed = StringField(required=True, unique=True)
-    name = StringField(max_length=64)
-    logo = StringField()
+    name = StringField(max_length=64)  # 合理？
+    logo_url = StringField()
+    _logo = StringField()
     host = StringField()
     website = StringField()
     email = StringField()  # !!!
     channel = IntField()  # 播客绑定的单独分发频道，由认证主播控制
     group = IntField()  # 播客绑定的群组
-    # 认证的主播，暨 telegram 管理员
+    # 认证的主播，telegram 管理员
     admin = ReferenceField(User, reverse_delete_rule=NULLIFY)
     episodes = ListField(ReferenceField(Episode, reverse_delete_rule=PULL))
     subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
@@ -144,6 +173,28 @@ class Podcast(Document):
          'weights': {'name': 10, 'host': 2}
          }
     ]}
+
+    @property
+    def logo(self):
+        path = f'public/logo/{self.name}.jpeg'
+        if not self._logo:
+            data = io.BytesIO(requests.get(self.logo_url).content)
+            with Image.open(data) as im:
+                # then process image to fit restriction:
+                # 1. jpeg format
+                im = im.convert('RGB')
+                # 2. < 320*320
+                size = (80, 80)
+                im = im.resize(size, Image.ANTIALIAS)
+                # 3. less than 200 kB
+                im.save(path, "JPEG")
+                # print(os.stat(path).st_size)
+            # with open(path, 'rb') as fr:
+                # self._logo.put(fr, content_type='image/jpeg')
+                # self.save()
+        # return self._logo
+        self._logo = path
+        return self._logo
 
     @classmethod
     def validate_feed(cls, feed, subsets=None):
@@ -216,7 +267,7 @@ class Podcast(Document):
                     title=episode.title,
                     performer=self.name,
                     duration=episode.duration,
-                    thumb=self.logo
+                    thumb=episode.logo
                 )
             except TimedOut:
                 print('download timed out!')
@@ -240,7 +291,7 @@ class Podcast(Document):
         self.name = unescape(feed.title)[:63]
         if len(self.name) == 63:
             self.name += '…'
-        self.logo = feed['image']['href']
+        self.logo_url = feed['image']['href']
 
         if feed.get('author_detail'):
             self.host = unescape(feed.author_detail.get('name') or '')
@@ -299,8 +350,8 @@ class Podcast(Document):
         episode.size = audio.get('length') or 0
         episode.size = int(episode.size)
         episode.performer = self.name
-        episode.logo = item.get('image').href if item.get(
-            'image') else self.logo
+        episode.logo_url = item.get('image').href if item.get(
+            'image') else self.logo_url
         episode.duration = self.set_duration(item.get('itunes_duration'))
 
         episode.link = item.get('link')
@@ -311,7 +362,7 @@ class Podcast(Document):
         episode.summary = unescape(item.get('summary') or '')
         episode.shownotes = item.get('content')[0]['value'] if item.get(
             'content') else episode.summary
-        episode.set_content(episode.logo)
+        episode.set_content(episode.logo_url)
         episode.published_time = datetime.datetime.fromtimestamp(
             mktime(item.published_parsed))
         episode.updated_time = datetime.datetime.fromtimestamp(

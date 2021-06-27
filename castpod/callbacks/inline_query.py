@@ -13,9 +13,10 @@ def handle_inline_query(update, context):
     run_async = context.dispatcher.run_async
     query = update.inline_query
     query_text = query.query
-    results, kwargs = [], {"auto_pagination": True, "cache_time": 20}
+    results, kwargs = [], {"auto_pagination": True, "cache_time": 120}
     user = User.validate_user(update.effective_user)
     if not query_text:
+        kwargs.update({"cache_time": 10})
         results = run_async(show_subscription, user).result()
     elif re.match('^p$', query_text):
         results = run_async(show_fav_podcasts, user).result()
@@ -26,7 +27,6 @@ def handle_inline_query(update, context):
             podcast = Podcast.objects.get(
                 Q(name=query_text) & Q(subscribers=user))
             results = run_async(show_episodes, podcast).result()
-            kwargs.update({"cache_time": 40})
         except:
             results = run_async(search_podcast, query_text).result()
 
@@ -57,9 +57,9 @@ def show_subscription(user):
                 id=str(index),
                 title=str(podcast.name) + fav_flag,
                 description=podcast.host or podcast.name,
-                photo_url=podcast.logo,
+                photo_url=podcast.logo_url,
                 input_message_content=InputTextMessageContent(podcast.name),
-                thumb_url=podcast.logo,
+                thumb_url=podcast.logo_url,
                 caption=podcast.name,
                 thumb_width=80,
                 thumb_height=80
@@ -84,7 +84,7 @@ def show_fav_podcasts(user):
                 input_message_content=InputTextMessageContent(
                     podcast.name, parse_mode=None),
                 description=podcast.host or podcast.name,
-                thumb_url=podcast.logo,
+                thumb_url=podcast.logo_url,
                 thumb_height=80,
                 thumb_width=80
             )
@@ -107,11 +107,11 @@ def show_episodes(podcast):
             id=index,
             title=episode.title,
             input_message_content=InputTextMessageContent((
-                f"[{SPEAKER_MARK}]({podcast.logo}) *{podcast.name}* #{len(podcast.episodes)-index}"
+                f"[{SPEAKER_MARK}]({podcast.logo_url}) *{podcast.name}* #{len(podcast.episodes)-index}"
             )),
             reply_markup=InlineKeyboardMarkup.from_row(buttons),
             description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",
-            thumb_url=episode.logo,
+            thumb_url=episode.logo_url,
             thumb_width=80,
             thumb_height=80
         )
