@@ -19,6 +19,7 @@ def register_handlers(dispatcher):
         CommandHandler('start', command.start,
                        filters=Filters.chat_type.private, pass_args=True),
         CommandHandler('manage', command.manage),
+        CommandHandler('star', command.star),
         CommandHandler('search', command.search, run_async=True),
         CommandHandler('favorite', command.favorite),
         CommandHandler('recent', command.recent),
@@ -37,7 +38,7 @@ def register_handlers(dispatcher):
         ),
         MessageHandler(
             Filters.regex(f'^{STAR_MARK}$'),
-            message.show_star,
+            command.star,
             run_async=True
         ),
         MessageHandler(

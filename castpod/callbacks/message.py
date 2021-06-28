@@ -274,17 +274,4 @@ def search_podcast(update, context):
     )
 
 
-@delete_update_message
-def show_star(update, context):
-    run_async = context.dispatcher.run_async
-    user = User.validate_user(update.effective_user)
 
-    page = ManagePage(Podcast.star_by(user, 'name'), text='已启动收藏面板')
-    msg = run_async(
-        update.message.reply_text,
-        text=page.text,
-        reply_markup=ReplyKeyboardMarkup(
-            page.keyboard(null_text='还没有收藏播客～', jump_to=DOC_MARK), resize_keyboard=True, one_time_keyboard=True, selective=True)
-    ).result()
-    delete_manage_starter(context)
-    save_manage_starter(context.chat_data, msg)
