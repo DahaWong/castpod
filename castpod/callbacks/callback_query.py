@@ -5,7 +5,7 @@ from castpod.utils import delete_manage_starter, save_manage_starter, generate_o
 from .command import settings as command_settings
 from .command import help_ as command_help
 from config import manifest
-from ..constants import TICK_MARK
+from ..constants import TICK_MARK, STAR_MARK
 import re
 
 
@@ -67,7 +67,7 @@ def fav_ep(update, context):
     podcast = episode.from_podcast
     user = User.objects.get(user_id=update.effective_user.id)
     user.fav_ep(episode)
-    print(episode.fav_subscribers)
+    print(episode.starrers)
     context.dispatcher.run_async(
         query.edit_message_reply_markup,
         InlineKeyboardMarkup([[InlineKeyboardButton('❤️', callback_data=f'unfav_ep_{episode_id}')], [
@@ -89,7 +89,7 @@ def unfav_ep(update, context):
     podcast = episode.from_podcast
     user = User.objects.get(user_id=update.effective_user.id)
     user.unfav_ep(episode)
-    print(episode.fav_subscribers)
+    print(episode.starrers)
     context.dispatcher.run_async(
         query.edit_message_reply_markup,
         InlineKeyboardMarkup([[InlineKeyboardButton('收藏', callback_data=f'fav_ep_{episode_id}')], [
@@ -121,7 +121,7 @@ def toggle_fav_podcast(update, context, to: str):
 
     if (to == 'fav'):
         kwargs = {
-            'fav_text': '⭐️',
+            'fav_text': STAR_MARK,
             'fav_action': "unfav_podcast"
         }
 
@@ -179,8 +179,8 @@ def back_to_actions(update, context):
     user = User.objects.get(user_id=query.from_user.id)
     podcast_id = re.match(r'back_to_actions_(.+)', query.data)[1]
     podcast = Podcast.objects.get(id=podcast_id)
-    if user in podcast.fav_subscribers:
-        page = PodcastPage(podcast, fav_text="⭐️",
+    if user in podcast.starrers:
+        page = PodcastPage(podcast, fav_text=STAR_MARK,
                            fav_action="unfav_podcast")
     else:
         page = PodcastPage(podcast)

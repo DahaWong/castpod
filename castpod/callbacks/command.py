@@ -2,7 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from config import manifest
 from castpod.models import User, Podcast, Episode
 from castpod.components import ManagePage, PodcastPage
-from castpod.utils import save_manage_starter, delete_update_message
+from castpod.utils import save_manage_starter, delete_update_message, delete_manage_starter
 from manifest import manifest
 from ..constants import RIGHT_SEARCH_MARK
 
@@ -72,6 +72,7 @@ def manage(update, context):
         reply_markup=ReplyKeyboardMarkup(
             page.keyboard(), resize_keyboard=True, one_time_keyboard=True, selective=True)
     ).result()
+    delete_manage_starter(context)
     save_manage_starter(context.chat_data, msg)
 
 
@@ -107,12 +108,17 @@ def favorite(update, context):
     # update.message.reply_text(
     #     '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
     user = User.validate_user(update.effective_user)
-    fav_episodes = Episode.objects(fav_subscribers=user)
+    fav_episodes = Episode.objects(starrers=user)
     if len(fav_episodes) == 1:
         update.message.reply_audio(
             audio=fav_episodes.first().file_id
         )
-    elif len(fav_episodes) >= 2:
+    elif len(fav_episodes) >= 2 and len(fav_episodes) <= 5:
+        update.message.reply_media_group(
+            media=list(map(lambda x: InputMediaAudio(x.file_id), fav_episodes))
+        )
+    elif len(fav_episodes) > 5:
+        #!!!
         update.message.reply_media_group(
             media=list(map(lambda x: InputMediaAudio(x.file_id), fav_episodes))
         )
@@ -123,11 +129,14 @@ def favorite(update, context):
                 InlineKeyboardButton('订阅列表', switch_inline_query_current_chat=''))
         )
 
+
 @delete_update_message
 def recent(update, context):
     update.message.reply_text(
         '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
 # @delete_update_message
+
+
 def wander(update, context):
     update.message.reply_text(
         '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)

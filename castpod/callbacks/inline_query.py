@@ -6,7 +6,7 @@ import re
 from config import manifest
 from castpod.models import User, Podcast
 import datetime
-from ..constants import SPEAKER_MARK
+from ..constants import SPEAKER_MARK, STAR_MARK
 
 
 def handle_inline_query(update, context):
@@ -51,8 +51,8 @@ def show_subscription(user):
             podcasts, key=lambda x: x.updated_time, reverse=True)
         for index, podcast in enumerate(podcasts):
             fav_flag = ''
-            if user in podcast.fav_subscribers:
-                fav_flag = '  ⭐️'
+            if user in podcast.starrers:
+                fav_flag = '  '+STAR_MARK
             yield InlineQueryResultPhoto(
                 id=str(index),
                 title=str(podcast.name) + fav_flag,
@@ -67,7 +67,7 @@ def show_subscription(user):
 
 
 def show_fav_podcasts(user):
-    favs = Podcast.objects(fav_subscribers__in=[user])
+    favs = Podcast.objects(starrers__in=[user])
     if not favs:
         yield InlineQueryResultArticle(
             id=0,
@@ -80,7 +80,7 @@ def show_fav_podcasts(user):
             podcast = fav.podcast
             yield InlineQueryResultArticle(
                 id=podcast.id,
-                title=podcast.name + "  ⭐️",
+                title=podcast.name + f"  {STAR_MARK}",
                 input_message_content=InputTextMessageContent(
                     podcast.name, parse_mode=None),
                 description=podcast.host or podcast.name,

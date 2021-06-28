@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from .constants import QUIT_MARK, TICK_MARK, SPEAKER_MARK
+from .constants import QUIT_MARK, TICK_MARK, SPEAKER_MARK, STAR_MARK
 
 
 class PodcastPage(object):
@@ -43,12 +43,12 @@ class ManagePage(object):
             self.podcasts) if index // 3 == i]
         return row
 
-    def keyboard(self):
+    def keyboard(self, null_text='探索播客世界', jump_to=STAR_MARK):
         podcasts_count = self.podcasts.count()
         if not podcasts_count:
-            return [['探索播客世界']]
+            return [[QUIT_MARK, jump_to],[null_text]]
         rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
-        return [[QUIT_MARK]]+[self.row(i) for i in range(rows_count)]
+        return [[QUIT_MARK, jump_to]]+[self.row(i) for i in range(rows_count)]
 
 
 class Tips(object):

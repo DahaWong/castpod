@@ -59,35 +59,35 @@ class User(Document):
 
     def unsubscribe(self, podcast):
         podcast.update(pull__subscribers=self)
-        podcast.update(pull__fav_subscribers=self)
+        podcast.update(pull__starrers=self)
 
     def toggle_fav(self, podcast):
-        if self in podcast.fav_subscribers:
-            podcast.update(pull__fav_subscribers=self)
+        if self in podcast.starrers:
+            podcast.update(pull__starrers=self)
         else:
-            podcast.update(push__fav_subscribers=self)
+            podcast.update(push__starrers=self)
 
     def fav_ep(self, episode):
-        episode.update(push__fav_subscribers=self)
+        episode.update(push__starrers=self)
 
     def unfav_ep(self, episode):
-        episode.update(pull__fav_subscribers=self)
+        episode.update(pull__starrers=self)
+
 
 class Episode(Document):
-    from_podcast = ReferenceField('Podcast') # reverse delete rule = ??? !!!
+    from_podcast = ReferenceField('Podcast')  # reverse delete rule = ??? !!!
     title = StringField(unique=True)
     link = StringField()
     subtitle = StringField()
     summary = StringField()
     host = StringField()
-    timeline = StringField()
     published_time = DateTimeField()
     updated_time = DateTimeField()
     message_id = IntField()  # message_id in podcast_vault
     file_id = StringField()
     shownotes = StringField()
-    shownotes_url = URLField()
-    timeline = StringField()
+    _shownotes_url = URLField()
+    _timeline = StringField()
     is_downloaded = BooleanField(required=True, default=True)
     is_new = BooleanField(default=False)
     url = StringField()
@@ -96,11 +96,11 @@ class Episode(Document):
     _logo = StringField()  # local path
     size = IntField()
     duration = IntField()
-    fav_subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
+    starrers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
 
     @property
     def logo(self):
-        path = f'public/logo/sub/{self.title}.jpeg' #!!!!
+        path = f'public/logo/sub/{self.title}.jpeg'  # !!!!
         if not self._logo:
             data = io.BytesIO(requests.get(self.logo_url).content)
             with Image.open(data) as im:
@@ -120,14 +120,16 @@ class Episode(Document):
         self._logo = path
         return self._logo
 
-    def set_shownotes_url(self, title, author):
-        res = telegraph.create_page(
-            title=f"{title}",
-            html_content=self.shownotes,
-            author_name=author
-        )
-        self.shownotes_url = f"https://telegra.ph/{res['path']}"
-        return self.shownotes_url
+    @property
+    def shownotes_url(self):
+        if not self._shownotes_url:
+            res = telegraph.create_page(
+                title=f"{self.title}",
+                html_content=self.shownotes,
+                author_name=self.from_podcast.name
+            )
+            self._shownotes_url = f"https://telegra.ph/{res['path']}"
+        return self._shownotes_url
 
     def set_content(self, logo_url):
         img_content = f"<img src='{logo_url}'>" if logo_url and (
@@ -136,16 +138,19 @@ class Episode(Document):
             self.replace_invalid_tags(self.shownotes)
         return self.shownotes
 
-    def set_timeline(self):
-        shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.shownotes)
-        # pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
-        pattern = r'.+(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9].+'
-        matches = re.finditer(pattern, shownotes)
-        self.timeline = '\n\n'.join([re.sub(
-            r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches])
-        return self.timeline
+    @property
+    def timeline(self):
+        if not self._timeline:
+            shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.shownotes)
+            # pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
+            pattern = r'.+(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9].+'
+            matches = re.finditer(pattern, shownotes)
+            self._timeline = '\n\n'.join([re.sub(
+                r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches])
+        return self._timeline
 
     def replace_invalid_tags(self, html_content):
+        #!!!
         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
         html_content = html_content.replace('cite>', "i>")
         html_content = re.sub(r'</?(?:div|span|audio).*?>', '', html_content)
@@ -168,7 +173,7 @@ class Podcast(Document):
     admin = ReferenceField(User, reverse_delete_rule=NULLIFY)
     episodes = ListField(ReferenceField(Episode, reverse_delete_rule=PULL))
     subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
-    fav_subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
+    starrers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
     updated_time = DateTimeField(default=datetime.datetime(1970, 1, 1))
     last_updated_time = DateTimeField()
     job_group = ListField(IntField(min_value=0, max_value=47))
@@ -218,11 +223,11 @@ class Podcast(Document):
             return queryset(subscribers=user)
 
     @queryset_manager
-    def fav_by(doc_cls, queryset, user, subsets=None):
+    def star_by(doc_cls, queryset, user, subsets=None):
         if subsets:
-            return queryset(fav_subscribers=user).only(subsets)
+            return queryset(starrers=user).only(subsets)
         else:
-            return queryset(fav_subscribers=user)
+            return queryset(starrers=user)
 
     def parse_feed(self):
         result = feedparser.parse(self.feed)
@@ -267,7 +272,7 @@ class Podcast(Document):
                         f"{SPEAKER_MARK} *{self.name}*\n"
                         f"总第 {len(self.episodes) - i} 期\n\n"
                         f"[订阅](https://t.me/{manifest.bot_id}?start={self.id})"
-                        f" | [相关链接]({episode.shownotes_url or episode.set_shownotes_url(episode.title, self.name)})\n\n"
+                        f" | [相关链接]({episode.shownotes_url})\n\n"
                         f"#{self.id}"
                     ),
                     title=episode.title,
