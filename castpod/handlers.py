@@ -1,5 +1,5 @@
 from castpod.callbacks import *
-from .constants import QUIT_MARK, SPEAKER_MARK
+from .constants import QUIT_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK
 from telegram.ext import MessageHandler, Filters, InlineQueryHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 import inspect
 
@@ -19,7 +19,10 @@ def register_handlers(dispatcher):
         CommandHandler('start', command.start,
                        filters=Filters.chat_type.private, pass_args=True),
         CommandHandler('manage', command.manage),
+        CommandHandler('star', command.star),
+        CommandHandler('search', command.search, run_async=True),
         CommandHandler('favorite', command.favorite),
+        CommandHandler('recent', command.recent),
         CommandHandler('wander', command.wander),
         CommandHandler('settings', command.settings),
         CommandHandler('help', command.help_, run_async=True),
@@ -31,6 +34,16 @@ def register_handlers(dispatcher):
         MessageHandler(
             Filters.regex(f'^{QUIT_MARK}$'),
             message.exit_reply_keyboard,
+            run_async=True
+        ),
+        MessageHandler(
+            Filters.regex(f'^{STAR_MARK}$'),
+            command.star,
+            run_async=True
+        ),
+        MessageHandler(
+            Filters.regex(f'^{DOC_MARK}$'),
+            command.manage,
             run_async=True
         ),
         MessageHandler(
