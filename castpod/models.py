@@ -32,6 +32,40 @@ class Setting(EmbeddedDocument):
     feed_freq = IntField(default=60)  # minutes
 
 
+class Logo(EmbeddedDocument):
+    _path = StringField(required=True)
+    is_local = BooleanField(default=False)
+    url = URLField()
+    file_id = StringField()
+
+    @property
+    def path(self):
+        if not self.is_local:
+            print('not local')
+            data = io.BytesIO(requests.get(self.url).content)
+            with Image.open(data) as im:
+                # then process image to fit restriction:
+                # 1. jpeg format
+                im = im.convert('RGB')
+                # 2. < 320*320
+                size = (80, 80)
+                im = im.resize(size, Image.ANTIALIAS)
+                # 3. less than 200 kB !!
+                im.save(self._path, "JPEG")
+                # print(os.stat(path).st_size)
+            # with open(path, 'rb') as fr:
+                # self._logo.put(fr, content_type='image/jpeg')
+                # self.save()
+        # return self._logo
+        self.is_local = True
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        self._path = value
+        self.save()
+
+
 class User(Document):
     # meta = {'queryset_class': UserQuerySet}
     user_id = IntField(primary_key=True)
@@ -50,7 +84,7 @@ class User(Document):
     def subscribe(self, podcast):
         if self in podcast.subscribers:
             return
-        if not podcast.name:  # if podcast never been initialized, ..
+        if not podcast.name:  # if podcast has never been initialized, ..
             result = podcast.parse_feed()
             if not result:
                 return
@@ -92,33 +126,20 @@ class Episode(Document):
     is_new = BooleanField(default=False)
     url = StringField()
     performer = StringField()
-    logo_url = StringField()
-    _logo = StringField()  # local path
+    _logo = EmbeddedDocumentField(Logo)
     size = IntField()
     duration = IntField()
     starrers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
 
     @property
     def logo(self):
-        path = f'public/logo/sub/{self.title}.jpeg'  # !!!!
         if not self._logo:
-            data = io.BytesIO(requests.get(self.logo_url).content)
-            with Image.open(data) as im:
-                # then process image to fit restriction:
-                # 1. jpeg format
-                im = im.convert('RGB')
-                # 2. < 320*320
-                size = (80, 80)
-                im = im.resize(size, Image.ANTIALIAS)
-                # 3. less than 200 kB
-                im.save(path, "JPEG")
-                # print(os.stat(path).st_size)
-            # with open(path, 'rb') as fr:
-                # self._logo.put(fr, content_type='image/jpeg')
-                # self.save()
-        # return self._logo
-        self._logo = path
+            self._logo = Logo(_path=f'public/logo/sub/{self.title}.jpeg')
         return self._logo
+
+    @logo.setter
+    def logo(self, value):
+        self._logo = value
 
     @property
     def shownotes_url(self):
@@ -162,8 +183,7 @@ class Podcast(Document):
     # meta = {'queryset_class': PodcastQuerySet}
     feed = StringField(required=True, unique=True)
     name = StringField(max_length=64)  # 合理？
-    logo_url = StringField()
-    _logo = StringField()
+    _logo = EmbeddedDocumentField(Logo)
     host = StringField()
     website = StringField()
     email = StringField()  # !!!
@@ -187,24 +207,8 @@ class Podcast(Document):
 
     @property
     def logo(self):
-        path = f'public/logo/{self.name}.jpeg'
         if not self._logo:
-            data = io.BytesIO(requests.get(self.logo_url).content)
-            with Image.open(data) as im:
-                # then process image to fit restriction:
-                # 1. jpeg format
-                im = im.convert('RGB')
-                # 2. < 320*320
-                size = (80, 80)
-                im = im.resize(size, Image.ANTIALIAS)
-                # 3. less than 200 kB
-                im.save(path, "JPEG")
-                # print(os.stat(path).st_size)
-            # with open(path, 'rb') as fr:
-                # self._logo.put(fr, content_type='image/jpeg')
-                # self.save()
-        # return self._logo
-        self._logo = path
+            self._logo = Logo(_path=f'public/logo/{self.name}.jpeg')
         return self._logo
 
     @classmethod
@@ -278,7 +282,7 @@ class Podcast(Document):
                     title=episode.title,
                     performer=self.name,
                     duration=episode.duration,
-                    thumb=episode.logo
+                    thumb=episode.logo.path
                 )
             except TimedOut:
                 print('download timed out!')
@@ -302,7 +306,8 @@ class Podcast(Document):
         self.name = unescape(feed.title)[:63]
         if len(self.name) == 63:
             self.name += '…'
-        self.logo_url = feed['image']['href']
+        self.logo.url = feed['image']['href']
+        self.save()
 
         if feed.get('author_detail'):
             self.host = unescape(feed.author_detail.get('name') or '')
@@ -361,19 +366,19 @@ class Podcast(Document):
         episode.size = audio.get('length') or 0
         episode.size = int(episode.size)
         episode.performer = self.name
-        episode.logo_url = item.get('image').href if item.get(
-            'image') else self.logo_url
+        episode.title = unescape(item.get('title') or '')
+        episode.logo.url=item.get('image').href if item.get(
+            'image') else self.logo.url
         episode.duration = self.set_duration(item.get('itunes_duration'))
 
         episode.link = item.get('link')
-        episode.title = unescape(item.get('title') or '')
         episode.subtitle = unescape(item.get('subtitle') or '')
         if episode.title == episode.subtitle:
             episode.subtitle = ''
         episode.summary = unescape(item.get('summary') or '')
         episode.shownotes = item.get('content')[0]['value'] if item.get(
             'content') else episode.summary
-        episode.set_content(episode.logo_url)
+        episode.set_content(episode.logo.url)
         episode.published_time = datetime.datetime.fromtimestamp(
             mktime(item.published_parsed))
         episode.updated_time = datetime.datetime.fromtimestamp(

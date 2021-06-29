@@ -29,13 +29,15 @@ def start(update, context):
         manage_page = ManagePage(
             Podcast.subscribe_by(user), f'`{podcast.name}` 订阅成功！'
         )
-
-        run_async(
-            update.message.reply_text,
-            text=page.text(),
-            reply_markup=InlineKeyboardMarkup(page.keyboard()),
-            parse_mode="HTML"
-        )
+        photo = podcast.logo.file_id or podcast.logo.url
+        msg = run_async(message.reply_photo,
+                  photo = photo,
+                  caption=page.text(),
+                  reply_markup=InlineKeyboardMarkup(page.keyboard()),
+                  parse_mode="HTML"
+                  ).result()
+        podcast.logo.file_id=msg.photo[0].file_id
+        podcast.save()
 
         run_async(
             update.message.reply_text,

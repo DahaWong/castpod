@@ -43,11 +43,16 @@ def subscribe_feed(update, context):
         )
 
         podcast_page = PodcastPage(podcast, **kwargs)
-        run_async(message.reply_text,
-                  text=podcast_page.text(),
-                  reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
-                  parse_mode="HTML"
-                  )
+        photo = podcast.logo.file_id or podcast.logo.url
+        msg = run_async(message.reply_photo,
+                        photo=photo,
+                        caption=podcast_page.text(),
+                        reply_markup=InlineKeyboardMarkup(
+                            podcast_page.keyboard()),
+                        parse_mode="HTML"
+                        ).result()
+        podcast.logo.file_id = msg.photo[0].file_id
+        podcast.save()
         run_async(message.delete)
     except Exception as e:
         run_async(subscribing_message.edit_text, "订阅失败，可能是因为订阅源损坏 :(")
@@ -168,7 +173,7 @@ def download_episode(update, context):
                 performer=podcast.name,
                 duration=episode.duration,
                 # thumb=podcast.logo.read()
-                thumb=episode.logo
+                thumb=episode.logo.path
             )
         except Exception as e:
             raise e
@@ -238,11 +243,15 @@ def show_podcast(update, context):
             )
 
         page = PodcastPage(podcast, **kwargs)
-        update.message.reply_text(
-            text=page.text(),
-            reply_markup=InlineKeyboardMarkup(page.keyboard()),
-            parse_mode="HTML"
-        )
+        photo = podcast.logo.file_id or podcast.logo.url
+        msg = run_async(message.reply_photo,
+                        photo=photo,
+                        caption=page.text(),
+                        reply_markup=InlineKeyboardMarkup(page.keyboard()),
+                        parse_mode="HTML"
+                        ).result()
+        print(msg.photo[0].file_id)
+        podcast.logo.update(set__file_id=msg.photo[0].file_id)
         run_async(update.message.delete)
 
 
@@ -272,6 +281,3 @@ def search_podcast(update, context):
                 '搜索播客', switch_inline_query_current_chat='')
         )
     )
-
-
-
