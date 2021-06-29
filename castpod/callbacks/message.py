@@ -1,14 +1,16 @@
-from castpod.models import User, Podcast
+from ..models import User, Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
-from castpod.components import PodcastPage, ManagePage
+from ..components import PodcastPage, ManagePage
 from config import podcast_vault, manifest, dev
-from castpod.utils import delete_update_message, local_download, parse_doc, delete_manage_starter, save_manage_starter
+from ..utils import delete_update_message, local_download, parse_doc, delete_manage_starter, save_manage_starter
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
 from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK
 import re
 # @is_group??
 
+def delete_message(update, context):
+    update.message.delete()
 
 def subscribe_feed(update, context):
     run_async = context.dispatcher.run_async

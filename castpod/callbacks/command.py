@@ -4,7 +4,7 @@ from castpod.models import User, Podcast, Episode
 from castpod.components import ManagePage, PodcastPage
 from castpod.utils import save_manage_starter, delete_update_message, delete_manage_starter
 from manifest import manifest
-from ..constants import RIGHT_SEARCH_MARK,DOC_MARK
+from ..constants import RIGHT_SEARCH_MARK, DOC_MARK
 
 
 @delete_update_message
@@ -31,12 +31,12 @@ def start(update, context):
         )
         photo = podcast.logo.file_id or podcast.logo.url
         msg = run_async(message.reply_photo,
-                  photo = photo,
-                  caption=page.text(),
-                  reply_markup=InlineKeyboardMarkup(page.keyboard()),
-                  parse_mode="HTML"
-                  ).result()
-        podcast.logo.file_id=msg.photo[0].file_id
+                        photo=photo,
+                        caption=page.text(),
+                        reply_markup=InlineKeyboardMarkup(page.keyboard()),
+                        parse_mode="HTML"
+                        ).result()
+        podcast.logo.file_id = msg.photo[0].file_id
         podcast.save()
 
         run_async(
@@ -76,6 +76,7 @@ def manage(update, context):
     ).result()
     delete_manage_starter(context)
     save_manage_starter(context.chat_data, msg)
+
 
 @delete_update_message
 def star(update, context):
@@ -122,8 +123,6 @@ def about(update, context):
 
 @delete_update_message
 def favorite(update, context):
-    # update.message.reply_text(
-    #     '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
     user = User.validate_user(update.effective_user)
     fav_episodes = Episode.objects(starrers=user)
     if len(fav_episodes) == 1:
@@ -132,7 +131,9 @@ def favorite(update, context):
         )
     elif len(fav_episodes) >= 2 and len(fav_episodes) <= 5:
         update.message.reply_media_group(
-            media=list(map(lambda x: InputMediaAudio(x.file_id), fav_episodes))
+            media=list(map(lambda episode: InputMediaAudio(
+                media=episode.file_id
+            ), fav_episodes))
         )
     elif len(fav_episodes) > 5:
         #!!!

@@ -69,6 +69,13 @@ def register_handlers(dispatcher):
         ),
         MessageHandler(Filters.chat(username="podcast_vault_chat")
                        & Filters.audio, message.handle_audio),
+        MessageHandler(
+            Filters.status_update.pinned_message,
+            # | Filters.status_update.left_chat_member |
+            # Filters.status_update.new_chat_members |
+            # Filters.status_update.new_chat_title
+            message.delete_message
+        ),
         InlineQueryHandler(inline_query.handle_inline_query),
         ConversationHandler(
             entry_points=[conversation.request_host_handler],

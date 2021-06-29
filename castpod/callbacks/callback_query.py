@@ -62,12 +62,10 @@ def fav_ep(update, context):
         r'fav_ep_(.+)',
         query.data
     )[1]
-    print(episode_id)
     episode = Episode.objects.get(id=episode_id)
     podcast = episode.from_podcast
     user = User.objects.get(user_id=update.effective_user.id)
     user.fav_ep(episode)
-    print(episode.starrers)
     context.dispatcher.run_async(
         query.edit_message_reply_markup,
         InlineKeyboardMarkup([[InlineKeyboardButton('❤️', callback_data=f'unfav_ep_{episode_id}')], [
@@ -77,6 +75,7 @@ def fav_ep(update, context):
                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
         ]])
     )
+    update.effective_message.pin()
 
 
 def unfav_ep(update, context):
@@ -89,7 +88,6 @@ def unfav_ep(update, context):
     podcast = episode.from_podcast
     user = User.objects.get(user_id=update.effective_user.id)
     user.unfav_ep(episode)
-    print(episode.starrers)
     context.dispatcher.run_async(
         query.edit_message_reply_markup,
         InlineKeyboardMarkup([[InlineKeyboardButton('收藏', callback_data=f'fav_ep_{episode_id}')], [
@@ -99,6 +97,7 @@ def unfav_ep(update, context):
                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
         ]])
     )
+    update.effective_message.unpin()
 
 
 def fav_podcast(update, context):
