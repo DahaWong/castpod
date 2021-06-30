@@ -1,7 +1,7 @@
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
 from castpod.utils import search_itunes
-from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultCachedPhoto
+from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultCachedPhoto, InlineQueryResultPhoto, InlineQueryResultCachedAudio
 import re
 from config import manifest
 from castpod.models import User, Podcast
@@ -53,18 +53,29 @@ def show_subscription(user):
             fav_flag = ''
             if user in podcast.starrers:
                 fav_flag = '  '+STAR_MARK
-            yield InlineQueryResultCachedPhoto(
-                id=str(index),
-                photo_file_id=podcast.logo.file_id,
-                title=str(podcast.name) + fav_flag,
-                description=podcast.host or podcast.name,
-                # photo_url=podcast.logo.url,
-                input_message_content=InputTextMessageContent(podcast.name),
-                thumb_url=podcast.logo.url,
-                caption=podcast.name,
-                thumb_width=80,
-                thumb_height=80
-            )
+            if podcast.logo.file_id:
+                yield InlineQueryResultCachedPhoto(
+                    id=str(index),
+                    photo_file_id=podcast.logo.file_id,
+                    title=str(podcast.name) + fav_flag,
+                    description=podcast.host or podcast.name,
+                    # photo_url=podcast.logo.url,
+                    input_message_content=InputTextMessageContent(
+                        podcast.name),
+                    caption=podcast.name
+                )
+            else:
+                yield InlineQueryResultPhoto(
+                    id=str(index),
+                    description=podcast.host or podcast.name,
+                    photo_url=podcast.logo.url,
+                    thumb_url=podcast.logo.url,
+                    photo_width=80,
+                    photo_height=80,
+                    title=str(podcast.name) + fav_flag,
+                    caption=podcast.name,
+                    input_message_content=InputTextMessageContent(podcast.name)
+                )
 
 
 def show_fav_podcasts(user):
@@ -104,18 +115,28 @@ def show_episodes(podcast):
             "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
     ]
     for index, episode in enumerate(episodes):
-        yield InlineQueryResultArticle(
-            id=index,
-            title=episode.title,
-            input_message_content=InputTextMessageContent((
-                f"[{SPEAKER_MARK}]({podcast.logo.url}) *{podcast.name}* #{len(podcast.episodes)-index}"
-            )),
-            reply_markup=InlineKeyboardMarkup.from_row(buttons),
-            description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",
-            thumb_url=episode.logo.url,
-            thumb_width=80,
-            thumb_height=80
-        )
+        if episode.file_id:
+            yield InlineQueryResultCachedAudio(
+                id = index,
+                audio_file_id = episode.file_id,
+                reply_markup=InlineKeyboardMarkup.from_row(buttons),
+                input_message_content=InputTextMessageContent((
+                    f"[{SPEAKER_MARK}]({podcast.logo.url}) *{podcast.name}* #{len(podcast.episodes)-index}"
+                )),
+            )
+        else:
+            yield InlineQueryResultArticle(
+                id=index,
+                title=episode.title,
+                input_message_content=InputTextMessageContent((
+                    f"[{SPEAKER_MARK}]({podcast.logo.url}) *{podcast.name}* #{len(podcast.episodes)-index}"
+                )),
+                reply_markup=InlineKeyboardMarkup.from_row(buttons),
+                description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",
+                thumb_url=episode.logo.url,
+                thumb_width=80,
+                thumb_height=80
+            )
 
 
 def search_podcast(keyword):

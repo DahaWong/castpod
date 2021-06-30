@@ -71,9 +71,6 @@ def register_handlers(dispatcher):
                        & Filters.audio, message.handle_audio),
         MessageHandler(
             Filters.status_update.pinned_message,
-            # | Filters.status_update.left_chat_member |
-            # Filters.status_update.new_chat_members |
-            # Filters.status_update.new_chat_title
             message.delete_message
         ),
         InlineQueryHandler(inline_query.handle_inline_query),
@@ -92,4 +89,4 @@ def register_handlers(dispatcher):
 
     for handler in handlers:
         dispatcher.add_handler(handler)
-        # dispatcher.add_error_handler(error.handle_error)
+        dispatcher.add_error_handler(error.handle_error)

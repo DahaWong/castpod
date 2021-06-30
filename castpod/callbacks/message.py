@@ -9,8 +9,10 @@ from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK
 import re
 # @is_group??
 
+
 def delete_message(update, context):
     update.message.delete()
+
 
 def subscribe_feed(update, context):
     run_async = context.dispatcher.run_async
@@ -83,6 +85,7 @@ def save_subscription(update, context):
                 podcasts_count += 1
             except Exception as e:
                 podcast.delete()
+                context.bot.send_message(dev, f'{e}')
                 failed_feeds.append(feed['url'])
                 continue
             run_async(
@@ -252,8 +255,8 @@ def show_podcast(update, context):
                         reply_markup=InlineKeyboardMarkup(page.keyboard()),
                         parse_mode="HTML"
                         ).result()
-        print(msg.photo[0].file_id)
-        podcast.logo.update(set__file_id=msg.photo[0].file_id)
+        podcast.logo.file_id = msg.photo[0].file_id
+        podcast.save()
         run_async(update.message.delete)
 
 

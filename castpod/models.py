@@ -194,7 +194,7 @@ class Podcast(Document):
     episodes = ListField(ReferenceField(Episode, reverse_delete_rule=PULL))
     subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
     starrers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
-    updated_time = DateTimeField(default=datetime.datetime(1970, 1, 1))
+    _updated_time = DateTimeField(default=datetime.datetime(1970, 1, 1))
     last_updated_time = DateTimeField()
     job_group = ListField(IntField(min_value=0, max_value=47))
 
@@ -204,6 +204,14 @@ class Podcast(Document):
          'weights': {'name': 10, 'host': 2}
          }
     ]}
+
+    @property
+    def updated_time(self):
+        return self._updated_time
+
+    @updated_time.setter
+    def updated_time(self, value):
+        self._updated_time = datetime.datetime.fromtimestamp(mktime(value))
 
     @property
     def logo(self):
@@ -234,20 +242,24 @@ class Podcast(Document):
             return queryset(starrers=user)
 
     def parse_feed(self):
-        result = feedparser.parse(self.feed)
-        if str(result.status)[0] != '2' and str(result.status)[0] != '3':
+        # Do request using requests library and timeout
+        try:
+            res = requests.get(self.feed, timeout=5.0)
+            res.raise_for_status()
+        except requests.ReadTimeout:
+            raise Exception(f'网络连接超时！')
+        except requests.exceptions.HTTPError as e:
             self.delete()
-            raise Exception(f'Feed open error, status: {result.status}')
+            raise Exception(f'Feed open error, status: {res.status_code}')
+        content = io.BytesIO(res.content)
+        result = feedparser.parse(content)
         if not result.entries:
             self.delete()
             print('feed has no entries!')
-            # raise Exception(f'Feed has no entries.')
-            return
-        updated_time = result.feed.get(
+            raise Exception(f'Feed has no entries.')
+        self.updated_time = result.feed.get(
             'updated_parsed') or result.entries[0].updated_parsed
-        self.updated_time = datetime.datetime.fromtimestamp(
-            mktime(updated_time))
-        self.save()
+        # self.save()
         return result
 
     def check_update(self, context):
@@ -257,21 +269,21 @@ class Podcast(Document):
         self.last_updated_time = self.episodes[-1].published_time
         if self.last_updated_time < self.updated_time:
             context.bot.send_message(
-                dev, f'`{self.name}` 有更新：\n\n上次发布\n`{self.last_updated_time}`\n\n最近发布\n`{self.updated_time}`')
+                dev, f'`{self.name}` 有更新：\n\n上次发布\n`{self.last_updated_time}`\n\n最近更新\n`{self.updated_time}`')
             self.update_feed(result, init=False)
-            context.bot.send_message(dev, '更新结束，进入下载阶段')
         else:
             context.bot.send_message(dev, f'`{self.name}：未检测到更新`')
         for i, episode in enumerate(self.episodes):
+            context.bot.send_message(dev, '更新结束，进入下载阶段')
             if episode.is_downloaded:
                 continue
             context.bot.send_message(
                 dev, f'开始下载 `{self.name}`：`{episode.title}`…')
             try:
-                audio_file = local_download(episode, context)
+                audio = local_download(episode, context)
                 context.bot.send_audio(
                     chat_id=f'@{podcast_vault}',
-                    audio=audio_file,
+                    audio=audio,
                     caption=(
                         f"{SPEAKER_MARK} *{self.name}*\n"
                         f"总第 {len(self.episodes) - i} 期\n\n"
@@ -284,21 +296,21 @@ class Podcast(Document):
                     duration=episode.duration,
                     thumb=episode.logo.path
                 )
-            except TimedOut:
-                print('download timed out!')
+            except TimedOut as e:
+                context.bot.send_message(dev, '下载超时！')
                 pass
             except Exception as e:
-                print(e)
+                context.bot.send_message(dev, f'{e}')
                 continue
             episode.is_downloaded = True
             episode.is_new = True
             episode.save()
-        self.save()
+        # self.save()
 
     def update_feed(self, result, init):
         feed = result.feed
         if not feed.get('title'):
-            self.save()
+            # self.save()
             self.delete()
             raise Exception("Cannot parse feed name.")
         if init:
@@ -323,11 +335,6 @@ class Podcast(Document):
         for item in result['items']:
             episode = self.parse_episode(init, item)
             if episode:
-                # try:
-                #     self.episodes.remove(episode.title)
-                # except ValueError:
-                #     pass
-                # self.update(set__episodes=self.episodes)
                 self.update(push__episodes__0=episode)
                 self.save()
             elif not init:  # 一旦发现没有更新，就停止检测
@@ -361,13 +368,13 @@ class Podcast(Document):
         #     match = re.match(r'([0-9]+)\..*',size)
         #     if match:
         #         size = match[1]
+
         episode.from_podcast = self
         episode.url = audio.get('href')
-        episode.size = audio.get('length') or 0
-        episode.size = int(episode.size)
+        episode.size = int(audio.get('length')) or 0
         episode.performer = self.name
         episode.title = unescape(item.get('title') or '')
-        episode.logo.url=item.get('image').href if item.get(
+        episode.logo.url = item.image.href if item.get(
             'image') else self.logo.url
         episode.duration = self.set_duration(item.get('itunes_duration'))
 

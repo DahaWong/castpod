@@ -81,6 +81,6 @@ class manifest:
     author = "Daha"
     author_id = 'dahawong'
     author_url = "https://office.daha.me/"
-    version = "0.1.0"
+    version = "0.1.8"
     discription = ""
     repo = "https://github.com/dahawong/castpod"

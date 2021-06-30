@@ -51,7 +51,7 @@ def validate_path(path):
                 raise
 
 
-def local_download(episode, context):
+def local_download(episode, context) -> str:
     res = requests.get(episode.url, allow_redirects=True, stream=True)
     if res.status_code != 200:
         raise Exception(
