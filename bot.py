@@ -29,8 +29,8 @@ updater.bot.set_my_commands(commands=[
     ('about', '关于…')
 ], scope=BotCommandScopeAllPrivateChats())
 
-# updater.bot.set_my_commands(
-#     commands=[('favorite', '我的单集收藏')], scope=BotCommandScopeAllGroupChats())
+updater.bot.set_my_commands(
+    commands=[('favorite', '我的单集收藏')], scope=BotCommandScopeAllGroupChats())
 
 connection = dispatcher.run_async(
     connect,

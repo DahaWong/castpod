@@ -6,6 +6,8 @@ from castpod.utils import save_manage_starter, delete_update_message, delete_man
 from manifest import manifest
 from ..constants import RIGHT_SEARCH_MARK, DOC_MARK
 
+# Private
+
 
 @delete_update_message
 def start(update, context):
@@ -157,6 +159,8 @@ def share(update, context):
     )
 
 # @delete_update_message
+
+
 def wander(update, context):
     update.message.reply_text(
         '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
@@ -190,5 +194,17 @@ def help_(update, context):
             [InlineKeyboardButton('注销账号', callback_data="logout"),
              InlineKeyboardButton('导出订阅', callback_data="export")],
             [InlineKeyboardButton('关闭', callback_data="delete_message")]]
+        )
+    )
+
+
+@delete_update_message
+def invite(update, context):
+    update.message.reply_text(
+        text=f"邀请你的伙伴们一起听播客！",
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton(
+            '呼朋唤友', switch_inline_query=f"generate_invitation_link"
+            )
         )
     )
