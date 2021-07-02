@@ -21,8 +21,8 @@ class PodcastPage(object):
         if self.mode == 'private':
             return [
                 [InlineKeyboardButton("退订", callback_data=f"unsubscribe_podcast_{self.podcast.id}"),
-                 InlineKeyboardButton("关于", url=self.podcast.website),
-                 InlineKeyboardButton(self.fav_text, callback_data=f"{self.fav_action}_{self.podcast.id}")],
+                 InlineKeyboardButton(self.fav_text, callback_data=f"{self.fav_action}_{self.podcast.id}"),
+                 InlineKeyboardButton("分享", switch_inline_query=f"s {self.podcast.name}")],
                 [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
                  InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
             ]

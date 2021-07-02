@@ -24,6 +24,7 @@ def register_handlers(dispatcher):
         CommandHandler('favorite', command.favorite, run_async=True),
         CommandHandler('share', command.share, run_async=True),
         CommandHandler('invite', command.invite),
+        CommandHandler('bonus', command.bonus),
         CommandHandler('settings', command.settings),
         CommandHandler('help', command.help_, run_async=True),
         CommandHandler('about', command.about, run_async=True),

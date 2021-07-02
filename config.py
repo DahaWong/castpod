@@ -1,6 +1,7 @@
 from telegram.ext import PicklePersistence
 import configparser
 from telegram.ext import Defaults
+from telegram import Update
 
 
 config = configparser.ConfigParser()
@@ -43,7 +44,8 @@ webhook_info = {
     "url_path": bot_token,
     "webhook_url": f'https://webhook.daha.me/{bot_token}',
     "max_connections": 1000,
-    "drop_pending_updates": True
+    # "drop_pending_updates": True,
+    "allowed_updates": Update.ALL_TYPES
 }
 
 # Test

@@ -5,7 +5,7 @@ from castpod.components import ManagePage, PodcastPage
 from castpod.utils import save_manage_starter, delete_update_message, delete_manage_starter
 from manifest import manifest
 from ..constants import RIGHT_SEARCH_MARK, DOC_MARK
-
+import re
 # Private
 
 
@@ -16,6 +16,25 @@ def start(update, context):
     user = User.validate_user(update.effective_user)
 
     if context.args and context.args[0] != 'login':
+        if re.match(r'^via_.*$', context.args[0]):
+            user_id = context.args[0][4:]
+            from_user = User.objects.get(id=user_id).only('bonus')
+            from_user.update(inc__bonus=10)
+            welcome_text = (
+                f'欢迎使用 {manifest.name}！                                            '
+                f'\n\n您可以发送 OPML 文件或 RSS 链接以*导入播客订阅*。\n'
+                f'\n⚠️ 目前还*没有正式上线*，主要的问题是订阅的播客还不能更新。遇到问题或提供建议请移步[内测聊天室](https://t.me/castpodchat)。'
+            )
+            run_async(
+                message.reply_text,
+                text=welcome_text,
+                reply_markup=InlineKeyboardMarkup.from_button(
+                    InlineKeyboardButton(
+                        '搜索播客', switch_inline_query_current_chat=""
+                    )
+                )
+            )
+            return
         podcast_id = context.args[0]
         podcast = Podcast.objects(id=podcast_id).first()
         if not podcast:
@@ -201,10 +220,18 @@ def help_(update, context):
 @delete_update_message
 def invite(update, context):
     update.message.reply_text(
-        text=f"邀请你的伙伴们一起听播客！",
+        text=f"邀请你的伙伴一起听播客！",
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
-            '呼朋唤友', switch_inline_query=f"generate_invitation_link"
+                '呼朋唤友', switch_inline_query=f"#invite"
             )
         )
+    )
+
+
+def bonus(update, context):
+    update.message.reply_text(
+        text='您的积分是：'+str(User.objects.get(
+            user_id=update.effective_user.id).bonus),
+        reply_to_message_id=update.message.message_id
     )

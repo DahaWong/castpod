@@ -17,20 +17,6 @@ dispatcher = updater.dispatcher
 
 # Webhook:
 updater.start_webhook(**webhook_info)  # Webhook
-# updater.bot.set_webhook(**webhook_setting)  # Webhook
-updater.bot.set_my_commands(commands=[
-    ('search', '发现播客'),
-    ('manage', '订阅管理'),
-    ('star', '播客收藏'),
-    ('favorite', '单集收藏'),
-    ('share', '分享播客'),
-    ('settings', '偏好设置'),
-    ('help', '使用指南'),
-    ('about', '关于…')
-], scope=BotCommandScopeAllPrivateChats())
-
-updater.bot.set_my_commands(
-    commands=[('favorite', '我的单集收藏')], scope=BotCommandScopeAllGroupChats())
 
 connection = dispatcher.run_async(
     connect,
@@ -64,6 +50,24 @@ if connection.result():
 else:
     raise Exception('MongoDB Connection Failed.')
 
+
+updater.bot.set_my_commands(
+    commands=[BotCommand('favorite', '我的单集收藏')], scope=BotCommandScopeAllGroupChats())
+
+updater.bot.set_my_commands(commands=[
+    BotCommand('search', '发现播客'),
+    BotCommand('manage', '订阅管理'),
+    BotCommand('star', '播客收藏'),
+    BotCommand('favorite', '单集收藏'),
+    BotCommand('share', '分享播客'),
+    BotCommand('invite', '邀请好友'),
+    BotCommand('bonus', '我的积分'),
+    BotCommand('settings', '偏好设置'),
+    BotCommand('help', '使用指南'),
+    BotCommand('about', '关于…')
+], scope=BotCommandScopeAllPrivateChats())
+
 # Polling:
-# updater.start_polling() # polling
-# updater.idle()     # polling
+# updater.start_polling()  # polling
+
+updater.idle()

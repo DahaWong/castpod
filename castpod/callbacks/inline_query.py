@@ -24,8 +24,8 @@ def handle_inline_query(update, context):
         results = run_async(share_podcast, user, query_text).result()
     elif re.match('^s .*$', query_text):
         results = run_async(share_podcast, user, query_text).result()
-    elif re.match('^generate_invitation_link$', query_text):
-        results = run_async(generate_invitation_link, user).result()
+    elif re.match('^#invite$', query_text):
+        results = run_async(invite, user).result()
     else:
         try:
             podcast = Podcast.objects.get(
@@ -225,7 +225,7 @@ def share_podcast(user, query_text):
             input_message_content=InputTextMessageContent('用 Castpod 一起听播客吧！'),
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
-                    '开启旅程', url=f'https://t.me/{manifest.bot_id}?start=via_{user.id}')
+                    '开启旅程', url=f'https://t.me/{manifest.bot_id}?start=via{user.id}')
             )
         )
     else:
@@ -245,43 +245,26 @@ def share_podcast(user, query_text):
             return
         for index, podcast in enumerate(podcasts):
             email = f'\n✉️  {podcast.email}' if podcast.email else ''
-            if podcast.logo.file_id:
-                yield InlineQueryResultCachedPhoto(
-                    id=str(index),
-                    photo_file_id=podcast.logo.file_id,
-                    title=str(podcast.name),
-                    description=podcast.host or podcast.name,
-                    # caption=podcast.logo.url,
-                    caption=(
+            yield InlineQueryResultArticle(
+                id=str(index),
+                title=podcast.name,
+                description=podcast.host,
+                thumb_url=podcast.logo.url,
+                thumb_width=60,
+                thumb_height=60,
+                input_message_content=InputTextMessageContent(
+                    message_text=(
                         f'*{podcast.name}*'
                         f'\n[{SPEAKER_MARK}]({podcast.logo.url}) {podcast.host or podcast.name}'
                         f'{email}'
-                    ),
-                    reply_markup=InlineKeyboardMarkup.from_button(InlineKeyboardButton(
-                        '订阅', url=f'https://t.me/{manifest.bot_id}?start={podcast.id}'))
-                )
-            else:
-                yield InlineQueryResultPhoto(
-                    id=str(index),
-                    description=podcast.host or podcast.name,
-                    photo_url=podcast.logo.url,
-                    thumb_url=podcast.logo.url,
-                    photo_width=80,
-                    photo_height=80,
-                    title=str(podcast.name),
-                    caption=podcast.name,
-                    input_message_content=InputTextMessageContent(
-                        message_text=(
-                            f'<b>{podcast.name}</b>'
-                            f'\n<a href={podcast.logo.url}>{SPEAKER_MARK}</a> {podcast.host or podcast.name}'
-                            f'{email}'
-                        ),
-                        parse_mode='HTML'
                     )
-                )
+                ),
+                reply_markup=InlineKeyboardMarkup.from_button(InlineKeyboardButton(
+                    '订阅', url=f"https://t.me/{manifest.bot_id}/start={podcast.id}"))
+            )
 
 
-def generate_invitation_link(user):
+def invite(user):
     yield InlineQueryResultArticle(
         id='0',
         title="点击发送邀请函",

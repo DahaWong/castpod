@@ -71,6 +71,7 @@ class User(Document):
     user_id = IntField(primary_key=True)
     username = StringField()
     name = StringField()
+    bonus = IntField(default=0)
     settings = EmbeddedDocumentField(Setting)
 
     @classmethod
