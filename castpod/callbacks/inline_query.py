@@ -20,8 +20,8 @@ def handle_inline_query(update, context):
         results = run_async(show_subscription, user).result()
     elif re.match('^p$', query_text):
         results = run_async(show_fav_podcasts, user).result()
-    # elif re.match('^e$', query_text):
-    #     results = run_async(show_fav_episodes, user).result()
+    elif re.match('^s .*$', query_text):
+        results = run_async(share_podcast, user, query_text).result()
     else:
         try:
             podcast = Podcast.objects.get(
@@ -108,10 +108,6 @@ def show_fav_episodes(user):
 
 
 def show_episodes(podcast):
-    # episodes = sorted(podcast.episodes,
-    #                   key=lambda x: x.published_time, reverse=True)
-    print(podcast.name)
-    print(podcast.episodes)
     buttons = [
         InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
         InlineKeyboardButton(
@@ -175,3 +171,44 @@ def search_podcast(keyword):
                 thumb_height=60,
                 thumb_width=60
             )
+
+def share_podcast(user, query_text):
+    print(query_text[2:])
+    podcasts = Podcast.objects(Q(name__icontains=query_text[2:]) & Q(subscribers=user))
+    if not podcasts:
+        yield InlineQueryResultArticle(
+            id=0,
+            title='继续输入播客关键词…',
+            description=f'搜索想要分享的播客',
+            input_message_content=InputTextMessageContent('💌'),
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    '分享播客', switch_inline_query_current_chat='')
+            )
+        )
+    else:
+        for index, podcast in enumerate(podcasts):
+            if podcast.logo.file_id:
+                yield InlineQueryResultCachedPhoto(
+                    id=str(index),
+                    photo_file_id=podcast.logo.file_id,
+                    title=str(podcast.name),
+                    description=podcast.host or podcast.name,
+                    # photo_url=podcast.logo.url,
+                    input_message_content=InputTextMessageContent(
+                        podcast.name),
+                    # reply_markup=
+                    caption=podcast.name
+                )
+            else:
+                yield InlineQueryResultPhoto(
+                    id=str(index),
+                    description=podcast.host or podcast.name,
+                    photo_url=podcast.logo.url,
+                    thumb_url=podcast.logo.url,
+                    photo_width=80,
+                    photo_height=80,
+                    title=str(podcast.name),
+                    caption=podcast.name,
+                    input_message_content=InputTextMessageContent(podcast.name)
+                )

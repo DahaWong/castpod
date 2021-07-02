@@ -149,12 +149,14 @@ def favorite(update, context):
 
 
 @delete_update_message
-def recent(update, context):
+def share(update, context):
     update.message.reply_text(
-        '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
+        text='💌',
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton('分享播客', switch_inline_query='s '))
+    )
+
 # @delete_update_message
-
-
 def wander(update, context):
     update.message.reply_text(
         '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)

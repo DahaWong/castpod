@@ -7,7 +7,6 @@ from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
 from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK
 import re
-# @is_group??
 
 
 def delete_message(update, context):
