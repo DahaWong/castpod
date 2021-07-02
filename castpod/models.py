@@ -274,9 +274,10 @@ class Podcast(Document):
         else:
             context.bot.send_message(dev, f'`{self.name}：未检测到更新`')
         for i, episode in enumerate(self.episodes):
-            context.bot.send_message(dev, '更新结束，进入下载阶段')
             if episode.is_downloaded:
                 continue
+            else:
+                print('开始下载！！')
             context.bot.send_message(
                 dev, f'开始下载 `{self.name}`：`{episode.title}`…')
             try:
@@ -335,10 +336,14 @@ class Podcast(Document):
         for item in result['items']:
             episode = self.parse_episode(init, item)
             if episode:
-                self.update(push__episodes__0=episode)
+                self.update(push__episodes=episode)
                 self.save()
             elif not init:  # 一旦发现没有更新，就停止检测
                 break
+        self.reload()
+        sorted_episodes = sorted(
+            self.episodes, key=lambda x: x.published_time, reverse=True)
+        self.update(set__episodes=sorted_episodes)
         self.save()
 
     def set_job_group(self):
@@ -371,7 +376,7 @@ class Podcast(Document):
 
         episode.from_podcast = self
         episode.url = audio.get('href')
-        episode.size = int(audio.get('length')) or 0
+        episode.size = int((audio.get('length')) or 0)
         episode.performer = self.name
         episode.title = unescape(item.get('title') or '')
         episode.logo.url = item.image.href if item.get(

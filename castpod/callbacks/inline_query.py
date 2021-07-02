@@ -34,7 +34,8 @@ def handle_inline_query(update, context):
 
 
 def show_subscription(user):
-    podcasts = Podcast.objects(subscribers__in=[user])
+    podcasts = Podcast.objects(
+        subscribers__in=[user]).order_by('-updated_time')
     if not podcasts:
         yield InlineQueryResultArticle(
             id=0,
@@ -47,8 +48,8 @@ def show_subscription(user):
             )
         )
     else:
-        podcasts = sorted(
-            podcasts, key=lambda x: x.updated_time, reverse=True)
+        # podcasts = sorted(
+        #     podcasts, key=lambda x: x.updated_time, reverse=True)
         for index, podcast in enumerate(podcasts):
             fav_flag = ''
             if user in podcast.starrers:
@@ -107,18 +108,20 @@ def show_fav_episodes(user):
 
 
 def show_episodes(podcast):
-    episodes = sorted(podcast.episodes,
-                      key=lambda x: x.published_time, reverse=True)
+    # episodes = sorted(podcast.episodes,
+    #                   key=lambda x: x.published_time, reverse=True)
+    print(podcast.name)
+    print(podcast.episodes)
     buttons = [
         InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
         InlineKeyboardButton(
             "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
     ]
-    for index, episode in enumerate(episodes):
+    for index, episode in enumerate(podcast.episodes):
         if episode.file_id:
             yield InlineQueryResultCachedAudio(
-                id = index,
-                audio_file_id = episode.file_id,
+                id=index,
+                audio_file_id=episode.file_id,
                 reply_markup=InlineKeyboardMarkup.from_row(buttons),
                 input_message_content=InputTextMessageContent((
                     f"[{SPEAKER_MARK}]({podcast.logo.url}) *{podcast.name}* #{len(podcast.episodes)-index}"

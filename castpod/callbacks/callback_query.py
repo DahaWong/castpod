@@ -53,11 +53,8 @@ def delete_account(update, context):
     context.user_data.clear()
 
 # Podcast
-
-
 def fav_ep(update, context):
     query = update.callback_query
-    print(query.data)
     episode_id = re.match(
         r'fav_ep_(.+)',
         query.data

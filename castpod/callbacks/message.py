@@ -144,7 +144,7 @@ def download_episode(update, context):
         Q(name=match[1]) & Q(subscribers=user))  # ⚠️ name改成id，且这一段代码与 handle_audio 重复
     context.user_data.update({'podcast': podcast.name, 'chat_id': chat_id})
     index = int(match[2])
-    episode = podcast.episodes[index-1]
+    episode = podcast.episodes[-index]
     bot.send_chat_action(
         chat_id,
         ChatAction.UPLOAD_AUDIO
@@ -270,10 +270,10 @@ def handle_audio(update, context):
                       )[-1].replace('#', '')
     podcast = Podcast.objects(id=podcast_id).only('episodes').first()
     episodes = podcast.episodes
-    episodes[index-1].update(set__message_id=message.forward_from_message_id)
-    episodes[index-1].update(set__file_id=message.audio.file_id)
+    episodes[-index].update(set__message_id=message.forward_from_message_id)
+    episodes[-index].update(set__file_id=message.audio.file_id)
     podcast.update(set__episodes=episodes)
-    episodes[index-1].reload()
+    episodes[-index].reload()
     podcast.reload()
 
 
