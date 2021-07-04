@@ -41,7 +41,6 @@ class Logo(EmbeddedDocument):
     @property
     def path(self):
         if not self.is_local:
-            print('not local')
             data = io.BytesIO(requests.get(self.url).content)
             with Image.open(data) as im:
                 # then process image to fit restriction:

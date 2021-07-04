@@ -174,7 +174,7 @@ def share(update, context):
     update.message.reply_text(
         text='💌',
         reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton('分享播客', switch_inline_query='s '))
+            InlineKeyboardButton('分享播客', switch_inline_query=''))
     )
 
 # @delete_update_message

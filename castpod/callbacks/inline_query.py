@@ -17,22 +17,28 @@ def handle_inline_query(update, context):
     user = User.validate_user(update.effective_user)
     if not query_text:
         kwargs.update({"cache_time": 10})
-        results = run_async(show_subscription, user).result()
+        if query.chat_type == 'sender':
+            results = run_async(show_subscription, user).result()
+        else:
+            results = run_async(invite, user).result()
     elif re.match('^p$', query_text):
         results = run_async(show_fav_podcasts, user).result()
-    elif re.match('^s$', query_text):
-        results = run_async(share_podcast, user, query_text).result()
-    elif re.match('^s .*$', query_text):
-        results = run_async(share_podcast, user, query_text).result()
-    elif re.match('^#invite$', query_text):
-        results = run_async(invite, user).result()
+    # elif re.match('^s$', query_text):
+    #     results = run_async(share_podcast, user, query_text).result()
+    # elif re.match('^s .*$', query_text):
+    #     results = run_async(share_podcast, user, query_text).result()
+    # elif re.match('^#invite$', query_text):
+    #     results = run_async(invite, user).result()
     else:
         try:
             podcast = Podcast.objects.get(
                 Q(name=query_text) & Q(subscribers=user))
             results = run_async(show_episodes, podcast).result()
         except:
-            results = run_async(search_podcast, user, query_text).result()
+            if query.chat_type == 'sender':
+                results = run_async(search_podcast, user, query_text).result()
+            else:
+                results = run_async(share_podcast, user, query_text).result()
     run_async(query.answer, list(results), **kwargs)
 
 
@@ -216,59 +222,43 @@ def search_podcast(user, keywords):
 
 
 def share_podcast(user, query_text):
-    keywords = query_text[2:]
-    if not keywords:
+    keywords = query_text
+    podcasts = Podcast.objects(
+        Q(name__icontains=keywords) & Q(subscribers=user))
+    if not podcasts:
         yield InlineQueryResultArticle(
             id=0,
-            title='继续输入关键词…',
-            description=f'点此发送邀请链接',
-            input_message_content=InputTextMessageContent('用 Castpod 一起听播客吧！'),
-            reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton(
-                    '开启旅程', url=f'https://t.me/{manifest.bot_id}?start=via{user.id}')
-            )
+            title='没有找到相关的播客',
+            description=f'换个关键词试试 :)',
+            input_message_content=InputTextMessageContent(':)')
         )
-    else:
-        podcasts = Podcast.objects(
-            Q(name__icontains=keywords) & Q(subscribers=user))
-        if not podcasts:
-            yield InlineQueryResultArticle(
-                id=0,
-                title='没有找到相关的播客',
-                description=f'换个关键词试试',
-                input_message_content=InputTextMessageContent(':)'),
-                reply_markup=InlineKeyboardMarkup.from_button(
-                    InlineKeyboardButton(
-                        '删除', callback_data='delete_message')
+        return
+    for index, podcast in enumerate(podcasts):
+        email = f'\n✉️  {podcast.email}' if podcast.email else ''
+        yield InlineQueryResultArticle(
+            id=str(index),
+            title=podcast.name,
+            description=podcast.host,
+            thumb_url=podcast.logo.url,
+            thumb_width=60,
+            thumb_height=60,
+            input_message_content=InputTextMessageContent(
+                message_text=(
+                    f'*{podcast.name}*'
+                    f'\n[{SPEAKER_MARK}]({podcast.logo.url}) {podcast.host or podcast.name}'
+                    f'{email}'
                 )
-            )
-            return
-        for index, podcast in enumerate(podcasts):
-            email = f'\n✉️  {podcast.email}' if podcast.email else ''
-            yield InlineQueryResultArticle(
-                id=str(index),
-                title=podcast.name,
-                description=podcast.host,
-                thumb_url=podcast.logo.url,
-                thumb_width=60,
-                thumb_height=60,
-                input_message_content=InputTextMessageContent(
-                    message_text=(
-                        f'*{podcast.name}*'
-                        f'\n[{SPEAKER_MARK}]({podcast.logo.url}) {podcast.host or podcast.name}'
-                        f'{email}'
-                    )
-                ),
-                reply_markup=InlineKeyboardMarkup.from_button(InlineKeyboardButton(
-                    '订阅', url=f"https://t.me/{manifest.bot_id}/start={podcast.id}"))
-            )
+            ),
+            reply_markup=InlineKeyboardMarkup.from_button(InlineKeyboardButton(
+                '订阅', url=f"https://t.me/{manifest.bot_id}/start={podcast.id}"))
+        )
 
 
 def invite(user):
     yield InlineQueryResultArticle(
         id='0',
-        title="点击发送邀请函",
-        description="一起听播客吧",
+        title="点击发送 Castpod 邀请函",
+        description="或者继续输入关键词同好友分享播客",
         input_message_content=InputTextMessageContent("一起用 Castpod 听播客吧！"),
         reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(

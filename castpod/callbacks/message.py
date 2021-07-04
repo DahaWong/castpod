@@ -160,6 +160,7 @@ def download_episode(update, context):
     else:
         downloading_note = fetching_note.edit_text("下载中…")
         audio_file = local_download(episode, context)
+        print(audio_file)
         uploading_note = downloading_note.edit_text("正在上传，请稍候…")
         audio_message = None
         try:
