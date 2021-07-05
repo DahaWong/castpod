@@ -48,6 +48,32 @@ webhook_info = {
     "allowed_updates": Update.ALL_TYPES
 }
 
+# commands
+private_commands = [
+    ('search', '搜索播客'),
+    ('manage', '订阅列表'),
+    ('favorite', '喜欢的单集'),
+    ('settings', '偏好设置'),
+    ('help', '使用指南'),
+    ('about', '关于 Castpod')
+]
+
+dev_commands = [
+    ('search', '搜索播客'),
+    ('manage', '订阅列表'),
+    ('favorite', '喜欢的单集'),
+    ('settings', '偏好设置'),
+    ('help', '使用指南'),
+    ('about', '关于 Castpod'),
+    ('stat', '数据汇总'),
+    ('host', '管理主播')
+]
+
+group_commands = [
+    ('wander', '随机发送一集往期节目'),
+    ('update', '更新...'),
+]
+
 # Test
 # persistence = PicklePersistence(filename='persistence')
 # update_info_test = {
@@ -71,8 +97,9 @@ update_info = {
     'workers': 6
 }
 
-
 # Manifest
+
+
 class manifest:
     name = "Castpod"
     bot_id = "testdahabot"

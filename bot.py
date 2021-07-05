@@ -1,12 +1,12 @@
 from telegram.ext import Updater
-from telegram import BotCommandScopeAllPrivateChats, BotCommand, BotCommandScopeAllGroupChats
-from config import update_info, webhook_info, Mongo, dev
+from telegram import BotCommandScopeAllPrivateChats, BotCommandScopeAllGroupChats, BotCommandScopeAllChatAdministrators, BotCommandScopeChat
 from castpod.handlers import register_handlers
 from castpod.models import Podcast
+import config
 # from castpod.stats import register as register_stats
 from mongoengine import connect
 import datetime
-updater = Updater(**update_info)
+updater = Updater(**config.update_info)
 dispatcher = updater.dispatcher
 
 # Use this method to logout your bot from telegram api:
@@ -16,11 +16,11 @@ dispatcher = updater.dispatcher
 # updater.bot.close()
 
 # Webhook:
-updater.start_webhook(**webhook_info)  # Webhook
+updater.start_webhook(**config.webhook_info)  # Webhook
 
 connection = dispatcher.run_async(
     connect,
-    db=Mongo.db
+    db=config.Mongo.db
     # username=Mongo.user, # for auth
     # password=Mongo.pwd # for auth
     # host=Mongo.remote_host # for remote test
@@ -50,22 +50,13 @@ if connection.result():
 else:
     raise Exception('MongoDB Connection Failed.')
 
-
+# set commands
 updater.bot.set_my_commands(
-    commands=[BotCommand('favorite', '我的单集收藏')], scope=BotCommandScopeAllGroupChats())
-
-updater.bot.set_my_commands(commands=[
-    BotCommand('search', '发现播客'),
-    BotCommand('manage', '订阅管理'),
-    BotCommand('star', '播客收藏'),
-    BotCommand('favorite', '单集收藏'),
-    BotCommand('share', '分享播客'),
-    BotCommand('invite', '邀请好友'),
-    BotCommand('bonus', '我的积分'),
-    BotCommand('settings', '偏好设置'),
-    BotCommand('help', '使用指南'),
-    BotCommand('about', '关于…')
-], scope=BotCommandScopeAllPrivateChats())
+    commands=config.private_commands, scope=BotCommandScopeAllPrivateChats())
+updater.bot.set_my_commands(
+    commands=config.group_commands, scope=BotCommandScopeAllChatAdministrators())
+updater.bot.set_my_commands(
+    commands=config.dev_commands, scope=BotCommandScopeChat(config.dev))
 
 # Polling:
 # updater.start_polling()  # polling

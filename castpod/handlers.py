@@ -1,6 +1,7 @@
 from castpod.callbacks import *
 from .constants import QUIT_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK
 from telegram.ext import MessageHandler, Filters, InlineQueryHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
+from telegram import Chat
 import inspect
 
 RSS, CONFIRM, PHOTO = range(3)
@@ -74,7 +75,10 @@ def register_handlers(dispatcher):
             Filters.status_update.pinned_message,
             message.delete_message
         ),
-        InlineQueryHandler(inline_query.handle_inline_query),
+        InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
+        InlineQueryHandler(inline_query.via_private, chat_types=[Chat.PRIVATE]),
+        # InlineQueryHandler(inline_query.via_group, chat_types=[Chat.GROUP, Chat.SUPERGROUP]),
+        InlineQueryHandler(inline_query.via_channel, chat_types=[Chat.CHANNEL]),
         ConversationHandler(
             entry_points=[conversation.request_host_handler],
             states={

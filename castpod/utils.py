@@ -5,7 +5,8 @@ import errno
 import os
 import re
 from functools import wraps
-from config import bot_token, manifest, dev
+from config import bot_token, dev
+import manifest
 
 # iTunes Search API
 
@@ -58,7 +59,7 @@ def local_download(episode, context) -> str:
             f"Error when downloading audio, status: {res.status_code}.")
     block_size = 1024  # 1 Kb
     if context.user_data:
-        path = f"file:///home/daha/project/castpod/public/audio/{context.user_data['podcast']}/{episode.title}.mp3"
+        path = f"public/audio/{context.user_data['podcast']}/{episode.title}.mp3"
         validate_path(path)
         total = int(res.headers.get('content-length', 0))
         chat_id = context.user_data['chat_id']
@@ -79,7 +80,7 @@ def local_download(episode, context) -> str:
         if total != 0 and progress_bar.n != total:
             raise Exception("ERROR: something went wrong with progress bar.")
     else:
-        path = f"file:///home/daha/project/castpod/public/audio/new/{episode.title}.mp3"
+        path = f"public/audio/new/{episode.title}.mp3"
         validate_path(path)
         if not os.path.exists(os.path.dirname(path)):
             try:
