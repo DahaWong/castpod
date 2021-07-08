@@ -11,6 +11,7 @@ from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentField, FileField, ImageField, IntField, ListField, ReferenceField, StringField, URLField
 from mongoengine.queryset.manager import queryset_manager
 from telegram.error import TimedOut
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from castpod.utils import local_download
 from config import podcast_vault, dev, manifest
 from telegraph import Telegraph
@@ -286,11 +287,12 @@ class Podcast(Document):
                     chat_id=f'@{podcast_vault}',
                     audio=audio,
                     caption=(
-                        f"{SPEAKER_MARK} *{self.name}*\n"
-                        f"总第 {len(self.episodes) - i} 期\n\n"
-                        f"[订阅](https://t.me/{manifest.bot_id}?start={self.id})"
-                        f" | [相关链接]({episode.shownotes_url})\n\n"
+                        f"{SPEAKER_MARK} *{self.name}*"
                         f"#{self.id}"
+                    ),
+                    reply_markup=InlineKeyboardMarkup.from_row(
+                        [InlineKeyboardButton('订阅', url=f'https://t.me/{manifest.bot_id}?start={self.id}'),
+                         InlineKeyboardButton('相关链接', url=episode.shownotes_url)]
                     ),
                     title=episode.title,
                     performer=self.name,

@@ -52,26 +52,26 @@ webhook_info = {
 private_commands = [
     ('search', '搜索播客'),
     ('manage', '订阅列表'),
-    ('favorite', '喜欢的单集'),
+    ('favorite', '单集收藏'),
     ('settings', '偏好设置'),
     ('help', '使用指南'),
-    ('about', '关于 Castpod')
+    ('about', '关于我们')
 ]
 
 dev_commands = [
     ('search', '搜索播客'),
     ('manage', '订阅列表'),
-    ('favorite', '喜欢的单集'),
+    ('favorite', '单集收藏'),
     ('settings', '偏好设置'),
     ('help', '使用指南'),
-    ('about', '关于 Castpod'),
+    ('about', '关于我们'),
     ('stat', '数据汇总'),
     ('host', '管理主播')
 ]
 
 group_commands = [
-    ('wander', '随机发送一集往期节目'),
-    ('update', '更新...'),
+    ('wander', '随机漫步'),
+    ('update', '更新节目'),
 ]
 
 # Test

@@ -1,11 +1,11 @@
-from castpod.callbacks.command import share
+from .command import share
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
-from castpod.utils import search_itunes
+from ..utils import search_itunes
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultCachedPhoto, InlineQueryResultPhoto, InlineQueryResultCachedAudio
 import re
 from config import manifest
-from castpod.models import User, Podcast
+from ..models import User, Podcast
 import datetime
 from ..constants import SPEAKER_MARK, STAR_MARK
 

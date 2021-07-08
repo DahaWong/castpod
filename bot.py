@@ -33,7 +33,6 @@ register_handlers(dispatcher)
 def make_job(i):
     def job(context):
         podcasts = Podcast.objects(job_group=i)
-        # context.bot.send_message(dev, f'`{podcasts}`')
         for podcast in podcasts:
             podcast.check_update(context)
     return job

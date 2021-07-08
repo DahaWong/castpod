@@ -170,9 +170,11 @@ def download_episode(update, context):
                 caption=(
                     f"{SPEAKER_MARK} *{podcast.name}*\n"
                     f"总第 {index} 期\n\n"
-                    f"[订阅](https://t.me/{manifest.bot_id}?start={podcast.id})"
-                    f" | [相关链接]({episode.shownotes_url})\n\n"
                     f"#{podcast.id}"
+                ),
+                reply_markup=InlineKeyboardMarkup.from_row(
+                    [InlineKeyboardButton('订阅', url=f'https://t.me/{manifest.bot_id}?start={podcast.id}'),
+                     InlineKeyboardButton('相关链接', url=episode.shownotes_url)]
                 ),
                 title=episode.title,
                 performer=podcast.name,
