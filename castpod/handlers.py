@@ -77,7 +77,7 @@ def register_handlers(dispatcher):
         ),
         InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
         InlineQueryHandler(inline_query.via_private, chat_types=[Chat.PRIVATE]),
-        # InlineQueryHandler(inline_query.via_group, chat_types=[Chat.GROUP, Chat.SUPERGROUP]),
+        InlineQueryHandler(inline_query.via_group, chat_types=[Chat.GROUP, Chat.SUPERGROUP]),
         InlineQueryHandler(inline_query.via_channel, chat_types=[Chat.CHANNEL]),
         ConversationHandler(
             entry_points=[conversation.request_host_handler],

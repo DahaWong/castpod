@@ -5,7 +5,7 @@ from config import podcast_vault, manifest, dev
 from ..utils import delete_update_message, local_download, parse_doc, delete_manage_starter, save_manage_starter
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
-from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK
+from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK, LOVE_MARK
 import re
 
 
@@ -193,12 +193,17 @@ def download_episode(update, context):
     forwarded_message.edit_caption(
         caption=(
             f"{SPEAKER_MARK} <b>{podcast.name}</b>\n\n"
-            f"<a href='{episode.shownotes_url or podcast.website}'>相关链接</a>"
             # f"<a href='https://t.me/{podcast_vault}/{forward_from_message}'>留言区</a>\n\n"
             f"{episode.timeline}"
         ),
         parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('收藏', callback_data=f'fav_ep_{episode.id}')], [
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton('相关链接', url=episode.shownotes_url or podcast.website),
+                InlineKeyboardButton(LOVE_MARK, callback_data=f'fav_ep_{episode.id}'),
+             InlineKeyboardButton('分享', switch_inline_query=f'...')
+            ], 
+            [
             InlineKeyboardButton(
                 "订阅列表", switch_inline_query_current_chat=""),
             InlineKeyboardButton(
