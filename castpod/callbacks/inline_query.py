@@ -5,7 +5,7 @@ from ..utils import search_itunes
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultCachedPhoto, InlineQueryResultPhoto, InlineQueryResultCachedAudio
 import re
 from config import manifest
-from ..models import User, Podcast
+from ..models import User, Podcast, Episode
 import datetime
 from ..constants import SPEAKER_MARK, STAR_MARK
 
@@ -45,11 +45,11 @@ def via_private(update, context):
 
 
 def via_group(update, context):
-    pass
+    via_private(update, context)
 
 
 def via_channel(update, context):
-    pass
+    via_private(update, context)
 
 
 def search_podcast(user, keywords):
@@ -214,13 +214,39 @@ def share_podcast(user, keywords):
     podcasts = Podcast.objects(
         Q(name__icontains=keywords) & Q(subscribers=user))
     if not podcasts:
-        yield InlineQueryResultArticle(
-            id=0,
-            title='没有找到相关的播客',
-            description=f'换个关键词试试 :)',
-            input_message_content=InputTextMessageContent(':)')
+        podcasts_of_user = Podcast.objects(subscribers=user).only('episodes')
+        episodes = Episode.objects(
+            Q(title__icontains=keywords) & Q(from_podcast__in=podcasts_of_user)
         )
-        return
+        if not episodes:
+            yield InlineQueryResultArticle(
+                id=0,
+                title='没有找到相关的播客',
+                description=f'换个关键词试试 :)',
+                input_message_content=InputTextMessageContent(':)')
+            )
+            return
+        else:
+            for index, episode in enumerate(episodes):
+                podcast = episode.from_podcast
+                email = f'\n✉️  {podcast.email}' if podcast.email else ''
+                yield InlineQueryResultArticle(
+                    id=index,
+                    title=episode.title,
+                    description=podcast.name,
+                    thumb_url=episode.logo.url,
+                    thumb_width=60,
+                    thumb_height=60,
+                    input_message_content=InputTextMessageContent(
+                        message_text=(
+                            f'*{podcast.name}*'
+                            f'\n[{SPEAKER_MARK}]({podcast.logo.url}) {podcast.host or podcast.name}'
+                            f'{email}'
+                        )
+                    ),
+                    reply_markup=InlineKeyboardMarkup.from_button(InlineKeyboardButton(
+                        '订阅', url=f"https://t.me/{manifest.bot_id}/start={podcast.id}"))
+                )
     for index, podcast in enumerate(podcasts):
         email = f'\n✉️  {podcast.email}' if podcast.email else ''
         yield InlineQueryResultArticle(

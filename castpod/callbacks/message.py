@@ -193,8 +193,8 @@ def download_episode(update, context):
     forwarded_message.edit_caption(
         caption=(
             f"{SPEAKER_MARK} <b>{podcast.name}</b>\n\n"
-            f"<a href='{episode.shownotes_url or podcast.website}'>相关链接</a>  |  "
-            f"<a href='https://t.me/{podcast_vault}/{forward_from_message}'>留言区</a>\n\n"
+            f"<a href='{episode.shownotes_url or podcast.website}'>相关链接</a>"
+            # f"<a href='https://t.me/{podcast_vault}/{forward_from_message}'>留言区</a>\n\n"
             f"{episode.timeline}"
         ),
         parse_mode=ParseMode.HTML,
