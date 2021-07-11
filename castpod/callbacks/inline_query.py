@@ -21,17 +21,15 @@ def via_sender(update, context):
             cache_time=30
         )
         return
-    match = re.match(r'.*#(-?[0-9]*)$', keywords)
-    index = match[1]
-    if match and not index:
+    match = re.match(r'(.*?)#(.*)$', keywords)
+    name, index = match[1], match[2]
+    if match:
         try:
             podcast = Podcast.objects.get(
-                Q(name=keywords[:-1]) & Q(subscribers=user))
-            results = show_episodes(podcast)
+                Q(name=name) & Q(subscribers=user))
+            results = show_episodes(podcast, index)
         except:
             results = search_podcast(user, keywords)
-    elif index:
-        results = show_specific_episode()
     query.answer(
         list(results),
         auto_pagination=True,
@@ -172,13 +170,50 @@ def show_subscription(user):
                 )
 
 
-def show_episodes(podcast):
+def show_episodes(podcast, index):
     buttons = [
         InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
         InlineKeyboardButton(
             "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
     ]
-    for index, episode in enumerate(podcast.episodes):
+    if index:
+        if re.match(r'^-?[0-9]*$', index):
+            index = int(index)
+            if abs(index) <= len(podcast.episodes):
+                if index >= 0:
+                    index = -index
+                    episodes = podcast.episodes[max(
+                        index-3, -len(podcast.episodes)): min(index+2, -1)]
+                else:
+                    index = abs(index + 1)
+                    episodes = podcast.episodes[max(
+                        index-3, 0): min(index+2, len(podcast.episodes))]
+            else:
+                yield InlineQueryResultArticle(
+                    id=0,
+                    title='超出检索范围',
+                    input_message_content=InputTextMessageContent(':('),
+                    # !!如果 podcast.episodes.count() == 1
+                    description=f"请输入 1 ～ {len(podcast.episodes)} 之间的数字",
+                )
+                return
+        else:
+            episodes = Episode.objects(
+                Q(from_podcast=podcast) & Q(title__icontains=index)
+            ).order_by('-published_time') or Episode.objects(
+                Q(from_podcast=podcast) & Q(summary__icontains=index)
+            ).order_by('-published_time')
+            if not episodes:
+                yield InlineQueryResultArticle(
+                    id=0,
+                    title='没有找到相关的节目',
+                    input_message_content=InputTextMessageContent(':('),
+                    description=f"换个关键词试试",
+                )
+                return
+    else:
+        episodes = podcast.episodes
+    for index, episode in enumerate(episodes):
         if episode.file_id:
             yield InlineQueryResultCachedAudio(
                 id=index,
