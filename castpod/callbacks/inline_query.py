@@ -1,4 +1,3 @@
-from .command import share
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
 from ..utils import search_itunes
@@ -7,31 +6,37 @@ import re
 from config import manifest
 from ..models import User, Podcast, Episode
 import datetime
-from ..constants import SPEAKER_MARK, STAR_MARK
+from ..constants import SPEAKER_MARK
 
 
 def via_sender(update, context):
     query = update.inline_query
     user = User.validate_user(update.effective_user)
-    if not query.query:
+    keywords = query.query
+    if not keywords:
         results = show_subscription(user)
         query.answer(
             list(results),
             auto_pagination=True,
             cache_time=30
         )
-    else:
+        return
+    match = re.match(r'.*#(-?[0-9]*)$', keywords)
+    index = match[1]
+    if match and not index:
         try:
             podcast = Podcast.objects.get(
-                Q(name=query.query) & Q(subscribers=user))
+                Q(name=keywords[:-1]) & Q(subscribers=user))
             results = show_episodes(podcast)
         except:
-            results = search_podcast(user, query.query)
-        query.answer(
-            list(results),
-            auto_pagination=True,
-            cache_time=10
-        )
+            results = search_podcast(user, keywords)
+    elif index:
+        results = show_specific_episode()
+    query.answer(
+        list(results),
+        auto_pagination=True,
+        cache_time=10
+    )
 
 
 def via_private(update, context):
@@ -128,7 +133,7 @@ def search_podcast(user, keywords):
 
 def show_subscription(user):
     podcasts = Podcast.objects(
-        subscribers__in=[user]).order_by('-updated_time')
+        subscribers=user).order_by('-updated_time')
     if not podcasts:
         yield InlineQueryResultArticle(
             id=0,
@@ -171,7 +176,7 @@ def show_episodes(podcast):
     buttons = [
         InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
         InlineKeyboardButton(
-            "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
+            "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
     ]
     for index, episode in enumerate(podcast.episodes):
         if episode.file_id:

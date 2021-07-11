@@ -69,7 +69,7 @@ def fav_ep(update, context):
             InlineKeyboardButton(
                 "订阅列表", switch_inline_query_current_chat=""),
             InlineKeyboardButton(
-                "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
+                "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
         ]])
     )
     update.effective_message.pin()
@@ -91,7 +91,7 @@ def unfav_ep(update, context):
             InlineKeyboardButton(
                 "订阅列表", switch_inline_query_current_chat=""),
             InlineKeyboardButton(
-                "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
+                "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
         ]])
     )
     update.effective_message.unpin()

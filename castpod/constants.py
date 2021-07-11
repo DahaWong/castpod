@@ -7,3 +7,4 @@ LEFT_SEARCH_MARK = '🔍'
 STAR_MARK = '⭐'
 DOC_MARK = '📄'
 FAV_MARK = '❤️'
+# TABS = '\t'* 34

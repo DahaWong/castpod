@@ -24,12 +24,12 @@ class PodcastPage(object):
                  InlineKeyboardButton(self.fav_text, callback_data=f"{self.fav_action}_{self.podcast.id}"),
                  InlineKeyboardButton("分享", switch_inline_query=f"{self.podcast.name}")],
                 [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
-                 InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
+                 InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}#")]
             ]
         elif self.mode == 'group':
             return [
                 [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
-                 InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}")]
+                 InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}#")]
             ]
 
 

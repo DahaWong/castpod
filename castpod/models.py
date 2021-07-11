@@ -269,8 +269,8 @@ class Podcast(Document):
             return
         self.last_updated_time = self.episodes[-1].published_time
         if self.last_updated_time < self.updated_time:
-            context.bot.send_message(
-                dev, f'`{self.name}` 有更新：\n\n上次发布\n`{self.last_updated_time}`\n\n最近更新\n`{self.updated_time}`')
+            # context.bot.send_message(
+            #     dev, f'`{self.name}` 有更新：\n\n上次发布\n`{self.last_updated_time}`\n\n最近更新\n`{self.updated_time}`')
             self.update_feed(result, init=False)
         else:
             context.bot.send_message(dev, f'`{self.name}：未检测到更新`')
@@ -287,7 +287,7 @@ class Podcast(Document):
                     chat_id=f'@{podcast_vault}',
                     audio=audio,
                     caption=(
-                        f"{SPEAKER_MARK} *{self.name}*"
+                        f"{SPEAKER_MARK} *{self.name}*\n\n"
                         f"#{self.id}"
                     ),
                     reply_markup=InlineKeyboardMarkup.from_row(

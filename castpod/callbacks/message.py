@@ -5,7 +5,7 @@ from config import podcast_vault, manifest, dev
 from ..utils import delete_update_message, local_download, parse_doc, delete_manage_starter, save_manage_starter
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
-from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK, LOVE_MARK
+from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK, FAV_MARK
 import re
 
 
@@ -160,7 +160,6 @@ def download_episode(update, context):
     else:
         downloading_note = fetching_note.edit_text("下载中…")
         audio_file = local_download(episode, context)
-        print(audio_file)
         uploading_note = downloading_note.edit_text("正在上传，请稍候…")
         audio_message = None
         try:
@@ -192,23 +191,26 @@ def download_episode(update, context):
         context.user_data.clear()  # !!!
     forwarded_message.edit_caption(
         caption=(
-            f"{SPEAKER_MARK} <b>{podcast.name}</b>\n\n"
+            # f"{SPEAKER_MARK} <b>{podcast.name}</b>\n\n"
             # f"<a href='https://t.me/{podcast_vault}/{forward_from_message}'>留言区</a>\n\n"
             f"{episode.timeline}"
         ),
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup([
             [
-                InlineKeyboardButton('相关链接', url=episode.shownotes_url or podcast.website),
-                InlineKeyboardButton(LOVE_MARK, callback_data=f'fav_ep_{episode.id}'),
-             InlineKeyboardButton('分享', switch_inline_query=f'...')
-            ], 
+                InlineKeyboardButton(
+                    '简介', url=episode.shownotes_url or podcast.website),
+                InlineKeyboardButton(
+                    '收藏', callback_data=f'fav_ep_{episode.id}'),
+                InlineKeyboardButton(
+                    '分享', switch_inline_query=f'{podcast.name}#{episode.id}')
+            ],
             [
-            InlineKeyboardButton(
-                "订阅列表", switch_inline_query_current_chat=""),
-            InlineKeyboardButton(
-                "单集列表", switch_inline_query_current_chat=f"{podcast.name}")
-        ]])
+                InlineKeyboardButton(
+                    "订阅列表", switch_inline_query_current_chat=""),
+                InlineKeyboardButton(
+                    "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
+            ]])
     )
     update.message.delete()
 
