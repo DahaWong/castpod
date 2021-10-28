@@ -5,8 +5,8 @@ import errno
 import os
 import re
 from functools import wraps
-from config import bot_token, dev
-import manifest
+from config import bot_token
+from datetime import date
 
 # iTunes Search API
 
@@ -42,7 +42,7 @@ def search_itunes(keyword: str):
 #   print(response.json())
 
 
-# Local Download
+# Download
 def validate_path(path):
     if not os.path.exists(os.path.dirname(path)):
         try:
@@ -52,17 +52,17 @@ def validate_path(path):
                 raise
 
 
-def local_download(episode, context) -> str:
+def download(episode, context) -> str:
     res = requests.get(episode.url, allow_redirects=True, stream=True)
     if res.status_code != 200:
         raise Exception(
             f"Error when downloading audio, status: {res.status_code}.")
     block_size = 1024  # 1 Kb
     if context.user_data:
+        chat_id = context.user_data['chat_id']
         path = f"public/audio/{context.user_data['podcast']}/{episode.title}.mp3"
         validate_path(path)
         total = int(res.headers.get('content-length', 0))
-        chat_id = context.user_data['chat_id']
         progress_bar = tqdm(
             total=total,
             unit='iB',
@@ -78,7 +78,7 @@ def local_download(episode, context) -> str:
         context.bot.delete_message(chat_id, message_id)
         progress_bar.close()
         if total != 0 and progress_bar.n != total:
-            raise Exception("ERROR: something went wrong with progress bar.")
+            raise Exception("Error: Something went wrong with progress bar.")
     else:
         path = f"public/audio/new/{episode.title}.mp3"
         validate_path(path)
@@ -91,7 +91,6 @@ def local_download(episode, context) -> str:
         with open(path, 'wb') as f:
             for data in res.iter_content(block_size):
                 f.write(data)
-    print(path)
     return path
 
 
@@ -138,6 +137,8 @@ def save_manage_starter(chat_data, message):
 
 def delete_manage_starter(context):
     run_async = context.dispatcher.run_async
+    if not context.chat_data.get('manage_starter'):
+        return
     for message in context.chat_data['manage_starter']:
         run_async(message.delete)
     context.chat_data['manage_starter'] = []
@@ -152,7 +153,7 @@ def generate_opml(user, podcasts):
         "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
         "\t<opml version='1.0'>\n"
         "\t\t<head>\n"
-        f"\t\t\t<title>{manifest.name} 订阅源</title>\n"
+        f"\t\t\t<title>Castpod 订阅 {date.today()}</title>\n"
         "\t\t</head>\n"
         "\t\t<body>\n"
         "\t\t\t<outline text='feeds'>\n"
@@ -163,7 +164,7 @@ def generate_opml(user, podcasts):
         "\t</opml>\n"
     )
     opml = head + body + tail
-    path = f"./public/subscriptions/{user.user_id}.xml"
+    path = f"./public/subscriptions/Castpod_{date.today().strftime('%Y%m%d')}.xml"
     with open(path, 'w+') as f:
         f.write(opml)
     return path

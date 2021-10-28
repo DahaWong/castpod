@@ -2,7 +2,7 @@ from ..models import User, Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ChatAction, ParseMode, ReplyKeyboardRemove
 from ..components import PodcastPage, ManagePage
 from config import podcast_vault, manifest, dev
-from ..utils import delete_update_message, local_download, parse_doc, delete_manage_starter, save_manage_starter
+from ..utils import delete_update_message, download, parse_doc, delete_manage_starter, save_manage_starter
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
 from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK, FAV_MARK
@@ -84,7 +84,6 @@ def save_subscription(update, context):
                 podcasts_count += 1
             except Exception as e:
                 podcast.delete()
-                context.bot.send_message(dev, f'{e}')
                 failed_feeds.append(feed['url'])
                 continue
             run_async(
@@ -159,7 +158,7 @@ def download_episode(update, context):
         forward_from_message = episode.message_id
     else:
         downloading_note = fetching_note.edit_text("下载中…")
-        audio_file = local_download(episode, context)
+        audio_file = download(episode, context)
         uploading_note = downloading_note.edit_text("正在上传，请稍候…")
         audio_message = None
         try:
@@ -172,7 +171,7 @@ def download_episode(update, context):
                     f"#{podcast.id}"
                 ),
                 reply_markup=InlineKeyboardMarkup.from_row(
-                    [InlineKeyboardButton('订阅', url=f'https://t.me/{manifest.bot_id}?start={podcast.id}'),
+                    [InlineKeyboardButton('订阅', url=f'https://t.me/{manifest.bot_id}?start=p{podcast.id}'),
                      InlineKeyboardButton('相关链接', url=episode.shownotes_url)]
                 ),
                 title=episode.title,

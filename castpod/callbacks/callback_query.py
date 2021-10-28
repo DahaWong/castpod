@@ -6,6 +6,7 @@ from .command import settings as command_settings
 from .command import help_ as command_help
 from config import manifest
 from ..constants import TICK_MARK, STAR_MARK
+from datetime import date
 import re
 
 
@@ -53,6 +54,8 @@ def delete_account(update, context):
     context.user_data.clear()
 
 # Podcast
+
+
 def fav_ep(update, context):
     query = update.callback_query
     episode_id = re.match(
@@ -200,7 +203,7 @@ def export_before_logout(update, context):
     subscribed_podcasts = Podcast.subscribe_by(user)
     run_async(
         message.reply_document,
-        filename=f"{user.username} 的 {manifest.name} 订阅.xml",
+        filename=f"castpod-{date.today()}.xml",
         document=generate_opml(user, subscribed_podcasts),
         reply_markup=InlineKeyboardMarkup.from_column(
             [InlineKeyboardButton("继续注销账号", callback_data="confirm_delete_account"),
@@ -222,7 +225,7 @@ def export(update, context):
     subscribed_podcasts = Podcast.subscribe_by(user)
     run_async(
         message.reply_document,
-        filename=f"{user.username} 的 {manifest.name} 订阅.xml",
+        filename=f"castpod-{date.today()}.xml",
         document=generate_opml(user, subscribed_podcasts)
     )
 

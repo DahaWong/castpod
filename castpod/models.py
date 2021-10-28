@@ -12,7 +12,7 @@ from mongoengine.fields import BooleanField, DateTimeField, EmbeddedDocumentFiel
 from mongoengine.queryset.manager import queryset_manager
 from telegram.error import TimedOut
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from castpod.utils import local_download
+from castpod.utils import download
 from config import podcast_vault, dev, manifest
 from telegraph import Telegraph
 from html import unescape
@@ -124,7 +124,6 @@ class Episode(Document):
     _shownotes_url = URLField()
     _timeline = StringField()
     is_downloaded = BooleanField(required=True, default=True)
-    is_new = BooleanField(default=False)
     url = StringField()
     performer = StringField()
     _logo = EmbeddedDocumentField(Logo)
@@ -164,7 +163,6 @@ class Episode(Document):
     def timeline(self):
         if not self._timeline:
             shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.shownotes)
-            # pattern = r'.+(?:[0-9]{1,2}:)?[0-9]{1,3}:[0-5][0-9].+'
             pattern = r'.+(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9].+'
             matches = re.finditer(pattern, shownotes)
             self._timeline = '\n\n'.join([re.sub(
@@ -183,7 +181,7 @@ class Episode(Document):
 class Podcast(Document):
     # meta = {'queryset_class': PodcastQuerySet}
     feed = StringField(required=True, unique=True)
-    name = StringField(max_length=64)  # 合理？
+    name = StringField(max_length=64)  # 合理吗？
     _logo = EmbeddedDocumentField(Logo)
     host = StringField()
     website = StringField()
@@ -196,8 +194,6 @@ class Podcast(Document):
     subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
     starrers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
     _updated_time = DateTimeField(default=datetime.datetime(1970, 1, 1))
-    last_updated_time = DateTimeField()
-    job_group = ListField(IntField(min_value=0, max_value=47))
 
     meta = {'indexes': [
         {'fields': ['$name', "$host"],
@@ -212,6 +208,7 @@ class Podcast(Document):
 
     @updated_time.setter
     def updated_time(self, value):
+        print(value)
         self._updated_time = datetime.datetime.fromtimestamp(mktime(value))
 
     @property
@@ -256,34 +253,32 @@ class Podcast(Document):
         result = feedparser.parse(content)
         if not result.entries:
             self.delete()
-            print('feed has no entries!')
             raise Exception(f'Feed has no entries.')
         self.updated_time = result.feed.get(
-            'updated_parsed') or result.entries[0].updated_parsed
-        # self.save()
+            'updated_parsed') or result.entries[0].get('updated_parsed')
+        self.save()
         return result
 
     def check_update(self, context):
+        last_updated_time = self.updated_time
         result = self.parse_feed()
         if not result:
             return
-        self.last_updated_time = self.episodes[-1].published_time
-        if self.last_updated_time < self.updated_time:
-            # context.bot.send_message(
-            #     dev, f'`{self.name}` 有更新：\n\n上次发布\n`{self.last_updated_time}`\n\n最近更新\n`{self.updated_time}`')
+        # context.bot.send_message(
+        #     dev, f"{self.name}\n上次更新 {str(last_updated_time)}\n最近更新 {str(self.updated_time)}")
+        if last_updated_time < self.updated_time:
+            context.bot.send_message(dev, f'{self.name} 检测到更新,更新中…')
             self.update_feed(result, init=False)
-        else:
-            context.bot.send_message(dev, f'`{self.name}：未检测到更新`')
-        for i, episode in enumerate(self.episodes):
+        # else:
+            # context.bot.send_message(dev, f'{self.name} 未检测到更新')
+        for episode in self.episodes:
             if episode.is_downloaded:
                 continue
-            else:
-                print('开始下载！！')
             context.bot.send_message(
-                dev, f'开始下载 `{self.name}`：`{episode.title}`…')
+                dev, f'开始下载：{self.name} - {episode.title}')
             try:
-                audio = local_download(episode, context)
-                context.bot.send_audio(
+                audio = download(episode, context)
+                message = context.bot.send_audio(
                     chat_id=f'@{podcast_vault}',
                     audio=audio,
                     caption=(
@@ -291,7 +286,7 @@ class Podcast(Document):
                         f"#{self.id}"
                     ),
                     reply_markup=InlineKeyboardMarkup.from_row(
-                        [InlineKeyboardButton('订阅', url=f'https://t.me/{manifest.bot_id}?start={self.id}'),
+                        [InlineKeyboardButton('订阅', url=f'https://t.me/{manifest.bot_id}?start=p{self.id}'),
                          InlineKeyboardButton('相关链接', url=episode.shownotes_url)]
                     ),
                     title=episode.title,
@@ -299,25 +294,23 @@ class Podcast(Document):
                     duration=episode.duration,
                     thumb=episode.logo.path
                 )
+                episode.is_downloaded = True
+                episode.message_id = message.message_id
+                episode.file_id = message.audio.file_id
+                episode.save()
+                return message
             except TimedOut as e:
                 context.bot.send_message(dev, '下载超时！')
                 pass
             except Exception as e:
                 context.bot.send_message(dev, f'{e}')
                 continue
-            episode.is_downloaded = True
-            episode.is_new = True
-            episode.save()
-        # self.save()
 
     def update_feed(self, result, init):
         feed = result.feed
         if not feed.get('title'):
-            # self.save()
             self.delete()
             raise Exception("Cannot parse feed name.")
-        if init:
-            self.set_job_group()
         self.name = unescape(feed.title)[:63]
         if len(self.name) == 63:
             self.name += '…'
@@ -348,11 +341,6 @@ class Podcast(Document):
         self.update(set__episodes=sorted_episodes)
         self.save()
 
-    def set_job_group(self):
-        i = random.randint(0, 47)
-        self.job_group = [i % 48 for i in range(i, i + 41, 8)]
-        self.save()
-
     def parse_episode(self, init, item):
         published_time = datetime.datetime.fromtimestamp(
             mktime(item.published_parsed))
@@ -361,10 +349,9 @@ class Podcast(Document):
             return
 
         if not init:
-            if (published_time <= self.last_updated_time):
-                print(published_time)
+            if (published_time <= self.episodes[0].published_time):
                 return
-            episode = Episode(is_downloaded=False, is_new=True)
+            episode = Episode(is_downloaded=False)
         else:
             episode = Episode()
 
@@ -398,6 +385,7 @@ class Podcast(Document):
         episode.updated_time = datetime.datetime.fromtimestamp(
             mktime(item.updated_parsed))
         episode.save()
+        self.save()
         return episode
 
     def set_duration(self, duration: str) -> int:

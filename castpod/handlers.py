@@ -94,4 +94,4 @@ def register_handlers(dispatcher):
 
     for handler in handlers:
         dispatcher.add_handler(handler)
-        dispatcher.add_error_handler(error.handle_error)
+        # dispatcher.add_error_handler(error.handle_error)

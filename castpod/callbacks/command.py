@@ -13,21 +13,24 @@ import re
 def start(update, context):
     run_async = context.dispatcher.run_async
     message = update.message
+    if User.objects(user_id=update.effective_user.id):
+        message.reply_text('您已经注册过啦，无需接受邀请 :)')
+        return
     user = User.validate_user(update.effective_user)
-
     if context.args and context.args[0] != 'login':
-        if re.match(r'^via_.*$', context.args[0]):
-            user_id = context.args[0][4:]
-            from_user = User.objects.get(id=user_id).only('bonus')
+        match = re.match(r'^(u|p)([0-9]*)$', context.args[0])
+        id_type, id_value = match[1], int(match[2])
+        if id_type == 'u':  # 由其他用户推荐登入u
+            from_user = User.objects.get(user_id=id_value).only('bonus')
             from_user.update(inc__bonus=10)
-            welcome_text = (
-                f'欢迎使用 {manifest.name}！                                            '
-                f'\n\n您可以发送 OPML 文件或 RSS 链接以*导入播客订阅*。\n'
-                f'\n⚠️ 目前还*没有正式上线*，主要的问题是订阅的播客还不能更新。遇到问题或提供建议请移步[内测聊天室](https://t.me/castpodchat)。'
+            text = (
+                f'您已接受 {from_user.first_name} 的邀请，欢迎使用 {manifest.name}！                                            '
+                f'\n\n发送 OPML 文件或者 RSS 链接均可以导入播客订阅。\n'
+                f'\n⚠️ 目前还*没有正式上线*，主要的问题是订阅的播客不能获取更新。遇到问题或提供建议请移步[内测聊天室](https://t.me/castpodchat)。'
             )
             run_async(
                 message.reply_text,
-                text=welcome_text,
+                text=text,
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
                         '搜索播客', switch_inline_query_current_chat=""
@@ -35,41 +38,41 @@ def start(update, context):
                 )
             )
             return
-        podcast_id = context.args[0]
-        podcast = Podcast.objects(id=podcast_id).first()
-        if not podcast:
-            update.reply_message(
-                f'抱歉，该播客不存在。如需订阅，请尝试在对话框输入 `@{manifest.bot_id} 播客关键词` 检索。')
-            return
-        if not user in podcast.subscribers:
-            subscribing_note = run_async(
-                update.message.reply_text, "正在订阅…").result()
-            user.subscribe(podcast)
-            run_async(subscribing_note.delete)
-        page = PodcastPage(podcast)
-        manage_page = ManagePage(
-            Podcast.subscribe_by(user), f'`{podcast.name}` 订阅成功！'
-        )
-        photo = podcast.logo.file_id or podcast.logo.url
-        msg = run_async(message.reply_photo,
-                        photo=photo,
-                        caption=page.text(),
-                        reply_markup=InlineKeyboardMarkup(page.keyboard()),
-                        parse_mode="HTML"
-                        ).result()
-        podcast.logo.file_id = msg.photo[0].file_id
-        podcast.save()
+        elif id_type == 'p':  # 订阅播客
+            podcast = Podcast.objects(id=id_value).first()
+            if not podcast:
+                update.reply_message(
+                    f'抱歉，该播客不存在。如需订阅，请尝试在对话框输入 `@{manifest.bot_id} 播客关键词` 检索。')
+                return
+            if not user in podcast.subscribers:
+                subscribing_note = run_async(
+                    update.message.reply_text, "正在订阅…").result()
+                user.subscribe(podcast)
+                run_async(subscribing_note.delete)
+            page = PodcastPage(podcast)
+            manage_page = ManagePage(
+                Podcast.subscribe_by(user), f'`{podcast.name}` 订阅成功！'
+            )
+            photo = podcast.logo.file_id or podcast.logo.url
+            msg = run_async(message.reply_photo,
+                            photo=photo,
+                            caption=page.text(),
+                            reply_markup=InlineKeyboardMarkup(page.keyboard()),
+                            parse_mode="HTML"
+                            ).result()
+            podcast.logo.file_id = msg.photo[0].file_id
+            podcast.save()
 
-        run_async(
-            update.message.reply_text,
-            text=manage_page.text,
-            reply_markup=ReplyKeyboardMarkup(manage_page.keyboard())
-        )
+            run_async(
+                update.message.reply_text,
+                text=manage_page.text,
+                reply_markup=ReplyKeyboardMarkup(manage_page.keyboard())
+            )
 
     else:
         welcome_text = (
             f'欢迎使用 {manifest.name}！                                            '
-            f'\n\n您可以发送 OPML 文件或 RSS 链接以*导入播客订阅*。\n'
+            f'\n\n发送 OPML 文件或者 RSS 链接均可以导入播客订阅。\n'
             f'\n⚠️ 目前还*没有正式上线*，主要的问题是订阅的播客还不能更新。遇到问题或提供建议请移步[内测聊天室](https://t.me/castpodchat)。'
         )
         run_async(

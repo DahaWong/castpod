@@ -3,7 +3,6 @@ from telegram import BotCommandScopeAllPrivateChats, BotCommandScopeAllGroupChat
 from castpod.handlers import register_handlers
 from castpod.models import Podcast
 import config
-# from castpod.stats import register as register_stats
 from mongoengine import connect
 import datetime
 updater = Updater(**config.update_info)
@@ -27,22 +26,18 @@ connection = dispatcher.run_async(
 )
 
 register_handlers(dispatcher)
-# register_stats(dispatcher) # stats
 
 
-def make_job(i):
-    def job(context):
-        podcasts = Podcast.objects(job_group=i)
-        for podcast in podcasts:
-            podcast.check_update(context)
-    return job
+def update_podcasts(context):
+    for podcast in Podcast.objects:
+        message = podcast.check_update(context)
+        if message:
+            for subscriber in podcast.subscribers:
+                message.copy(subscriber.user_id)
 
 
-for i in range(48):
-    interval = 15
-    time = datetime.time(hour=i // (60 // interval), minute=i * interval % 60)
-    dispatcher.job_queue.run_daily(
-        make_job(i), time, name=f'update_podcast_group_{i}')
+dispatcher.job_queue.run_repeating(
+    update_podcasts, 1200)  # run every 1200 s (20 min)
 
 if connection.result():
     print('MongoDB Connected!')

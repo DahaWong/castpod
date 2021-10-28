@@ -1,5 +1,4 @@
 from mongoengine.queryset.visitor import Q
-from mongoengine.errors import DoesNotExist
 from ..utils import search_itunes
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultCachedPhoto, InlineQueryResultPhoto, InlineQueryResultCachedAudio
 import re
@@ -22,14 +21,13 @@ def via_sender(update, context):
         )
         return
     match = re.match(r'(.*?)#(.*)$', keywords)
-    name, index = match[1], match[2]
-    if match:
-        try:
-            podcast = Podcast.objects.get(
-                Q(name=name) & Q(subscribers=user))
-            results = show_episodes(podcast, index)
-        except:
-            results = search_podcast(user, keywords)
+    try:
+        name, index = match[1], match[2]
+        podcast = Podcast.objects.get(
+            Q(name=name) & Q(subscribers=user))
+        results = show_episodes(podcast, index)
+    except:
+        results = search_podcast(user, keywords)
     query.answer(
         list(results),
         auto_pagination=True,
@@ -246,7 +244,7 @@ def get_invitation(user):
         input_message_content=InputTextMessageContent("一起用 Castpod 听播客吧！"),
         reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
-                        '开启旅程', url=f"https://t.me/{manifest.bot_id}/start=via_{user.id}"))
+                        '开启旅程', url=f"https://t.me/{manifest.bot_id}?start=u{user.id}"))
     )
 
 
@@ -285,7 +283,7 @@ def share_podcast(user, keywords):
                         )
                     ),
                     reply_markup=InlineKeyboardMarkup.from_button(InlineKeyboardButton(
-                        '订阅', url=f"https://t.me/{manifest.bot_id}/start={podcast.id}"))
+                        '订阅', url=f"https://t.me/{manifest.bot_id}?start=p{podcast.id}"))
                 )
     for index, podcast in enumerate(podcasts):
         email = f'\n✉️  {podcast.email}' if podcast.email else ''
@@ -304,5 +302,5 @@ def share_podcast(user, keywords):
                 )
             ),
             reply_markup=InlineKeyboardMarkup.from_button(InlineKeyboardButton(
-                '订阅', url=f"https://t.me/{manifest.bot_id}/start={podcast.id}"))
+                '订阅', url=f"https://t.me/{manifest.bot_id}?start=p{podcast.id}"))
         )
