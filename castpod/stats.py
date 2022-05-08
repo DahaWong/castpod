@@ -1,14 +1,14 @@
-# from ptbstats import set_dispatcher, register_stats, SimpleStats
+# from ptbstats import set_application, register_stats, SimpleStats
 # from telegram.ext import Filters
 
 
-# def register(dispatcher):
-#     set_dispatcher(dispatcher)
+# def register(application):
+#     set_application(application)
 
 #     register_stats(
 #         SimpleStats(
 #             'text',
-#             lambda u: bool(u.message and (Filters.text & ~ Filters.command)(u))
+#             lambda u: bool(u.message and (filters.TEXT & ~ filters.COMMAND)(u))
 #         )
 #     )
 #     register_stats(

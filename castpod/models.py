@@ -260,26 +260,26 @@ class Podcast(Document):
         self.save()
         return result
 
-    def check_update(self, context):
+    async def check_update(self, context):
         last_updated_time = self.updated_time
         result = self.parse_feed()
         if not result:
             return
-        # context.bot.send_message(
+        # await context.bot.send_message(
         #     dev, f"{self.name}\n上次更新 {str(last_updated_time)}\n最近更新 {str(self.updated_time)}")
         if last_updated_time < self.updated_time:
-            context.bot.send_message(dev, f'{self.name} 检测到更新,更新中…')
+            await context.bot.send_message(dev, f'{self.name} 检测到更新,更新中…')
             self.update_feed(result, init=False)
         # else:
-            # context.bot.send_message(dev, f'{self.name} 未检测到更新')
+            # await context.bot.send_message(dev, f'{self.name} 未检测到更新')
         for episode in self.episodes:
             if episode.is_downloaded:
                 continue
-            context.bot.send_message(
+            await context.bot.send_message(
                 dev, f'开始下载：{self.name} - {episode.title}')
             try:
                 audio = download(episode, context)
-                message = context.bot.send_audio(
+                message = await context.bot.send_audio(
                     chat_id=f'@{podcast_vault}',
                     audio=audio,
                     caption=(
@@ -301,10 +301,10 @@ class Podcast(Document):
                 episode.save()
                 return message
             except TimedOut as e:
-                context.bot.send_message(dev, '下载超时！')
+                await context.bot.send_message(dev, '下载超时！')
                 pass
             except Exception as e:
-                context.bot.send_message(dev, f'{e}')
+                await context.bot.send_message(dev, f'{e}')
                 continue
 
     def update_feed(self, result, init):

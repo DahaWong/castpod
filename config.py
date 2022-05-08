@@ -9,7 +9,6 @@ config.read('config.ini')  # Read the configuration file on your machine.
 
 
 # Bot
-bot_token_test = config['BOT']['TOKEN_TEST']
 bot_token = config['BOT']['TOKEN_TEST']
 proxy = config['BOT']['PROXY']
 bot_api = config['BOT']['API']
@@ -87,15 +86,15 @@ group_commands = [
 #  }
 
 # Build
-persistence = PicklePersistence(filename='persistence')
-update_info = {
-    'token': bot_token,
-    'use_context': True,
-    'persistence': persistence,
-    'base_url': bot_api,
-    'defaults': defaults,
-    'workers': 6
-}
+# persistence = PicklePersistence(filename='persistence')
+# update_info = {
+#     'token': bot_token,
+#     'use_context': True,
+#     'persistence': persistence,
+#     'base_url': bot_api,
+#     'defaults': defaults,
+#     'workers': 6
+# }
 
 # Manifest
 

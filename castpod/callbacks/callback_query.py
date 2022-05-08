@@ -10,53 +10,46 @@ from datetime import date
 import re
 
 
-def delete_message(update, context):
-    context.dispatcher.run_async(update.callback_query.delete_message)
+async def delete_message(update, context):
+    await update.callback_query.delete_message()
 
 
-def logout(update, context):
-    context.dispatcher.run_async(
-        update.callback_query.edit_message_text,
-        text="注销账号之前，也许您希望先导出订阅数据？",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton(
-                "不，直接注销", callback_data="confirm_delete_account"),
-            InlineKeyboardButton(
-                "导出订阅", callback_data="export_before_logout")], [
-            InlineKeyboardButton(
-                "返回", callback_data="back_to_help")
-        ]])
-    )
+async def logout(update, context):
+    await update.callback_query.edit_message_text(text="注销账号之前，也许您希望先导出订阅数据？", reply_markup=InlineKeyboardMarkup([[
+        InlineKeyboardButton(
+            "不，直接注销", callback_data="confirm_delete_account"),
+        InlineKeyboardButton(
+            "导出订阅", callback_data="export_before_logout")], [
+        InlineKeyboardButton(
+            "返回", callback_data="back_to_help")
+    ]]))
 
 
-def delete_account(update, context):
-    run_async = context.dispatcher.run_async
+async def delete_account(update, context):
     bot = context.bot
     message = update.callback_query.message
     user = User.validate_user(update.effective_user)
     if message.text:
-        deleting_note = run_async(message.edit_text, "注销中…").result()
+        deleting_note = await message.edit_text("注销中…")
         user.delete()
-        run_async(deleting_note.delete)
-        run_async(
-            bot.send_message,
+        await deleting_note.delete()
+        await bot.send_message(
             chat_id=user.user_id,
             text='账号已注销，感谢您这段时间的使用！',
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
                     '重新开始', url=f"https://t.me/{manifest.bot_id}?start=login")
-            )
-        )
+            ))
     else:
         user.delete()
-    run_async(delete_manage_starter, context)
+    await delete_manage_starter(context)
     context.chat_data.clear()
     context.user_data.clear()
 
 # Podcast
 
 
-def fav_ep(update, context):
+async def fav_ep(update, context):
     query = update.callback_query
     episode_id = re.match(
         r'fav_ep_(.+)',
@@ -66,8 +59,7 @@ def fav_ep(update, context):
     podcast = episode.from_podcast
     user = User.objects.get(user_id=update.effective_user.id)
     user.fav_ep(episode)
-    context.dispatcher.run_async(
-        query.edit_message_reply_markup,
+    await query.edit_message_reply_markup(
         InlineKeyboardMarkup([[InlineKeyboardButton('❤️', callback_data=f'unfav_ep_{episode_id}')], [
             InlineKeyboardButton(
                 "订阅列表", switch_inline_query_current_chat=""),
@@ -75,10 +67,10 @@ def fav_ep(update, context):
                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
         ]])
     )
-    update.effective_message.pin()
+    await update.effective_message.pin()
 
 
-def unfav_ep(update, context):
+async def unfav_ep(update, context):
     query = update.callback_query
     episode_id = re.match(
         r'unfav_ep_(.+)',
@@ -88,27 +80,25 @@ def unfav_ep(update, context):
     podcast = episode.from_podcast
     user = User.objects.get(user_id=update.effective_user.id)
     user.unfav_ep(episode)
-    context.dispatcher.run_async(
-        query.edit_message_reply_markup,
+    await query.edit_message_reply_markup(
         InlineKeyboardMarkup([[InlineKeyboardButton('收藏', callback_data=f'fav_ep_{episode_id}')], [
             InlineKeyboardButton(
                 "订阅列表", switch_inline_query_current_chat=""),
             InlineKeyboardButton(
                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
-        ]])
-    )
-    update.effective_message.unpin()
+        ]]))
+    await update.effective_message.unpin()
 
 
-def fav_podcast(update, context):
+async def fav_podcast(update, context):
     toggle_fav_podcast(update, context, to="fav")
 
 
-def unfav_podcast(update, context):
+async def unfav_podcast(update, context):
     toggle_fav_podcast(update, context, to="unfav")
 
 
-def toggle_fav_podcast(update, context, to: str):
+async def toggle_fav_podcast(update, context, to: str):
     query = update.callback_query
     user = User.objects.get(user_id=update.effective_user.id)
     podcast_id = re.match(
@@ -126,31 +116,24 @@ def toggle_fav_podcast(update, context, to: str):
 
     user.toggle_fav(podcast)
     keyboard = PodcastPage(podcast, **kwargs).keyboard()
-    context.dispatcher.run_async(
-        query.edit_message_reply_markup,
-        InlineKeyboardMarkup(keyboard)
-    )
+    await query.edit_message_reply_markup(InlineKeyboardMarkup(keyboard))
 
 
-def unsubscribe_podcast(update, context):
-    run_async = context.dispatcher.run_async
+async def unsubscribe_podcast(update, context):
     query = update.callback_query
     podcast_id = re.match(r'unsubscribe_podcast_(.+)', query.data)[1]
     podcast_name = Podcast.objects(id=podcast_id).only('name').first().name
-    run_async(
-        query.message.edit_text,
+    await query.message.edit_text(
         text=f"确认退订 {podcast_name} 吗？",
         reply_markup=InlineKeyboardMarkup.from_row([
             InlineKeyboardButton(
                 "返回", callback_data=f"back_to_actions_{podcast_id}"),
             InlineKeyboardButton("退订", callback_data=f"confirm_unsubscribe_{podcast_id}")]
-        )
-    )
-    run_async(query.answer, f"退订后，未来将不会收到 {podcast_name} 的更新。")
+        ))
+    await query.answer(f"退订后，未来将不会收到 {podcast_name} 的更新。")
 
 
-def confirm_unsubscribe(update, context):
-    run_async = context.dispatcher.run_async
+async def confirm_unsubscribe(update, context):
     query = update.callback_query
     podcast_id = re.match(r'confirm_unsubscribe_(.+)', query.data)[1]
     user = User.objects.get(user_id=query.from_user.id)
@@ -161,19 +144,19 @@ def confirm_unsubscribe(update, context):
         podcasts=Podcast.subscribe_by(user, 'name'),
         text=f'`{podcast.name}` 退订成功'
     )
-    run_async(query.message.delete)
-    msg = run_async(
-        context.bot.send_message,
+    await query.message.delete()
+    msg = await context.bot.send_message(
         chat_id=user.id,
         text=manage_page.text,
         reply_markup=ReplyKeyboardMarkup(
-            manage_page.keyboard(), resize_keyboard=True, one_time_keyboard=True)
-    ).result()
+            manage_page.keyboard(), resize_keyboard=True, one_time_keyboard=True
+        )
+    )
 
     save_manage_starter(context.chat_data, msg)
 
 
-def back_to_actions(update, context):
+async def back_to_actions(update, context):
     query = update.callback_query
     user = User.objects.get(user_id=query.from_user.id)
     podcast_id = re.match(r'back_to_actions_(.+)', query.data)[1]
@@ -183,8 +166,7 @@ def back_to_actions(update, context):
                            fav_action="unfav_podcast")
     else:
         page = PodcastPage(podcast)
-    context.dispatcher.run_async(
-        query.edit_message_text,
+    await query.edit_message_text(
         text=page.text(),
         reply_markup=InlineKeyboardMarkup(
             page.keyboard()),
@@ -192,17 +174,15 @@ def back_to_actions(update, context):
     )
 
 
-def export_before_logout(update, context):
-    run_async = context.dispatcher.run_async
+async def export_before_logout(update, context):
     user = User.validate_user(update.effective_user)
     message = update.callback_query.message
     podcasts = Podcast.objects(subscribers__in=[user])
     if not podcasts:
-        run_async(message.reply_text, '还没有订阅播客，请先订阅后导出~')
+        await message.reply_text('还没有订阅播客，请先订阅后导出~')
         return
     subscribed_podcasts = Podcast.subscribe_by(user)
-    run_async(
-        message.reply_document,
+    await message.reply_document(
         filename=f"castpod-{date.today()}.xml",
         document=generate_opml(user, subscribed_podcasts),
         reply_markup=InlineKeyboardMarkup.from_column(
@@ -211,20 +191,18 @@ def export_before_logout(update, context):
                  "返回帮助界面", callback_data="back_to_help")
              ])
     )
-    message.delete()
+    await message.delete()
 
 
-def export(update, context):
-    run_async = context.dispatcher.run_async
+async def export(update, context):
     user = User.validate_user(update.effective_user)
     message = update.callback_query.message
     podcasts = Podcast.objects(subscribers__in=[user])
     if not podcasts:
-        run_async(message.reply_text, '还没有订阅播客，请先订阅后导出~')
+        await message.reply_text('还没有订阅播客，请先订阅后导出~')
         return
     subscribed_podcasts = Podcast.subscribe_by(user)
-    run_async(
-        message.reply_document,
+    await message.reply_document(
         filename=f"castpod-{date.today()}.xml",
         document=generate_opml(user, subscribed_podcasts)
     )
@@ -232,11 +210,11 @@ def export(update, context):
 # Help
 
 
-def confirm_delete_account(update, context):
+async def confirm_delete_account(update, context):
     keyboard = [[InlineKeyboardButton("注销", callback_data="delete_account"),
                  InlineKeyboardButton("返回", callback_data=f"back_to_help")]]
 
-    update.callback_query.edit_message_text(
+    await update.callback_query.edit_message_text(
         "确认注销账号吗？该操作将会*清除您的全部数据*\n",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -244,19 +222,18 @@ def confirm_delete_account(update, context):
     # Tips('logout', "⦿ 这将清除所有存储在后台的个人数据。").send(update, context)
 
 
-def back_to_help(update, context):
+async def back_to_help(update, context):
     command_help(update, context)
 
 # settings
 
 
-def settings(update, context):
+async def settings(update, context):
     command_settings(update, context)
 
 
-def display_setting(update, context):
-    context.dispatcher.run_async(
-        update.callback_query.edit_message_text,
+async def display_setting(update, context):
+    await update.callback_query.edit_message_text(
         text=f"点击修改外观设置：",
         reply_markup=InlineKeyboardMarkup.from_column(
             [InlineKeyboardButton(f"显示时间线    {TICK_MARK}", callback_data="toggle_timeline"),
@@ -269,9 +246,8 @@ def display_setting(update, context):
     )
 
 
-def feed_setting(update, context):
-    context.dispatcher.run_async(
-        update.callback_query.edit_message_text,
+async def feed_setting(update, context):
+    await update.callback_query.edit_message_text(
         text=f"点击修改推送设置：",
         reply_markup=InlineKeyboardMarkup.from_column(
             [InlineKeyboardButton("更新频率    60 分钟", callback_data="feed_freq"),
@@ -280,9 +256,8 @@ def feed_setting(update, context):
     )
 
 
-def host_setting(update, context):
-    context.dispatcher.run_async(
-        update.callback_query.edit_message_text,
+async def host_setting(update, context):
+    await update.callback_query.edit_message_text(
         text=f"*主播设置*",
         reply_markup=InlineKeyboardMarkup.from_column(
             [InlineKeyboardButton("申请主播认证", callback_data="request_host"),
@@ -290,22 +265,3 @@ def host_setting(update, context):
              ]
         )
     )
-
-
-def confirm_host(update, context):
-    # re.match ...
-    # context.bot.send_message(
-    #   chat_id =
-    #   text = '恭喜，您已成功通过认证主播的初步审核！\n\n\n\n我们将发送一条最终确认消息到您在其他平台留下的官方联络地址，得到您的回复后即可完成主播认证。请留意您的信箱 :)
-    # )
-    pass
-
-
-def deny_host(update, context):
-    # re.match ...
-    # context.bot.send_message(
-    #   chat_id =
-    #   text = f'我们没能通过收到的图片资料核实您的主播身份，您可以重新发送资料或联系我们：\n\n{dev_email}',
-    #   reply_markup = InlineKeyboardMarkup.from_button('重新申请主播认证',callback_data='request_host')
-    # )
-    pass

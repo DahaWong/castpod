@@ -8,13 +8,13 @@ import datetime
 from ..constants import SPEAKER_MARK
 
 
-def via_sender(update, context):
+async def via_sender(update, context):
     query = update.inline_query
     user = User.validate_user(update.effective_user)
     keywords = query.query
     if not keywords:
         results = show_subscription(user)
-        query.answer(
+        await query.answer(
             list(results),
             auto_pagination=True,
             cache_time=30
@@ -28,28 +28,28 @@ def via_sender(update, context):
         results = show_episodes(podcast, index)
     except:
         results = search_podcast(user, keywords)
-    query.answer(
+    await query.answer(
         list(results),
         auto_pagination=True,
         cache_time=10
     )
 
 
-def via_private(update, context):
+async def via_private(update, context):
     query = update.inline_query
     user = User.validate_user(update.effective_user)
     if not query.query:
         results = get_invitation(user)
     else:
         results = share_podcast(user, query.query)
-    query.answer(list(results), auto_pagination=True, cache_time=600)
+    await query.answer(list(results), auto_pagination=True, cache_time=600)
 
 
-def via_group(update, context):
+async def via_group(update, context):
     via_private(update, context)
 
 
-def via_channel(update, context):
+async def via_channel(update, context):
     via_private(update, context)
 
 

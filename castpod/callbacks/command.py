@@ -10,11 +10,10 @@ import re
 
 
 @delete_update_message
-def start(update, context):
-    run_async = context.dispatcher.run_async
+async def start(update, context):
     message = update.message
     if User.objects(user_id=update.effective_user.id):
-        message.reply_text('您已经注册过啦，无需接受邀请 :)')
+        await message.reply_text('您已经注册过啦，无需接受邀请 :)')
         return
     user = User.validate_user(update.effective_user)
     if context.args and context.args[0] != 'login':
@@ -28,8 +27,7 @@ def start(update, context):
                 f'\n\n发送 OPML 文件或者 RSS 链接均可以导入播客订阅。\n'
                 f'\n⚠️ 目前还*没有正式上线*，主要的问题是订阅的播客不能获取更新。遇到问题或提供建议请移步[内测聊天室](https://t.me/castpodchat)。'
             )
-            run_async(
-                message.reply_text,
+            await  message.reply_text(
                 text=text,
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
@@ -41,30 +39,28 @@ def start(update, context):
         elif id_type == 'p':  # 订阅播客
             podcast = Podcast.objects(id=id_value).first()
             if not podcast:
-                update.reply_message(
+                await update.reply_message(
                     f'抱歉，该播客不存在。如需订阅，请尝试在对话框输入 `@{manifest.bot_id} 播客关键词` 检索。')
                 return
             if not user in podcast.subscribers:
-                subscribing_note = run_async(
-                    update.message.reply_text, "正在订阅…").result()
+                subscribing_note = await update.message.reply_text("正在订阅…")
                 user.subscribe(podcast)
-                run_async(subscribing_note.delete)
+                await subscribing_note.delete()
             page = PodcastPage(podcast)
             manage_page = ManagePage(
                 Podcast.subscribe_by(user), f'`{podcast.name}` 订阅成功！'
             )
             photo = podcast.logo.file_id or podcast.logo.url
-            msg = run_async(message.reply_photo,
-                            photo=photo,
-                            caption=page.text(),
-                            reply_markup=InlineKeyboardMarkup(page.keyboard()),
-                            parse_mode="HTML"
-                            ).result()
+            msg = await message.reply_photo(
+                photo=photo,
+                caption=page.text(),
+                reply_markup=InlineKeyboardMarkup(page.keyboard()),
+                parse_mode="HTML"
+            )
             podcast.logo.file_id = msg.photo[0].file_id
             podcast.save()
 
-            run_async(
-                update.message.reply_text,
+            await update.message.reply_text(
                 text=manage_page.text,
                 reply_markup=ReplyKeyboardMarkup(manage_page.keyboard())
             )
@@ -75,8 +71,7 @@ def start(update, context):
             f'\n\n发送 OPML 文件或者 RSS 链接均可以导入播客订阅。\n'
             f'\n⚠️ 目前还*没有正式上线*，主要的问题是订阅的播客还不能更新。遇到问题或提供建议请移步[内测聊天室](https://t.me/castpodchat)。'
         )
-        run_async(
-            message.reply_text,
+        await message.reply_text(
             text=welcome_text,
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
@@ -87,41 +82,42 @@ def start(update, context):
 
 
 @delete_update_message
-def manage(update, context):
-    run_async = context.dispatcher.run_async
+async def manage(update, context):
     user = User.validate_user(update.effective_user)
-
     page = ManagePage(Podcast.subscribe_by(user, 'name'))
-    msg = run_async(
-        update.effective_message.reply_text,
+    msg = await update.effective_message.reply_text(
         text=page.text,
         reply_markup=ReplyKeyboardMarkup(
             page.keyboard(), resize_keyboard=True, one_time_keyboard=True, selective=True)
-    ).result()
+    )
     delete_manage_starter(context)
     save_manage_starter(context.chat_data, msg)
 
 
 @delete_update_message
-def star(update, context):
-    run_async = context.dispatcher.run_async
+async def star(update, context):
     user = User.validate_user(update.effective_user)
 
     page = ManagePage(Podcast.star_by(user, 'name'), text='已启动收藏面板')
-    msg = run_async(
-        update.message.reply_text,
+    msg = await update.message.reply_text(
         text=page.text,
         reply_markup=ReplyKeyboardMarkup(
-            page.keyboard(null_text='还没有收藏播客～', jump_to=DOC_MARK), resize_keyboard=True, one_time_keyboard=True, selective=True)
-    ).result()
+            page.keyboard(
+                null_text='还没有收藏播客～',
+                jump_to=DOC_MARK
+            ),
+            resize_keyboard=True,
+            one_time_keyboard=True,
+            selective=True
+        )
+    )
     delete_manage_starter(context)
     save_manage_starter(context.chat_data, msg)
 
 
 @delete_update_message
-def search(update, context):
-    context.dispatcher.run_async(
-        update.message.reply_text,
+async def search(update, context):
+    await update.message.reply_text(
         text=RIGHT_SEARCH_MARK,
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton('搜索播客', switch_inline_query_current_chat=''))
@@ -129,13 +125,12 @@ def search(update, context):
 
 
 @delete_update_message
-def about(update, context):
+async def about(update, context):
     keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
                  InlineKeyboardButton("工作室", url=manifest.author_url)],
                 [InlineKeyboardButton('关闭', callback_data="delete_message")]
                 ]
-    context.dispatcher.run_async(
-        update.message.reply_text,
+    await update.message.reply_text(
         text=(
             f"*{manifest.name}*  "
             f"`{manifest.version}`"
@@ -146,26 +141,26 @@ def about(update, context):
 
 
 @delete_update_message
-def favorite(update, context):
+async def favorite(update, context):
     user = User.validate_user(update.effective_user)
     fav_episodes = Episode.objects(starrers=user)
     if len(fav_episodes) == 1:
-        update.message.reply_audio(
+        await update.message.reply_audio(
             audio=fav_episodes.first().file_id
         )
     elif len(fav_episodes) >= 2 and len(fav_episodes) <= 5:
-        update.message.reply_media_group(
+        await update.message.reply_media_group(
             media=list(map(lambda episode: InputMediaAudio(
                 media=episode.file_id
             ), fav_episodes))
         )
     elif len(fav_episodes) > 5:
         #!!!
-        update.message.reply_media_group(
+        await update.message.reply_media_group(
             media=list(map(lambda x: InputMediaAudio(x.file_id), fav_episodes))
         )
     else:
-        update.message.reply_text(
+        await update.message.reply_text(
             text='还没有收藏的单集～',
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton('订阅列表', switch_inline_query_current_chat=''))
@@ -173,8 +168,8 @@ def favorite(update, context):
 
 
 @delete_update_message
-def share(update, context):
-    update.message.reply_text(
+async def share(update, context):
+    await update.message.reply_text(
         text='💌',
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton('分享播客', switch_inline_query=''))
@@ -183,13 +178,13 @@ def share(update, context):
 # @delete_update_message
 
 
-def wander(update, context):
-    update.message.reply_text(
+async def wander(update, context):
+    await update.message.reply_text(
         '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
 
 
 @delete_update_message
-def settings(update, context):
+async def settings(update, context):
     keyboard = [
         [InlineKeyboardButton('外观设置', callback_data="display_setting"),
          InlineKeyboardButton('推送设置', callback_data="feed_setting"),
@@ -197,20 +192,17 @@ def settings(update, context):
          ],
         [InlineKeyboardButton('关闭', callback_data="delete_message")]]
     text_handler = update.message.reply_text if update.message else update.callback_query.edit_message_text
-    msg = context.dispatcher.run_async(
-        text_handler,
+    msg = await text_handler(
         text=f'请选择想要编辑的偏好设置：',
         reply_markup=InlineKeyboardMarkup(keyboard)
-    ).result()
+    )
     save_manage_starter(context.chat_data, msg)
 
 
 @delete_update_message
-def help_(update, context):
-    run_async = context.dispatcher.run_async
+async def help_(update, context):
     text_handler = update.message.reply_text if update.message else update.callback_query.edit_message_text
-    run_async(
-        text_handler,
+    await text_handler(
         text=f"[{manifest.name} 入门指南](https://github.com/DahaWong/castpod/wiki/%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97)\n\n",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton('注销账号', callback_data="logout"),
@@ -221,8 +213,8 @@ def help_(update, context):
 
 
 @delete_update_message
-def invite(update, context):
-    update.message.reply_text(
+async def invite(update, context):
+    await update.message.reply_text(
         text=f"邀请你的伙伴一起听播客！",
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton(
@@ -232,16 +224,16 @@ def invite(update, context):
     )
 
 
-def bonus(update, context):
-    update.message.reply_text(
+async def bonus(update, context):
+    await update.message.reply_text(
         text='您的积分是：'+str(User.objects.get(
             user_id=update.effective_user.id).bonus),
         reply_to_message_id=update.message.message_id
     )
 
 
-def test(update, context):
-    context.bot.send_audio(
+async def test(update, context):
+    await context.bot.send_audio(
         chat_id=f'@test_vault',
         audio="https://r.typlog.com/eyJzIjo1NSwiZSI6MzE4MiwicCI6MiwidSI6ImU0ZWEubXAzIn0.0EwztV0M_VEfyoRX5mt1zTjfmMs/yitianshijie/z_4526658732d3556cb8bb50e7865ae4ea.mp3",
         title="test",

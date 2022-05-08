@@ -1,13 +1,13 @@
 from castpod.callbacks import *
 from .constants import QUIT_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK
-from telegram.ext import MessageHandler, Filters, InlineQueryHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
+from telegram.ext import MessageHandler, filters, InlineQueryHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 from telegram import Chat
 import inspect
 
 RSS, CONFIRM, PHOTO = range(3)
 
 
-def register_handlers(dispatcher):
+def register_handlers(application):
     handlers = []
 
     for value in vars(callback_query).values():
@@ -18,62 +18,61 @@ def register_handlers(dispatcher):
 
     handlers.extend([
         CommandHandler('start', command.start,
-                       filters=Filters.chat_type.private, pass_args=True),
+                       filters=filters.ChatType.PRIVATE),
         CommandHandler('manage', command.manage),
         CommandHandler('test', command.test),  # test
         CommandHandler('star', command.star),
-        CommandHandler('search', command.search, run_async=True),
-        CommandHandler('favorite', command.favorite, run_async=True),
-        CommandHandler('share', command.share, run_async=True),
+        CommandHandler('search', command.search, block=False),
+        CommandHandler('favorite', command.favorite, block=False),
+        CommandHandler('share', command.share, block=False),
         CommandHandler('invite', command.invite),
         CommandHandler('bonus', command.bonus),
         CommandHandler('settings', command.settings),
-        CommandHandler('help', command.help_, run_async=True),
-        CommandHandler('about', command.about, run_async=True),
+        CommandHandler('help', command.help_, block=False),
+        CommandHandler('about', command.about, block=False),
         MessageHandler(
-            (Filters.via_bot(dispatcher.bot.get_me().id) | Filters.chat_type.private) & Filters.entity("url") & Filters.regex(r'^https?://'), message.subscribe_feed),
+            filters.ChatType.PRIVATE & filters.Entity("url") & filters.Regex(r'^https?://'), message.subscribe_feed),
         MessageHandler(
-            Filters.regex(f'{SPEAKER_MARK} (.+) #([0-9]+)'), message.download_episode, run_async=True),
+            filters.Regex(f'{SPEAKER_MARK} (.+) #([0-9]+)'), message.download_episode, block=False),
         MessageHandler(
-            Filters.regex(f'^{QUIT_MARK}$'),
+            filters.Regex(f'^{QUIT_MARK}$'),
             message.exit_reply_keyboard,
-            run_async=True
+            block=False
         ),
         MessageHandler(
-            Filters.regex(f'^{STAR_MARK}$'),
+            filters.Regex(f'^{STAR_MARK}$'),
             command.star,
-            run_async=True
+            block=False
         ),
         MessageHandler(
-            Filters.regex(f'^{DOC_MARK}$'),
+            filters.Regex(f'^{DOC_MARK}$'),
             command.manage,
-            run_async=True
+            block=False
         ),
         MessageHandler(
-            Filters.regex(r'^探索播客世界$'),
+            filters.Regex(r'^探索播客世界$'),
             message.search_podcast,
-            run_async=True
+            block=False
         ),
         MessageHandler(
-            Filters.chat_type.private &
-            (Filters.document.mime_type('text/xml') |
-             Filters.document.file_extension("opml") |
-             Filters.document.file_extension("opm")),
+            filters.ChatType.PRIVATE &
+            (filters.Document.MimeType('text/xml') |
+             filters.Document.FileExtension("opml") |
+             filters.Document.FileExtension("opm")),
             message.save_subscription,
-            run_async=True
+            block=False
         ),
         MessageHandler(
             (
-                Filters.reply |
-                Filters.via_bot(dispatcher.bot.get_me().id) |
-                Filters.chat_type.private
+                filters.REPLY |
+                filters.ChatType.PRIVATE
             ) &
-            Filters.text, message.show_podcast
+            filters.TEXT, message.show_podcast
         ),
-        MessageHandler(Filters.chat(username="podcast_vault_chat")
-                       & Filters.audio, message.handle_audio),
+        MessageHandler(filters.Chat(username="podcast_vault_chat")
+                       & filters.AUDIO, message.handle_audio),
         MessageHandler(
-            Filters.status_update.pinned_message,
+            filters.StatusUpdate.PINNED_MESSAGE,
             message.delete_message
         ),
         InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
@@ -97,5 +96,5 @@ def register_handlers(dispatcher):
     ])
 
     for handler in handlers:
-        dispatcher.add_handler(handler)
-        dispatcher.add_error_handler(error.handle_error)
+        application.add_handler(handler)
+    application.add_error_handler(error.handle_error)

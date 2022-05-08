@@ -52,7 +52,7 @@ def validate_path(path):
                 raise
 
 
-def download(episode, context) -> str:
+async def download(episode, context) -> str:
     res = requests.get(episode.url, allow_redirects=True, stream=True)
     if res.status_code != 200:
         raise Exception(
@@ -75,7 +75,7 @@ def download(episode, context) -> str:
                 progress_bar.update(len(data))
                 f.write(data)
             message_id = progress_bar.tgio.message_id
-        context.bot.delete_message(chat_id, message_id)
+        await context.bot.delete_message(chat_id, message_id)
         progress_bar.close()
         if total != 0 and progress_bar.n != total:
             raise Exception("Error: Something went wrong with progress bar.")
@@ -97,8 +97,8 @@ def download(episode, context) -> str:
 # Parse Feed
 
 
-def parse_doc(context, user, doc):
-    doc_file = context.bot.getFile(doc['file_id'])
+async def parse_doc(context, user, doc):
+    doc_file = await context.bot.getFile(doc['file_id'])
     doc_name = re.sub(r'.+(?=\.xml|\.opml?)',
                       str(user.user_id), doc['file_name'])
     path = f'public/import/{doc_name}'
@@ -121,10 +121,10 @@ def parse_opml(f):
 
 def delete_update_message(func):
     @wraps(func)
-    def wrapped(update, context, *args, **kwargs):
+    async def wrapped(update, context, *args, **kwargs):
         func(update, context, *args, **kwargs)
         if update.message:
-            context.dispatcher.run_async(update.effective_message.delete)
+            await update.effective_message.delete()
     return wrapped
 
 
@@ -135,12 +135,11 @@ def save_manage_starter(chat_data, message):
         chat_data.update({'manage_starter': [message]})
 
 
-def delete_manage_starter(context):
-    run_async = context.dispatcher.run_async
+async def delete_manage_starter(context):
     if not context.chat_data.get('manage_starter'):
         return
     for message in context.chat_data['manage_starter']:
-        run_async(message.delete)
+        await message.delete()
     context.chat_data['manage_starter'] = []
 
 

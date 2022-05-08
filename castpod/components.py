@@ -62,9 +62,9 @@ class Tips(object):
                 TICK_MARK, callback_data=f'close_tips_{self.command}')
         )
 
-    def send(self, update, context):
+    async def send(self, update, context):
         if self.command not in context.user_data.get('tips'):
             return
-        update.message.reply_text(
+        await update.message.reply_text(
             text=self.text,
             reply_markup=self.keyboard())

@@ -2,15 +2,15 @@ from config import dev, manifest
 import sys
 import html
 import traceback
-from telegram import ParseMode
+from telegram.constants import ParseMode
 import json
 
-# def handle_error(update, context):
+# async def handle_error(update, context):
 #     if not update:
 #         return
 #     if update.effective_message:
 #         text = f"刚刚的操作触发了一个错误，报告已抄送给[开发者](https://t.me/{manifest.author_id})。"
-#         update.effective_message.reply_text(text)
+#         await update.effective_message.reply_text(text)
 #     payload = ""
 #     if update.effective_user:
 #         payload += f"有[用户](tg://user?id={update.effective_user.id})"
@@ -23,19 +23,19 @@ import json
 #     trace = "".join(traceback.format_tb(sys.exc_info()[2]))
 #     text = f"{payload}触发了一个错误：`{context.error}`。\n\n"
 #     text += f"错误路径如下:\n`{trace}`" if trace else ''
-#     context.bot.send_message(dev, text)
+#     await context.bot.send_message(dev, text)
 #     raise context.error
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-def handle_error(update, context):
+async def handle_error(update, context):
     if not update:
         return
     if update.effective_message:
         text = f"刚刚的操作触发了一个错误，报告已抄送给[开发者](https://t.me/{manifest.author_id})。"
-        update.effective_message.reply_text(text)
+        await update.effective_message.reply_text(text)
     """Log the error and send a telegram message to notify the developer."""
     # Log the error before we do anything else, so we can see it even if something breaks.
     logger.error(msg="Exception while handling an update:",
@@ -59,5 +59,5 @@ def handle_error(update, context):
     )
 
     # Finally, send the message
-    context.bot.send_message(chat_id=dev,
+    await context.bot.send_message(chat_id=dev,
                              text=message, parse_mode=ParseMode.HTML)
