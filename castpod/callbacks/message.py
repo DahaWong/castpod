@@ -3,7 +3,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from telegram.constants import ChatAction, ParseMode
 from ..components import PodcastPage, ManagePage
 from config import podcast_vault, manifest, dev
-from ..utils import delete_update_message, download, parse_doc, delete_manage_starter, save_manage_starter
+from ..utils import download, parse_doc, delete_manage_starter, save_manage_starter
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
 from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK, FAV_MARK
@@ -205,7 +205,6 @@ async def download_episode(update, context):
     await update.message.delete()
 
 
-@delete_update_message
 async def exit_reply_keyboard(update, context):
     await update.message.reply_text(
         'OK', reply_markup=ReplyKeyboardRemove(selective=True)
@@ -271,7 +270,6 @@ async def handle_audio(update, context):
     podcast.reload()
 
 
-@delete_update_message
 async def search_podcast(update, context):
     await update.message.reply_text(
         text=RIGHT_SEARCH_MARK,

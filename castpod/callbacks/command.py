@@ -2,16 +2,16 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from config import manifest
 from castpod.models import User, Podcast, Episode
 from castpod.components import ManagePage, PodcastPage
-from castpod.utils import save_manage_starter, delete_update_message, delete_manage_starter
+from castpod.utils import save_manage_starter, delete_manage_starter
 from manifest import manifest
 from ..constants import RIGHT_SEARCH_MARK, DOC_MARK
 import re
 # Private
 
 
-@delete_update_message
 async def start(update, context):
     message = update.message
+    await message.delete()
     if User.objects(user_id=update.effective_user.id):
         await message.reply_text('您已经注册过啦，无需接受邀请 :)')
         return
@@ -81,8 +81,8 @@ async def start(update, context):
         )
 
 
-@delete_update_message
 async def manage(update, context):
+    await update.message.delete()
     user = User.validate_user(update.effective_user)
     page = ManagePage(Podcast.subscribe_by(user, 'name'))
     msg = await update.effective_message.reply_text(
@@ -94,8 +94,8 @@ async def manage(update, context):
     save_manage_starter(context.chat_data, msg)
 
 
-@delete_update_message
 async def star(update, context):
+    await update.message.delete()
     user = User.validate_user(update.effective_user)
 
     page = ManagePage(Podcast.star_by(user, 'name'), text='已启动收藏面板')
@@ -115,8 +115,8 @@ async def star(update, context):
     save_manage_starter(context.chat_data, msg)
 
 
-@delete_update_message
 async def search(update, context):
+    await update.message.delete()
     await update.message.reply_text(
         text=RIGHT_SEARCH_MARK,
         reply_markup=InlineKeyboardMarkup.from_button(
@@ -124,8 +124,8 @@ async def search(update, context):
     )
 
 
-@delete_update_message
 async def about(update, context):
+    await update.message.delete()
     keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
                  InlineKeyboardButton("工作室", url=manifest.author_url)],
                 [InlineKeyboardButton('关闭', callback_data="delete_message")]
@@ -140,8 +140,8 @@ async def about(update, context):
     )
 
 
-@delete_update_message
 async def favorite(update, context):
+    await update.message.delete()
     user = User.validate_user(update.effective_user)
     fav_episodes = Episode.objects(starrers=user)
     if len(fav_episodes) == 1:
@@ -167,41 +167,24 @@ async def favorite(update, context):
         )
 
 
-@delete_update_message
 async def share(update, context):
+    await update.message.delete()
     await update.message.reply_text(
         text='💌',
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton('分享播客', switch_inline_query=''))
     )
 
-# @delete_update_message
-
 
 async def wander(update, context):
     await update.message.reply_text(
-        '功能正在开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
+        '功能开发中，敬请等待！', reply_to_message_id=update.effective_message.message_id)
 
 
-@delete_update_message
-async def settings(update, context):
-    keyboard = [
-        [InlineKeyboardButton('外观设置', callback_data="display_setting"),
-         InlineKeyboardButton('推送设置', callback_data="feed_setting"),
-         InlineKeyboardButton('主播设置', callback_data="host_setting"),
-         ],
-        [InlineKeyboardButton('关闭', callback_data="delete_message")]]
-    text_handler = update.message.reply_text if update.message else update.callback_query.edit_message_text
-    msg = await text_handler(
-        text=f'请选择想要编辑的偏好设置：',
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-    save_manage_starter(context.chat_data, msg)
-
-
-@delete_update_message
 async def help_(update, context):
-    text_handler = update.message.reply_text if update.message else update.callback_query.edit_message_text
+    message = update.message
+    await message.delete()
+    text_handler = message.reply_text if message else update.callback_query.edit_message_text
     await text_handler(
         text=f"[{manifest.name} 入门指南](https://github.com/DahaWong/castpod/wiki/%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97)\n\n",
         reply_markup=InlineKeyboardMarkup([
@@ -212,8 +195,8 @@ async def help_(update, context):
     )
 
 
-@delete_update_message
 async def invite(update, context):
+    await update.message.delete()
     await update.message.reply_text(
         text=f"邀请你的伙伴一起听播客！",
         reply_markup=InlineKeyboardMarkup.from_button(
@@ -221,21 +204,4 @@ async def invite(update, context):
                 '呼朋唤友', switch_inline_query=f"#invite"
             )
         )
-    )
-
-
-async def bonus(update, context):
-    await update.message.reply_text(
-        text='您的积分是：'+str(User.objects.get(
-            user_id=update.effective_user.id).bonus),
-        reply_to_message_id=update.message.message_id
-    )
-
-
-async def test(update, context):
-    await context.bot.send_audio(
-        chat_id=f'@test_vault',
-        audio="https://r.typlog.com/eyJzIjo1NSwiZSI6MzE4MiwicCI6MiwidSI6ImU0ZWEubXAzIn0.0EwztV0M_VEfyoRX5mt1zTjfmMs/yitianshijie/z_4526658732d3556cb8bb50e7865ae4ea.mp3",
-        title="test",
-        performer="test"
     )

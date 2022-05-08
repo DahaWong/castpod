@@ -26,13 +26,6 @@ telegraph.create_account(
     author_url=f'https://t.me/{manifest.bot_id}'
 )
 
-
-class Setting(EmbeddedDocument):
-    timeline_displayed = BooleanField(default=True)
-    episodes_order_reversed = BooleanField(default=True)
-    feed_freq = IntField(default=60)  # minutes
-
-
 class Logo(EmbeddedDocument):
     _path = StringField(required=True)
     is_local = BooleanField(default=False)
@@ -71,8 +64,6 @@ class User(Document):
     user_id = IntField(primary_key=True)
     username = StringField()
     name = StringField()
-    bonus = IntField(default=0)
-    settings = EmbeddedDocumentField(Setting)
 
     @classmethod
     def validate_user(cls, from_user, subsets=None):

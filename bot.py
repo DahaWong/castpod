@@ -35,8 +35,8 @@ async def update_podcasts(context):
                 await message.copy(subscriber.user_id)
 
 
-application.job_queue.run_repeating(
-    update_podcasts, 1200)  # runs every 1200 s (20 min)
+# application.job_queue.run_repeating(
+#     update_podcasts, 1200)  # runs every 1200 s (20 min)
 
 # set commands
 application.bot.set_my_commands(

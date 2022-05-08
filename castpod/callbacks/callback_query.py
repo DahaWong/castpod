@@ -2,7 +2,6 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast, Episode
 from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml
-from .command import settings as command_settings
 from .command import help_ as command_help
 from config import manifest
 from ..constants import TICK_MARK, STAR_MARK
@@ -224,44 +223,3 @@ async def confirm_delete_account(update, context):
 
 async def back_to_help(update, context):
     command_help(update, context)
-
-# settings
-
-
-async def settings(update, context):
-    command_settings(update, context)
-
-
-async def display_setting(update, context):
-    await update.callback_query.edit_message_text(
-        text=f"点击修改外观设置：",
-        reply_markup=InlineKeyboardMarkup.from_column(
-            [InlineKeyboardButton(f"显示时间线    {TICK_MARK}", callback_data="toggle_timeline"),
-             InlineKeyboardButton(
-                 f'倒序显示单集    {TICK_MARK}', callback_data="toggle_episodes_order"),
-             InlineKeyboardButton(
-                 '返回', callback_data="settings"),
-             ]
-        )
-    )
-
-
-async def feed_setting(update, context):
-    await update.callback_query.edit_message_text(
-        text=f"点击修改推送设置：",
-        reply_markup=InlineKeyboardMarkup.from_column(
-            [InlineKeyboardButton("更新频率    60 分钟", callback_data="feed_freq"),
-             InlineKeyboardButton('返回', callback_data="settings")
-             ])
-    )
-
-
-async def host_setting(update, context):
-    await update.callback_query.edit_message_text(
-        text=f"*主播设置*",
-        reply_markup=InlineKeyboardMarkup.from_column(
-            [InlineKeyboardButton("申请主播认证", callback_data="request_host"),
-             InlineKeyboardButton('返回', callback_data="settings")
-             ]
-        )
-    )

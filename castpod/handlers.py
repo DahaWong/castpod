@@ -26,8 +26,6 @@ def register_handlers(application):
         CommandHandler('favorite', command.favorite, block=False),
         CommandHandler('share', command.share, block=False),
         CommandHandler('invite', command.invite),
-        CommandHandler('bonus', command.bonus),
-        CommandHandler('settings', command.settings),
         CommandHandler('help', command.help_, block=False),
         CommandHandler('about', command.about, block=False),
         MessageHandler(

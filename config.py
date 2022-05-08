@@ -52,7 +52,6 @@ private_commands = [
     ('search', '搜索播客'),
     ('manage', '订阅列表'),
     ('favorite', '单集收藏'),
-    ('settings', '偏好设置'),
     ('help', '使用指南'),
     ('about', '关于我们')
 ]
@@ -61,7 +60,6 @@ dev_commands = [
     ('search', '搜索播客'),
     ('manage', '订阅列表'),
     ('favorite', '单集收藏'),
-    ('settings', '偏好设置'),
     ('help', '使用指南'),
     ('about', '关于我们'),
     ('stat', '数据汇总'),
