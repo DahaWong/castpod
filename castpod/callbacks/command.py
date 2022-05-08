@@ -19,9 +19,8 @@ async def start(update, context):
     if context.args and context.args[0] != 'login':
         match = re.match(r'^(u|p)([0-9]*)$', context.args[0])
         id_type, id_value = match[1], int(match[2])
-        if id_type == 'u':  # 由其他用户推荐登入u
-            from_user = User.objects.get(user_id=id_value).only('bonus')
-            from_user.update(inc__bonus=10)
+        if id_type == 'u':  # 由其他用户推荐登入
+            from_user = User.objects.get(user_id=id_value)
             text = (
                 f'您已接受 {from_user.first_name} 的邀请，欢迎使用 {manifest.name}！                                            '
                 f'\n\n发送 OPML 文件或者 RSS 链接均可以导入播客订阅。\n'
