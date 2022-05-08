@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from .constants import QUIT_MARK, TICK_MARK, SPEAKER_MARK, STAR_MARK
+from .constants import CLOSE_MARK, TICK_MARK, SPEAKER_MARK, STAR_MARK
 
 
 class PodcastPage(object):
@@ -21,7 +21,8 @@ class PodcastPage(object):
         if self.mode == 'private':
             return [
                 [InlineKeyboardButton("退订", callback_data=f"unsubscribe_podcast_{self.podcast.id}"),
-                 InlineKeyboardButton(self.fav_text, callback_data=f"{self.fav_action}_{self.podcast.id}"),
+                 InlineKeyboardButton(
+                     self.fav_text, callback_data=f"{self.fav_action}_{self.podcast.id}"),
                  InlineKeyboardButton("分享", switch_inline_query=f"{self.podcast.name}")],
                 [InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=f""),
                  InlineKeyboardButton("分集列表", switch_inline_query_current_chat=f"{self.podcast.name}#")]
@@ -46,9 +47,9 @@ class ManagePage(object):
     def keyboard(self, null_text='探索播客世界', jump_to=STAR_MARK):
         podcasts_count = self.podcasts.count()
         if not podcasts_count:
-            return [[QUIT_MARK, jump_to],[null_text]]
+            return [[CLOSE_MARK, jump_to], [null_text]]
         rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
-        return [[QUIT_MARK, jump_to]]+[self.row(i) for i in range(rows_count)]
+        return [[CLOSE_MARK, jump_to]]+[self.row(i) for i in range(rows_count)]
 
 
 class Tips(object):

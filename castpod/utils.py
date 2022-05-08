@@ -124,14 +124,6 @@ def save_manage_starter(chat_data, message):
         chat_data.update({'manage_starter': [message]})
 
 
-async def delete_manage_starter(context):
-    if not context.chat_data.get('manage_starter'):
-        return
-    for message in context.chat_data['manage_starter']:
-        await message.delete()
-    context.chat_data['manage_starter'] = []
-
-
 def generate_opml(user, podcasts):
     body = ''
     for podcast in podcasts:

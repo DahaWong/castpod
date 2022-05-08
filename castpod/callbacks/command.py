@@ -4,14 +4,13 @@ from castpod.models import User, Podcast, Episode
 from castpod.components import ManagePage, PodcastPage
 from castpod.utils import save_manage_starter, delete_manage_starter
 from manifest import manifest
-from ..constants import RIGHT_SEARCH_MARK, DOC_MARK
+from ..constants import RIGHT_SEARCH_MARK, DOC_MARK, STAR_MARK
 import re
 # Private
 
 
 async def start(update, context):
     message = update.message
-    await message.delete()
     if User.objects(user_id=update.effective_user.id):
         await message.reply_text('您已经注册过啦，无需接受邀请 :)')
         return
@@ -81,23 +80,31 @@ async def start(update, context):
 
 
 async def manage(update, context):
-    await update.message.delete()
     user = User.validate_user(update.effective_user)
     page = ManagePage(Podcast.subscribe_by(user, 'name'))
-    msg = await update.effective_message.reply_text(
+    if context.chat_data.get('reply_keyboard'):
+        await context.chat_data['reply_keyboard'].delete()
+    msg = await update.message.reply_text(
         text=page.text,
         reply_markup=ReplyKeyboardMarkup(
-            page.keyboard(), resize_keyboard=True, one_time_keyboard=True, selective=True)
+            page.keyboard(
+                null_text='还没有订阅播客～',
+                jump_to=STAR_MARK
+            ),
+            resize_keyboard=True,
+            one_time_keyboard=True,
+            selective=True
+        )
     )
-    delete_manage_starter(context)
-    save_manage_starter(context.chat_data, msg)
+    context.chat_data.update(reply_keyboard=msg)
+    await update.message.delete()
 
 
 async def star(update, context):
-    await update.message.delete()
     user = User.validate_user(update.effective_user)
-
     page = ManagePage(Podcast.star_by(user, 'name'), text='已启动收藏面板')
+    if context.chat_data.get('reply_keyboard'):
+        await context.chat_data['reply_keyboard'].delete()
     msg = await update.message.reply_text(
         text=page.text,
         reply_markup=ReplyKeyboardMarkup(
@@ -110,12 +117,11 @@ async def star(update, context):
             selective=True
         )
     )
-    delete_manage_starter(context)
-    save_manage_starter(context.chat_data, msg)
+    await update.message.delete()
+    context.chat_data.update(reply_keyboard=msg)
 
 
 async def search(update, context):
-    await update.message.delete()
     await update.message.reply_text(
         text=RIGHT_SEARCH_MARK,
         reply_markup=InlineKeyboardMarkup.from_button(
@@ -124,7 +130,6 @@ async def search(update, context):
 
 
 async def about(update, context):
-    await update.message.delete()
     keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
                  InlineKeyboardButton("工作室", url=manifest.author_url)],
                 [InlineKeyboardButton('关闭', callback_data="delete_message")]
@@ -140,7 +145,6 @@ async def about(update, context):
 
 
 async def favorite(update, context):
-    await update.message.delete()
     user = User.validate_user(update.effective_user)
     fav_episodes = Episode.objects(starrers=user)
     if len(fav_episodes) == 1:
@@ -167,7 +171,6 @@ async def favorite(update, context):
 
 
 async def share(update, context):
-    await update.message.delete()
     await update.message.reply_text(
         text='💌',
         reply_markup=InlineKeyboardMarkup.from_button(
@@ -182,7 +185,6 @@ async def wander(update, context):
 
 async def help_(update, context):
     message = update.message
-    await message.delete()
     text_handler = message.reply_text if message else update.callback_query.edit_message_text
     await text_handler(
         text=f"[{manifest.name} 入门指南](https://github.com/DahaWong/castpod/wiki/%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97)\n\n",
@@ -195,7 +197,6 @@ async def help_(update, context):
 
 
 async def invite(update, context):
-    await update.message.delete()
     await update.message.reply_text(
         text=f"邀请你的伙伴一起听播客！",
         reply_markup=InlineKeyboardMarkup.from_button(

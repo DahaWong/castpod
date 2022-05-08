@@ -1,12 +1,12 @@
-from ..models import User, Podcast
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.constants import ChatAction, ParseMode
+from ..models import User, Podcast
 from ..components import PodcastPage, ManagePage
+from ..utils import download, parse_doc
 from config import podcast_vault, manifest, dev
-from ..utils import download, parse_doc, delete_manage_starter, save_manage_starter
+from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
-from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK, FAV_MARK
 import re
 
 
@@ -180,11 +180,7 @@ async def download_episode(update, context):
         episode.update(set__file_id=audio_message.audio.file_id)
         context.user_data.clear()  # !!!
     forwarded_message.edit_caption(
-        caption=(
-            # f"{SPEAKER_MARK} <b>{podcast.name}</b>\n\n"
-            # f"<a href='https://t.me/{podcast_vault}/{forward_from_message}'>留言区</a>\n\n"
-            f"{episode.timeline}"
-        ),
+        caption=(f"{episode.timeline}"),
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup([
             [
@@ -205,11 +201,15 @@ async def download_episode(update, context):
     await update.message.delete()
 
 
-async def exit_reply_keyboard(update, context):
-    await update.message.reply_text(
+async def close_reply_keyboard(update, context):
+    if context.chat_data.get('reply_keyboard'):
+        await context.chat_data['reply_keyboard'].delete()
+    msg = await update.message.reply_text(
         'OK', reply_markup=ReplyKeyboardRemove(selective=True)
-    ).delete()
-    await delete_manage_starter(context)
+    )
+    await msg.delete()
+    await update.message.delete()
+    context.chat_data.pop('reply_keyboard', None)
 
 
 async def show_podcast(update, context):
@@ -250,7 +250,7 @@ async def show_podcast(update, context):
         )
         podcast.logo.file_id = msg.photo[0].file_id
         podcast.save()
-        await update.message.delete()
+        await message.delete()
 
 
 async def handle_audio(update, context):

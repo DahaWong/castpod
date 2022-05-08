@@ -133,7 +133,7 @@ def show_subscription(user):
     if not podcasts:
         yield InlineQueryResultArticle(
             id=0,
-            title='请输入关键词…',
+            title='搜索播客…',
             description=f'在 @{manifest.bot_id} 后输入关键词，寻找喜欢的播客吧！',
             input_message_content=InputTextMessageContent('🔍️'),
             reply_markup=InlineKeyboardMarkup.from_button(

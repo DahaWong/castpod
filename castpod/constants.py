@@ -1,5 +1,5 @@
 # Marks
-QUIT_MARK = '╳'
+CLOSE_MARK = '╳'
 TICK_MARK = '✓'
 SPEAKER_MARK = '🎙'
 RIGHT_SEARCH_MARK = '🔎'

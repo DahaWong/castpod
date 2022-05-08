@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from castpod.components import PodcastPage, ManagePage
 from castpod.models import User, Podcast, Episode
-from castpod.utils import delete_manage_starter, save_manage_starter, generate_opml
+from castpod.utils import save_manage_starter, generate_opml
 from .command import help_ as command_help
 from config import manifest
 from ..constants import TICK_MARK, STAR_MARK
@@ -41,7 +41,6 @@ async def delete_account(update, context):
             ))
     else:
         user.delete()
-    await delete_manage_starter(context)
     context.chat_data.clear()
     context.user_data.clear()
 
@@ -144,15 +143,13 @@ async def confirm_unsubscribe(update, context):
         text=f'`{podcast.name}` 退订成功'
     )
     await query.message.delete()
-    msg = await context.bot.send_message(
+    await context.bot.send_message(
         chat_id=user.id,
         text=manage_page.text,
         reply_markup=ReplyKeyboardMarkup(
             manage_page.keyboard(), resize_keyboard=True, one_time_keyboard=True
         )
     )
-
-    save_manage_starter(context.chat_data, msg)
 
 
 async def back_to_actions(update, context):
@@ -190,7 +187,6 @@ async def export_before_logout(update, context):
                  "返回帮助界面", callback_data="back_to_help")
              ])
     )
-    await message.delete()
 
 
 async def export(update, context):
