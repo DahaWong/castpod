@@ -20,6 +20,7 @@ def register_handlers(dispatcher):
         CommandHandler('start', command.start,
                        filters=Filters.chat_type.private, pass_args=True),
         CommandHandler('manage', command.manage),
+        CommandHandler('test', command.test),  # test
         CommandHandler('star', command.star),
         CommandHandler('search', command.search, run_async=True),
         CommandHandler('favorite', command.favorite, run_async=True),
@@ -76,9 +77,12 @@ def register_handlers(dispatcher):
             message.delete_message
         ),
         InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
-        InlineQueryHandler(inline_query.via_private, chat_types=[Chat.PRIVATE]),
-        InlineQueryHandler(inline_query.via_group, chat_types=[Chat.GROUP, Chat.SUPERGROUP]),
-        InlineQueryHandler(inline_query.via_channel, chat_types=[Chat.CHANNEL]),
+        InlineQueryHandler(inline_query.via_private,
+                           chat_types=[Chat.PRIVATE]),
+        InlineQueryHandler(inline_query.via_group, chat_types=[
+                           Chat.GROUP, Chat.SUPERGROUP]),
+        InlineQueryHandler(inline_query.via_channel,
+                           chat_types=[Chat.CHANNEL]),
         ConversationHandler(
             entry_points=[conversation.request_host_handler],
             states={
@@ -94,4 +98,4 @@ def register_handlers(dispatcher):
 
     for handler in handlers:
         dispatcher.add_handler(handler)
-        # dispatcher.add_error_handler(error.handle_error)
+        dispatcher.add_error_handler(error.handle_error)

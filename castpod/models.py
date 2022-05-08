@@ -241,6 +241,7 @@ class Podcast(Document):
 
     def parse_feed(self):
         # Do request using requests library and timeout
+        # ！！！
         try:
             res = requests.get(self.feed, timeout=5.0)
             res.raise_for_status()
@@ -357,21 +358,20 @@ class Podcast(Document):
 
         audio = item.enclosures[0]
 
-        # size = audio.get('length') or 0
-        # if isinstance(size, str):
-        #     match = re.match(r'([0-9]+)\..*',size)
-        #     if match:
-        #         size = match[1]
+        size = audio.get('length') or 0
+        if isinstance(size, str):
+            match = re.match(r'([0-9]+)\..*', size)
+            if match:
+                size = match[1]
 
         episode.from_podcast = self
         episode.url = audio.get('href')
-        episode.size = int((audio.get('length')) or 0)
+        episode.size = int(size)
         episode.performer = self.name
         episode.title = unescape(item.get('title') or '')
         episode.logo.url = item.image.href if item.get(
             'image') else self.logo.url
         episode.duration = self.set_duration(item.get('itunes_duration'))
-
         episode.link = item.get('link')
         episode.subtitle = unescape(item.get('subtitle') or '')
         if episode.title == episode.subtitle:

@@ -238,3 +238,12 @@ def bonus(update, context):
             user_id=update.effective_user.id).bonus),
         reply_to_message_id=update.message.message_id
     )
+
+
+def test(update, context):
+    context.bot.send_audio(
+        chat_id=f'@test_vault',
+        audio="https://r.typlog.com/eyJzIjo1NSwiZSI6MzE4MiwicCI6MiwidSI6ImU0ZWEubXAzIn0.0EwztV0M_VEfyoRX5mt1zTjfmMs/yitianshijie/z_4526658732d3556cb8bb50e7865ae4ea.mp3",
+        title="test",
+        performer="test"
+    )

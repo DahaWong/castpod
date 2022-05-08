@@ -159,7 +159,7 @@ def download_episode(update, context):
     else:
         downloading_note = fetching_note.edit_text("下载中…")
         audio_file = download(episode, context)
-        uploading_note = downloading_note.edit_text("正在上传，请稍候…")
+        uploading_note = downloading_note.edit_text("发送中，请稍候…")
         audio_message = None
         try:
             audio_message = bot.send_audio(
