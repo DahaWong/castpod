@@ -1,6 +1,6 @@
 from castpod.callbacks import *
 from .constants import CLOSE_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK
-from telegram.ext import MessageHandler, filters, InlineQueryHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
+from telegram.ext import MessageHandler, filters, InlineQueryHandler, CommandHandler, CallbackQueryHandler
 from telegram import Chat
 import inspect
 
@@ -79,17 +79,6 @@ def register_handlers(application):
                            Chat.GROUP, Chat.SUPERGROUP]),
         InlineQueryHandler(inline_query.via_channel,
                            chat_types=[Chat.CHANNEL]),
-        ConversationHandler(
-            entry_points=[conversation.request_host_handler],
-            states={
-                RSS: [conversation.rss_handler, conversation.explain_rss_handler],
-                CONFIRM: [conversation.confirm_podcast_handler, conversation.deny_confirm_handler],
-                PHOTO: [conversation.photo_handler]
-            },
-            fallbacks=[conversation.fallback_handler],
-            allow_reentry=True,
-            conversation_timeout=900
-        )
     ])
 
     for handler in handlers:

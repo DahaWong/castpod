@@ -1,24 +1,22 @@
 from telegram import BotCommandScopeAllPrivateChats, BotCommandScopeAllGroupChats, BotCommandScopeAllChatAdministrators, BotCommandScopeChat
-from telegram.ext import Updater, ApplicationBuilder
+from telegram.ext import ApplicationBuilder
 from castpod.handlers import register_handlers
 from castpod.models import Podcast
 import config
 from mongoengine import connect
-import datetime
 application = ApplicationBuilder().token(
-    config.bot_token).defaults(config.defaults).build()
-# updater = Updater(**config.update_info)
+    config.bot_token).defaults(config.defaults).base_url(config.bot_api).build()
 
-# Use this method to logout your bot from telegram api:
-# await updater.bot.log_out()
-
-# await updater.bot.delete_webhook()
-# await updater.bot.close()
+# Use this method to logout your bot from official telegram api:
+# application.bot.log_out()
+# application.bot.delete_webhook()
+# application.bot.close()
 
 # Webhook:
 # application.run_webhook(**config.webhook_info)
 
-connection = connect(db=config.Mongo.db)
+# Database:
+connect(db=config.Mongo.db)
 # username=Mongo.user, # for auth
 # password=Mongo.pwd # for auth
 # host=Mongo.remote_host # for remote test)
@@ -38,12 +36,13 @@ async def update_podcasts(context):
 # application.job_queue.run_repeating(
 #     update_podcasts, 1200)  # runs every 1200 s (20 min)
 
-# set commands
-application.bot.set_my_commands(
+# Set commands scope:
+bot = application.bot
+bot.set_my_commands(
     commands=config.private_commands, scope=BotCommandScopeAllPrivateChats())
-application.bot.set_my_commands(
+bot.set_my_commands(
     commands=config.group_commands, scope=BotCommandScopeAllChatAdministrators())
-application.bot.set_my_commands(
+bot.set_my_commands(
     commands=config.dev_commands, scope=BotCommandScopeChat(config.dev))
 
 # Polling:

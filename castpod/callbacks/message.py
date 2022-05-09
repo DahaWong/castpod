@@ -16,7 +16,7 @@ async def delete_message(update, context):
 
 async def subscribe_feed(update, context):
     message = update.message
-    chat_type = update.effective_chat.type  # !应该用filter
+    chat_type = update.effective_chat.type
     await context.bot.send_chat_action(
         chat_id=message.chat_id,
         action='typing'
@@ -56,7 +56,7 @@ async def subscribe_feed(update, context):
         podcast.save()
         await message.delete()
     except Exception as e:
-        await subscribing_message.edit_text("订阅失败，可能是订阅源已失效")
+        await subscribing_message.edit_text("订阅失败 :(")
         raise e
 
 

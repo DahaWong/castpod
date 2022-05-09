@@ -2,7 +2,6 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from config import manifest
 from castpod.models import User, Podcast, Episode
 from castpod.components import ManagePage, PodcastPage
-from castpod.utils import save_manage_starter, delete_manage_starter
 from manifest import manifest
 from ..constants import RIGHT_SEARCH_MARK, DOC_MARK, STAR_MARK
 import re
@@ -131,9 +130,7 @@ async def search(update, context):
 
 async def about(update, context):
     keyboard = [[InlineKeyboardButton("源代码", url=manifest.repo),
-                 InlineKeyboardButton("工作室", url=manifest.author_url)],
-                [InlineKeyboardButton('关闭', callback_data="delete_message")]
-                ]
+                 InlineKeyboardButton("工作室", url=manifest.author_url)]]
     await update.message.reply_text(
         text=(
             f"*{manifest.name}*  "
@@ -190,8 +187,7 @@ async def help_(update, context):
         text=f"[{manifest.name} 入门指南](https://github.com/DahaWong/castpod/wiki/%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97)\n\n",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton('注销账号', callback_data="logout"),
-             InlineKeyboardButton('导出订阅', callback_data="export")],
-            [InlineKeyboardButton('关闭', callback_data="delete_message")]]
+             InlineKeyboardButton('导出订阅', callback_data="export")]]
         )
     )
 

@@ -1,7 +1,5 @@
-from telegram.ext import PicklePersistence
 import configparser
 from telegram.ext import Defaults
-from telegram import Update
 
 
 config = configparser.ConfigParser()
@@ -38,13 +36,12 @@ class Mongo(object):
 
 
 webhook_info = {
-    "listen": '127.0.0.1',
-    "port": webhook_port,
+    "listen": '136.244.105.159',
+    "port": 8848,
     "url_path": bot_token,
-    "webhook_url": f'https://webhook.daha.me/{bot_token}',
+    "webhook_url": f'http://127.0.0.1:8848/{bot_token}',
     "max_connections": 1000,
-    # "drop_pending_updates": True,
-    "allowed_updates": Update.ALL_TYPES
+    "drop_pending_updates": True,
 }
 
 # commands
@@ -62,8 +59,7 @@ dev_commands = [
     ('favorite', '单集收藏'),
     ('help', '使用指南'),
     ('about', '关于我们'),
-    ('stat', '数据汇总'),
-    ('host', '管理主播')
+    ('stat', '数据汇总')
 ]
 
 group_commands = [
