@@ -125,7 +125,7 @@ async def download_episode(update, context):
     message = update.message
     chat_id = message.chat_id
     fetching_note = await bot.send_message(chat_id, "获取节目中…")
-    await bot.send_chat_action(chat_id, ChatAction.RECORD_AUDIO)
+    await bot.send_chat_action(chat_id, ChatAction.RECORD_VOICE)
     match = re.match(f'{SPEAKER_MARK} (.+) #([0-9]+)', message.text)
     user = User.validate_user(update.effective_user)
     # podcast = Podcast.objects.get(name=match[1])
@@ -136,11 +136,11 @@ async def download_episode(update, context):
     episode = podcast.episodes[-index]
     await bot.send_chat_action(
         chat_id,
-        ChatAction.UPLOAD_AUDIO
+        ChatAction.UPLOAD_VOICE
     )
 
     if episode.message_id:
-        fetching_note.delete()
+        await fetching_note.delete()
         forwarded_message = await bot.forward_message(
             chat_id=chat_id,
             from_chat_id=f"@{podcast_vault}",
@@ -148,9 +148,10 @@ async def download_episode(update, context):
         )
         forward_from_message = episode.message_id
     else:
-        downloading_note = fetching_note.edit_text("下载中…")
-        audio_file = download(episode, context)
-        uploading_note = downloading_note.edit_text("发送中，请稍候…")
+        downloading_note = await fetching_note.edit_text("下载中…")
+        audio_file, progress_message_id = download(episode, context)
+        await context.bot.delete_message(update.effective_chat.id, progress_message_id)
+        uploading_note = await downloading_note.edit_text("发送中，请稍候…")
         audio_message = None
         try:
             audio_message = await bot.send_audio(
@@ -173,13 +174,13 @@ async def download_episode(update, context):
         except Exception as e:
             raise e
         finally:
-            uploading_note.delete()
-        forwarded_message = audio_message.forward(chat_id)
+            await uploading_note.delete()
+        forwarded_message = await audio_message.forward(chat_id)
         forward_from_message = audio_message.message_id
         episode.update(set__message_id=audio_message.message_id)
         episode.update(set__file_id=audio_message.audio.file_id)
         context.user_data.clear()  # !!!
-    forwarded_message.edit_caption(
+    await forwarded_message.edit_caption(
         caption=(f"{episode.timeline}"),
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup([

@@ -1,5 +1,5 @@
 from tqdm.contrib.telegram import tqdm
-import requests
+import httpx
 from bs4 import BeautifulSoup
 import errno
 import os
@@ -17,7 +17,7 @@ endpoints = {
 
 
 def search_itunes(keyword: str):
-    res = requests.get(f"{api_root}{endpoints['search_podcast']}{keyword}")
+    res = httpx.get(f"{api_root}{endpoints['search_podcast']}{keyword}")
     status = str(res.status_code)
     if not status.startswith('2'):
         return None
@@ -52,46 +52,42 @@ def validate_path(path):
                 raise
 
 
-async def download(episode, context) -> str:
-    res = requests.get(episode.url, allow_redirects=True, stream=True)
-    if res.status_code != 200:
-        raise Exception(
-            f"Error when downloading audio, status: {res.status_code}.")
-    block_size = 1024  # 1 Kb
-    if context.user_data:
-        chat_id = context.user_data['chat_id']
-        path = f"public/audio/{context.user_data['podcast']}/{episode.title}.mp3"
-        validate_path(path)
-        total = int(res.headers.get('content-length', 0))
-        progress_bar = tqdm(
-            total=total,
-            unit='iB',
-            token=bot_token,
-            chat_id=chat_id,
-            bar_format='{percentage:3.0f}% |{bar:6}|'
-        )
-        with open(path, 'wb') as f:
-            for data in res.iter_content(block_size):
-                progress_bar.update(len(data))
-                f.write(data)
-            message_id = progress_bar.tgio.message_id
-        await context.bot.delete_message(chat_id, message_id)
-        progress_bar.close()
-        if total != 0 and progress_bar.n != total:
-            raise Exception("Error: Something went wrong with progress bar.")
-    else:
-        path = f"public/audio/new/{episode.title}.mp3"
-        validate_path(path)
-        if not os.path.exists(os.path.dirname(path)):
-            try:
-                os.makedirs(os.path.dirname(path))
-            except OSError as exc:  # Guard against race condition
-                if exc.errno != errno.EEXIST:
-                    raise
-        with open(path, 'wb') as f:
-            for data in res.iter_content(block_size):
-                f.write(data)
-    return path
+def download(episode, context):
+    with httpx.stream("GET", episode.url) as res:
+        if context.user_data:
+            chat_id = context.user_data['chat_id']
+            path = f"public/audio/{context.user_data['podcast']}/{episode.title}.mp3"
+            validate_path(path)
+            total = int(res.headers['Content-Length'])
+            progress_bar = tqdm(
+                total=total,
+                unit='iB',
+                token=bot_token,
+                chat_id=chat_id,
+                bar_format='{percentage:3.0f}% |{bar:6}|'
+            )
+            with open(path, 'wb') as f:
+                for data in res.iter_raw(1024): # 1024 bytes
+                    progress_bar.update(len(data))
+                    f.write(data)
+                message_id = progress_bar.tgio.message_id
+            progress_bar.close()
+            if total != 0 and progress_bar.n != total:
+                raise Exception(
+                    "Error: Something went wrong with progress bar.")
+        else:
+            path = f"public/audio/new/{episode.title}.mp3"
+            validate_path(path)
+            if not os.path.exists(os.path.dirname(path)):
+                try:
+                    os.makedirs(os.path.dirname(path))
+                except OSError as exc:  # Guard against race condition
+                    if exc.errno != errno.EEXIST:
+                        raise
+            with open(path, 'wb') as f:
+                for data in res.iter_content(block_size):
+                    f.write(data)
+    return (path, message_id)
 
 
 # Parse Feed
@@ -117,6 +113,8 @@ def parse_opml(f):
     return feeds
 
 # Manage page
+
+
 def save_manage_starter(chat_data, message):
     if chat_data.get('manage_starter'):
         chat_data['manage_starter'].append(message)

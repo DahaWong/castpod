@@ -3,7 +3,7 @@ import io
 import os
 import random
 import datetime
-import requests
+import httpx
 from time import mktime
 import feedparser
 from mongoengine import PULL, NULLIFY
@@ -35,7 +35,7 @@ class Logo(EmbeddedDocument):
     @property
     def path(self):
         if not self.is_local:
-            data = io.BytesIO(requests.get(self.url).content)
+            data = io.BytesIO(httpx.get(self.url).content)
             with Image.open(data) as im:
                 # then process image to fit restriction:
                 # 1. jpeg format
@@ -199,7 +199,6 @@ class Podcast(Document):
 
     @updated_time.setter
     def updated_time(self, value):
-        print(value)
         self._updated_time = datetime.datetime.fromtimestamp(mktime(value))
 
     @property
@@ -231,18 +230,7 @@ class Podcast(Document):
             return queryset(starrers=user)
 
     def parse_feed(self):
-        # Do request using requests library and timeout
-        # ！！！
-        try:
-            res = requests.get(self.feed, timeout=5.0)
-            res.raise_for_status()
-        except requests.ReadTimeout:
-            raise Exception(f'网络连接超时！')
-        except requests.exceptions.HTTPError as e:
-            self.delete()
-            raise Exception(f'Feed open error, status: {res.status_code}')
-        content = io.BytesIO(res.content)
-        result = feedparser.parse(content)
+        result = feedparser.parse(self.feed)
         if not result.entries:
             self.delete()
             raise Exception(f'Feed has no entries.')
@@ -349,15 +337,10 @@ class Podcast(Document):
 
         audio = item.enclosures[0]
 
-        size = audio.get('length') or 0
-        if isinstance(size, str):
-            match = re.match(r'([0-9]+)\..*', size)
-            if match:
-                size = match[1]
-
         episode.from_podcast = self
         episode.url = audio.get('href')
-        episode.size = int(size)
+        size = audio.get('length') or 0
+        episode.size = size if isinstance(size, int) else 0
         episode.performer = self.name
         episode.title = unescape(item.get('title') or '')
         episode.logo.url = item.image.href if item.get(
