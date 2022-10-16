@@ -3,4 +3,4 @@ bs4
 feedparser
 tqdm
 telegraph
-mongoengine
+peewee

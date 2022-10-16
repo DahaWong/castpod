@@ -15,3 +15,10 @@ dump/
 
 # Dev
 test.py
+
+# db
+*.db
+*.db-shm
+*.db-wal
+
+.venv/*
