@@ -1,6 +1,6 @@
 python-telegram-bot==20.a4
 bs4
 feedparser
-tqdm
 telegraph
 peewee
+Pillow

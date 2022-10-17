@@ -6,13 +6,6 @@ from time import mktime
 
 import feedparser
 import httpx
-from mongoengine import NULLIFY, PULL
-from mongoengine.document import Document, EmbeddedDocument
-from mongoengine.fields import (BooleanField, DateTimeField,
-                                EmbeddedDocumentField, FileField, ImageField,
-                                IntField, ListField, ReferenceField,
-                                StringField, URLField)
-from mongoengine.queryset.manager import queryset_manager
 from PIL import Image
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import TimedOut

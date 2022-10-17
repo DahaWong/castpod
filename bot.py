@@ -39,7 +39,6 @@ application = (
 
 register_handlers(application)
 db_init()
-daha = User.create(username="dahawong")
 
 # Webhook:
 # application.run_webhook(**config.webhook_info)
