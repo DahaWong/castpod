@@ -1,4 +1,13 @@
-from peewee import *
+from peewee import (
+    SqliteDatabase,
+    TextField,
+    Model,
+    IntegerField,
+    BooleanField,
+    ForeignKeyField,
+    DateTimeField,
+)
+from playhouse.sqlite_ext import FTSModel, SearchField
 from datetime import datetime
 from PIL import Image
 
@@ -42,23 +51,38 @@ class Group(BaseModel):
 
 
 class Logo(BaseModel):
-    path = TextField()
     downloaded = BooleanField(default=False)
-    url = TextField()
+    path = TextField()
     file_id = TextField()
+    url = TextField()
 
 
 class Podcast(BaseModel):
     feed = TextField(unique=True)
     name = TextField()
-    # logo
+    logo = ForeignKeyField(Logo)
     host = TextField()
     website = TextField()
     email = TextField()
     channel = TextField()
     group = IntegerField()
     updated_time = DateTimeField(default=datetime.now)
-    owner = ForeignKeyField(User, 'owning_podcasts')
+    owner = ForeignKeyField(User, "owning_podcasts")
+
+
+class Shownotes(BaseModel):
+    content = TextField()
+    url = TextField()
+
+
+class ShownotesIndex(FTSModel):
+    # Full-text search index.
+    content = SearchField()
+
+    class Meta:
+        database = db
+        options = {"content": Shownotes.content}
+
 
 class Episode(BaseModel):
     id = TextField(unique=True)
@@ -67,12 +91,12 @@ class Episode(BaseModel):
     link = TextField()
     subtitle = TextField()
     summary = TextField()
+    logo = ForeignKeyField(Logo)
+    shownotes = ForeignKeyField(Shownotes, "episode")
     published_time = DateTimeField(default=datetime.now)
     updated_time = DateTimeField(default=datetime.now)
     message_id = IntegerField()
     file_id = TextField()
-    shownotes= TextField()
-    shownotes_url = TextField()
     # timeline
     downloaded = BooleanField(default=False)
     url = TextField()
@@ -82,9 +106,7 @@ class Episode(BaseModel):
     duration = IntegerField()
 
 
-# Intermediate models
-
-
+# Middle models
 class UserPodcast(BaseModel):
     user = ForeignKeyField(User)
     podcast = ForeignKeyField(Podcast)
@@ -112,4 +134,26 @@ class GroupPodcast(BaseModel):
 
 def db_init():
     db.connect()
-    db.create_tables([User])
+    db.create_tables(
+        [
+            User,
+            Channel,
+            Group,
+            Logo,
+            Podcast,
+            Shownotes,
+            ShownotesIndex,
+            Episode,
+            UserPodcast,
+            FavPodcast,
+            SaveEpisode,
+            ChannelPodcast,
+            GroupPodcast,
+        ]
+    )
+    # Now, we can manage content in the ShownotesIndex. To populate the
+    # search index:
+    ShownotesIndex.rebuild()
+
+    # Optimize the index.
+    ShownotesIndex.optimize()
