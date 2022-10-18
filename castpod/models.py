@@ -1,8 +1,7 @@
 # import datetime
+
 # import io
 # import re
-# from html import unescape
-# from time import mktime
 
 # import feedparser
 # import httpx
@@ -298,8 +297,6 @@
 #             self.host = unescape(feed.author_detail.get('name') or '')
 #         else:
 #             self.host = ''
-#         if self.host == self.name:
-#             self.host = ''
 #         self.website = feed.get('link')
 #         if feed.get('author_detail'):
 #             self.email = feed.author_detail.get('email') or ''
@@ -312,7 +309,6 @@
 #                 self.save()
 #             elif not init:  # 一旦发现没有更新，就停止检测
 #                 break
-#         self.reload()
 #         sorted_episodes = sorted(
 #             self.episodes, key=lambda x: x.published_time, reverse=True)
 #         self.update(set__episodes=sorted_episodes)
@@ -359,25 +355,22 @@
 #         self.save()
 #         return episode
 
-#     def set_duration(self, duration: str) -> int:
-#         duration_timedelta = None
-#         if duration:
-#             if ':' in duration:
-#                 time = duration.split(':')
-#                 if len(time) == 3:
-#                     duration_timedelta = datetime.timedelta(
-#                         hours=int(time[0]),
-#                         minutes=int(time[1]),
-#                         seconds=int(time[2])
-#                     ).total_seconds()
-#                 elif len(time) == 2:
-#                     duration_timedelta = datetime.timedelta(
-#                         hours=0,
-#                         minutes=int(time[0]),
-#                         seconds=int(time[1])
-#                     ).total_seconds()
-#             else:
-#                 duration_timedelta = re.sub(r'\.[0-9]+', '', duration)
+
+# def set_duration(self, duration: str) -> int:
+#     duration_timedelta = None
+#     if duration:
+#         if ":" in duration:
+#             time = duration.split(":")
+#             if len(time) == 3:
+#                 duration_timedelta = datetime.timedelta(
+#                     hours=int(time[0]), minutes=int(time[1]), seconds=int(time[2])
+#                 ).total_seconds()
+#             elif len(time) == 2:
+#                 duration_timedelta = datetime.timedelta(
+#                     hours=0, minutes=int(time[0]), seconds=int(time[1])
+#                 ).total_seconds()
 #         else:
-#             duration_timedelta = 0
-#         return int(duration_timedelta)
+#             duration_timedelta = re.sub(r"\.[0-9]+", "", duration)
+#     else:
+#         duration_timedelta = 0
+#     return int(duration_timedelta)

@@ -23,9 +23,11 @@ async def via_sender(update, context):
         results = [
             InlineQueryResultArticle(
                 id=0,
-                title="输入播客名称以订阅…",
-                input_message_content=InputTextMessageContent("test", parse_mode=None),
-                description="test",
+                title="🔍",
+                input_message_content=InputTextMessageContent(
+                    "test", parse_mode=None
+                ),
+                description="输入播客名称…",
             )
         ]
     else:

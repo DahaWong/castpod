@@ -33,8 +33,10 @@ def register_handlers(application):
             # CommandHandler('share', command.share, block=False),
             CommandHandler("help", command.help_, block=False),
             CommandHandler("about", command.about, block=False),
-            # MessageHandler(
-            #     filters.ChatType.PRIVATE & filters.Entity("url") & filters.Regex(r'^https?://'), message.subscribe_feed),
+            MessageHandler(
+                filters.ChatType.PRIVATE & filters.Entity("url"),
+                message.subscribe_feed,
+            ),
             # MessageHandler(
             #     filters.Regex(f'{SPEAKER_MARK} (.+) #([0-9]+)'), message.download_episode, block=False),
             # MessageHandler(

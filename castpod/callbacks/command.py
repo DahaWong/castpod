@@ -1,16 +1,14 @@
-from telegram import (
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    ReplyKeyboardMarkup,
-    InputMediaAudio,
-    Update,
-)
-from config import manifest
-from castpod.models_new import User, Podcast, Episode
-from castpod.components import ManagePage, PodcastPage
-from manifest import manifest
-from ..constants import RIGHT_SEARCH_MARK, DOC_MARK, STAR_MARK
 import re
+
+from telegram import (InlineKeyboardButton, InlineKeyboardMarkup,
+                      InputMediaAudio, ReplyKeyboardMarkup, Update)
+
+from castpod.components import ManagePage, PodcastPage
+from castpod.models_new import Episode, Podcast, User
+from config import manifest
+from manifest import manifest
+
+from ..constants import DOC_MARK, RIGHT_SEARCH_MARK, STAR_MARK
 
 
 async def start(update: Update, context):

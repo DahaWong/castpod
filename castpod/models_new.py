@@ -1,16 +1,22 @@
+import re
+from datetime import date, datetime, timedelta
+from html import unescape
+from time import mktime
+from pprint import pprint
+
+import feedparser
 from peewee import (
+    BooleanField,
+    CharField,
+    DateTimeField,
+    ForeignKeyField,
+    IntegerField,
+    Model,
     SqliteDatabase,
     TextField,
-    Model,
-    IntegerField,
-    BooleanField,
-    ForeignKeyField,
-    DateTimeField,
 )
-from playhouse.sqlite_ext import FTSModel, SearchField
-from datetime import datetime
 from PIL import Image
-
+from playhouse.sqlite_ext import FTSModel, SearchField
 
 db = SqliteDatabase(
     database="dimbo.db",
@@ -51,20 +57,33 @@ class Group(BaseModel):
 
 
 class Logo(BaseModel):
+    url = TextField()
     is_downloaded = BooleanField(default=False)
     path = TextField(null=True)
     file_id = TextField(null=True)
-    url = TextField()
 
 
 class Podcast(BaseModel):
     feed = TextField(unique=True)
-    name = TextField()
-    logo = ForeignKeyField(Logo)
-    host = TextField()
+    name = CharField(null=True, max_length=64)
+    logo = ForeignKeyField(Logo, null=True)
+    host = TextField(null=True)
     website = TextField(null=True)
     email = TextField(null=True)
     updated_time = DateTimeField(default=datetime.now)
+
+    def initialize(self):
+        parsed = parse_feed(self.feed)
+        self.name = parsed["name"]
+        self.logo = parsed["logo"]
+        self.host = parsed["host"]
+        self.website = parsed["website"]
+        self.email = parsed["email"]
+        # self.updated_time = parsed["updated_time"]
+        with db.atomic():
+            for item in parsed["items"]:
+                kwargs = parse_episode(item, self)
+                Episode.create(**kwargs)
 
 
 class Shownotes(BaseModel):
@@ -82,29 +101,29 @@ class ShownotesIndex(FTSModel):
 
 
 class Episode(BaseModel):
-    id = TextField(unique=True)
-    from_podcast = ForeignKeyField(Podcast, backref="episodes")
+    # guid = TextField(unique=True)
+    from_podcast = ForeignKeyField(Podcast, null=True, backref="episodes")
     title = TextField()
     link = TextField()
     subtitle = TextField(null=True)
     summary = TextField(null=True)
-    logo = ForeignKeyField(Logo)
-    shownotes = ForeignKeyField(Shownotes, backref="episode")
+    logo = ForeignKeyField(Logo, null=True)
+    shownotes = ForeignKeyField(Shownotes, null=True, backref="episode")
     published_time = DateTimeField(default=datetime.now)
     updated_time = DateTimeField(default=datetime.now)
     message_id = IntegerField(null=True)
     file_id = TextField(null=True)
     # timeline
     is_downloaded = BooleanField(default=False)
-    url = TextField()
-    performer = TextField()
+    url = TextField(null=True)
+    performer = TextField(null=True)
     size = IntegerField(null=True)
     duration = IntegerField(null=True)
 
 
 # Middle models
-class UserPodcast(BaseModel):
-    """Model for user's subscribtion."""
+class UserSubscribePodcast(BaseModel):
+    """Model for user's subscription."""
 
     user = ForeignKeyField(User)
     podcast = ForeignKeyField(Podcast)
@@ -121,7 +140,7 @@ class SaveEpisode(BaseModel):
 
 
 class ChannelPodcast(BaseModel):
-    """Model for channel's subscribtion."""
+    """Model for channel's subscription."""
 
     channel = ForeignKeyField(Channel)
     podcast = ForeignKeyField(Podcast)
@@ -146,7 +165,7 @@ def db_init():
             Shownotes,
             ShownotesIndex,
             Episode,
-            UserPodcast,
+            UserSubscribePodcast,
             FavPodcast,
             SaveEpisode,
             ChannelPodcast,
@@ -159,3 +178,74 @@ def db_init():
 
     # Optimize the index.
     ShownotesIndex.optimize()
+
+
+def parse_feed(feed):
+    result = feedparser.parse(feed)
+    feed = result.feed
+    podcast = {}
+    if not result.entries:
+        return
+        # self.delete_instance()
+        # raise Exception(f"Feed has no entries.")
+    podcast["feed"] = feed
+    podcast["name"] = (
+        unescape(feed.title)
+        if len(feed.title) <= 63
+        else unescape(feed.title)[:63] + "…"
+    )
+    podcast["logo"] = Logo.create(url=feed["image"]["href"])
+    podcast["host"] = unescape(feed.author_detail.get("name") or "")
+    podcast["website"] = feed.get("link")
+    podcast["email"] = unescape(feed.author_detail.get("email") or "")
+    podcast["updated_time"] = result.feed.get("updated_parsed")
+    podcast["items"] = result["items"]
+    return podcast
+
+
+def parse_episode(item, podcast):
+    episode = {}
+    episode["from_podcast"] = podcast.id
+    episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
+    audio = item.enclosures[0]
+    episode["url"] = audio.get("href")
+    episode["size"] = audio.get("length") if isinstance(audio.get("length"), int) else 0
+    # performer = self.name
+    episode["title"] = unescape(item.get("title") or "")
+
+    # if item.get("image"):
+    #     episode["logo"] = Logo.get_or_create(url=item.image.href)[0]
+    # else:
+    #     episode["logo"] = podcast.logo
+
+    episode["duration"] = set_duration(item.get("itunes_duration"))
+    episode["link"] = item.get("link")
+    episode["subtitle"] = unescape(item.get("subtitle") or "")
+    episode["summary"] = unescape(item.get("summary") or "")
+    # episode["shownotes"] = (
+    #     item.get("content")[0]["value"] if item.get("content") else episode["summary"]
+    # )
+    episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
+    episode["updated_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
+    # pprint(episode)
+    return episode
+
+
+def set_duration(duration: str) -> int:
+    duration_timedelta = None
+    if duration:
+        if ":" in duration:
+            time = duration.split(":")
+            if len(time) == 3:
+                duration_timedelta = timedelta(
+                    hours=int(time[0]), minutes=int(time[1]), seconds=int(time[2])
+                ).total_seconds()
+            elif len(time) == 2:
+                duration_timedelta = timedelta(
+                    hours=0, minutes=int(time[0]), seconds=int(time[1])
+                ).total_seconds()
+        else:
+            duration_timedelta = re.sub(r"\.[0-9]+", "", duration)
+    else:
+        duration_timedelta = 0
+    return int(duration_timedelta)

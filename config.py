@@ -1,6 +1,7 @@
 import configparser
 
 from telegram.ext import Defaults
+from telegram.constants import ParseMode
 
 config = configparser.ConfigParser()
 config.read("config.ini")  # Read the configuration file on your machine.
@@ -10,7 +11,7 @@ config.read("config.ini")  # Read the configuration file on your machine.
 bot_token = config["BOT"]["TOKEN_TEST"]
 bot_api = config["BOT"]["API"]
 podcast_vault = config["BOT"]["PODCAST_VAULT"]
-defaults = Defaults(parse_mode="MARKDOWN", disable_notification=True)
+defaults = Defaults(parse_mode=ParseMode.HTML, disable_notification=True)
 
 # Dev
 dev = config["DEV"]["USER_ID"]

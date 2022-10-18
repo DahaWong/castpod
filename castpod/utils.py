@@ -1,11 +1,12 @@
-import httpx
+import errno
+import os
+import re
+from datetime import date, datetime
+from functools import wraps
 
-# from bs4 import BeautifulSoup
-# import errno
-# import os
-# import re
-# from functools import wraps
-# from datetime import date
+import httpx
+from bs4 import BeautifulSoup
+
 
 # iTunes Search API
 api_root = "https://itunes.apple.com/search?"
@@ -19,7 +20,6 @@ async def search_itunes(keyword: str):
     if not status.startswith("2"):
         return None
     results = res.json()["results"]
-    print(results)
     return results
 
 
@@ -33,15 +33,16 @@ async def search_itunes(keyword: str):
 #             if exc.errno != errno.EEXIST:
 #                 raise
 
-# def download(episode, context):
-# async with httpx.AsyncClient() as client:
-#   async with client.stream('GET', 'https://www.example.com/') as response:
-#      async for chunk in response.aiter_bytes():
-#         pass
-#     with httpx.stream("GET", episode.url) as res:
+# async def download(episode, context):
+#     async with httpx.AsyncClient() as client:
+#         async with client.stream('GET', 'https://www.example.com/') as response:
+#                 with open(path, 'wb') as f:
+#                 async for chunk in response.aiter_bytes():
+#                     f.write(chunk)
+#     with httpx.stream("GET", url) as res:
 #         if context.user_data:
 #             chat_id = context.user_data['chat_id']
-#             path = f"public/audio/{context.user_data['podcast']}/{episode.title}.mp3"
+#             path = f"public/audio/{context.user_data['podcast']}/{title}.mp3"
 #             validate_path(path)
 #             total = int(res.headers['Content-Length'])
 #             progress_bar = tqdm(
@@ -61,7 +62,7 @@ async def search_itunes(keyword: str):
 #                 raise Exception(
 #                     "Error: Something went wrong with progress bar.")
 #         else:
-#             path = f"public/audio/new/{episode.title}.mp3"
+#             path = f"public/audio/new/{title}.mp3"
 #             validate_path(path)
 #             if not os.path.exists(os.path.dirname(path)):
 #                 try:
@@ -75,9 +76,7 @@ async def search_itunes(keyword: str):
 #     return (path, message_id)
 
 
-# # Parse Feed
-
-
+# Parse Feed
 # async def parse_doc(context, user, doc):
 #     doc_file = await context.bot.getFile(doc['file_id'])
 #     doc_name = re.sub(r'.+(?=\.xml|\.opml?)',
