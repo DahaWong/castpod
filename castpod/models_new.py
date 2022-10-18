@@ -25,7 +25,7 @@ db = SqliteDatabase(
 
 
 class BaseModel(Model):
-    """A base model that will use our Sqlite database."""
+    """A base model that will use Sqlite database."""
 
     class Meta:
         database = db
@@ -33,27 +33,27 @@ class BaseModel(Model):
 
 class User(BaseModel):
     id = IntegerField(primary_key=True)
-    name = TextField()
+    name = TextField(null=True)
 
 
 class Channel(BaseModel):
     """a telegram channel."""
 
     id = IntegerField(primary_key=True)
-    name = TextField()
+    name = TextField(null=True)
 
 
 class Group(BaseModel):
     """a telegram group."""
 
     id = IntegerField(primary_key=True)
-    name = TextField()
+    name = TextField(null=True)
 
 
 class Logo(BaseModel):
-    downloaded = BooleanField(default=False)
-    path = TextField()
-    file_id = TextField()
+    is_downloaded = BooleanField(default=False)
+    path = TextField(null=True)
+    file_id = TextField(null=True)
     url = TextField()
 
 
@@ -62,12 +62,9 @@ class Podcast(BaseModel):
     name = TextField()
     logo = ForeignKeyField(Logo)
     host = TextField()
-    website = TextField()
-    email = TextField()
-    channel = TextField()
-    group = IntegerField()
+    website = TextField(null=True)
+    email = TextField(null=True)
     updated_time = DateTimeField(default=datetime.now)
-    owner = ForeignKeyField(User, "owning_podcasts")
 
 
 class Shownotes(BaseModel):
@@ -89,25 +86,26 @@ class Episode(BaseModel):
     from_podcast = ForeignKeyField(Podcast, backref="episodes")
     title = TextField()
     link = TextField()
-    subtitle = TextField()
-    summary = TextField()
+    subtitle = TextField(null=True)
+    summary = TextField(null=True)
     logo = ForeignKeyField(Logo)
-    shownotes = ForeignKeyField(Shownotes, "episode")
+    shownotes = ForeignKeyField(Shownotes, backref="episode")
     published_time = DateTimeField(default=datetime.now)
     updated_time = DateTimeField(default=datetime.now)
-    message_id = IntegerField()
-    file_id = TextField()
+    message_id = IntegerField(null=True)
+    file_id = TextField(null=True)
     # timeline
-    downloaded = BooleanField(default=False)
+    is_downloaded = BooleanField(default=False)
     url = TextField()
     performer = TextField()
-    # logo
-    size = IntegerField()
-    duration = IntegerField()
+    size = IntegerField(null=True)
+    duration = IntegerField(null=True)
 
 
 # Middle models
 class UserPodcast(BaseModel):
+    """Model for user's subscribtion."""
+
     user = ForeignKeyField(User)
     podcast = ForeignKeyField(Podcast)
 
@@ -123,11 +121,15 @@ class SaveEpisode(BaseModel):
 
 
 class ChannelPodcast(BaseModel):
+    """Model for channel's subscribtion."""
+
     channel = ForeignKeyField(Channel)
     podcast = ForeignKeyField(Podcast)
 
 
 class GroupPodcast(BaseModel):
+    """Model for group's subscribtion."""
+
     group = ForeignKeyField(Group)
     podcast = ForeignKeyField(Podcast)
 
