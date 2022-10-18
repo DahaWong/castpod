@@ -1,48 +1,30 @@
-# from tqdm.contrib.telegram import tqdm
-# import httpx
+import httpx
+
 # from bs4 import BeautifulSoup
 # import errno
 # import os
 # import re
 # from functools import wraps
-# from config import bot_token
 # from datetime import date
 
-# # iTunes Search API
-
-# api_root = 'https://itunes.apple.com/search?'
-# endpoints = {
-#     'search_podcast': 'media=podcast&limit=25&term='
-# }
+# iTunes Search API
+api_root = "https://itunes.apple.com/search?"
+endpoints = {"search_podcast": "media=podcast&limit=25&term="}
 
 
-# def search_itunes(keyword: str):
-#     res = httpx.get(f"{api_root}{endpoints['search_podcast']}{keyword}")
-#     status = str(res.status_code)
-#     if not status.startswith('2'):
-#         return None
-#     results = res.json()['results']
-#     return results
-
-# # Spotify Search API
-# # def spotify_search(keyword:str):
-# #   headersAPI = {
-# #     'accept': 'application/json',
-# #     'Authorization': 'Bearer '+ 'BQC6unM9WV8GYYIrRhIpR-uJaQ9FLP7KF2xTlIanMXkxi5K1ii5O7ES0VxB3SVdacnvEGGOPqHcl5Hx9LKE',
-# #   }
-# #   response = requests.get(
-# #     'https://api.spotify.com/v1/search',
-# #     headers=headersAPI,
-# #     params=(
-# #       ('q', keyword),
-# #       ('type', 'show')
-# #     ),
-# #     verify=True
-# #   )
-# #   print(response.json())
+async def search_itunes(keyword: str):
+    async with httpx.AsyncClient() as client:
+        res = await client.get(f"{api_root}{endpoints['search_podcast']}{keyword}")
+    status = str(res.status_code)
+    if not status.startswith("2"):
+        return None
+    results = res.json()["results"]
+    print(results)
+    return results
 
 
 # # Download
+
 # def validate_path(path):
 #     if not os.path.exists(os.path.dirname(path)):
 #         try:
@@ -51,8 +33,11 @@
 #             if exc.errno != errno.EEXIST:
 #                 raise
 
-
 # def download(episode, context):
+# async with httpx.AsyncClient() as client:
+#   async with client.stream('GET', 'https://www.example.com/') as response:
+#      async for chunk in response.aiter_bytes():
+#         pass
 #     with httpx.stream("GET", episode.url) as res:
 #         if context.user_data:
 #             chat_id = context.user_data['chat_id']

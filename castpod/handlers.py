@@ -28,7 +28,7 @@ def register_handlers(application):
             CommandHandler("start", command.start, filters=filters.ChatType.PRIVATE),
             # CommandHandler('manage', command.manage),
             # CommandHandler('star', command.star),
-            # CommandHandler('search', command.search, block=False),
+            CommandHandler("search", command.search, block=False),
             # CommandHandler('favorite', command.favorite, block=False),
             # CommandHandler('share', command.share, block=False),
             CommandHandler("help", command.help_, block=False),
@@ -78,7 +78,7 @@ def register_handlers(application):
             #     filters.StatusUpdate.PINNED_MESSAGE,
             #     message.delete_message
             # ),
-            # InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
+            InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
             # InlineQueryHandler(inline_query.via_private,
             #                    chat_types=[Chat.PRIVATE]),
             # InlineQueryHandler(inline_query.via_group, chat_types=[

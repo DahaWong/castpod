@@ -31,6 +31,9 @@ async def start(update: Update, context):
                 InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="")
             ),
         )
+    elif not context.args:
+        await message.reply_text("欢迎回来！")
+        return
 
     # if subscribing podcast via deep link:
     if context.args and context.args[0] != "login":
@@ -62,8 +65,6 @@ async def start(update: Update, context):
             text=manage_page.text,
             reply_markup=ReplyKeyboardMarkup(manage_page.keyboard()),
         )
-    else:
-        await message.reply_text("欢迎回来！")
 
 
 # async def manage(update, context):
@@ -102,13 +103,13 @@ async def start(update: Update, context):
 #     context.chat_data.update(reply_keyboard=msg)
 
 
-# async def search(update, context):
-#     await update.message.reply_text(
-#         text=RIGHT_SEARCH_MARK,
-#         reply_markup=InlineKeyboardMarkup.from_button(
-#             InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="")
-#         ),
-#     )
+async def search(update, context):
+    await update.message.reply_text(
+        text=RIGHT_SEARCH_MARK,
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="")
+        ),
+    )
 
 
 async def about(update, context):

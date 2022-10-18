@@ -1,37 +1,42 @@
-# from mongoengine.queryset.visitor import Q
-# from ..utils import search_itunes
-# from telegram import (
-#     InlineQueryResultArticle,
-#     InputTextMessageContent,
-#     InlineKeyboardButton,
-#     InlineKeyboardMarkup,
-#     InlineQueryResultCachedPhoto,
-#     InlineQueryResultPhoto,
-#     InlineQueryResultCachedAudio,
-# )
-# import re
-# from config import manifest
-# from ..models import User, Podcast, Episode
-# import datetime
-# from ..constants import SPEAKER_MARK
+from ..utils import search_itunes
+from telegram import (
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InlineQueryResultCachedPhoto,
+    InlineQueryResultPhoto,
+    InlineQueryResultCachedAudio,
+)
+import re
+from config import manifest
+from ..models_new import User, Podcast, Episode
+import datetime
+from ..constants import SPEAKER_MARK
 
 
-# async def via_sender(update, context):
-#     query = update.inline_query
-#     user = User.validate_user(update.effective_user)
-#     keywords = query.query
-#     if not keywords:
-#         results = show_subscription(user)
-#         await query.answer(list(results), auto_pagination=True, cache_time=30)
-#         return
-#     match = re.match(r"(.*?)#(.*)$", keywords)
-#     try:
-#         name, index = match[1], match[2]
-#         podcast = Podcast.objects.get(Q(name=name) & Q(subscribers=user))
-#         results = show_episodes(podcast, index)
-#     except:
-#         results = search_podcast(user, keywords)
-#     await query.answer(list(results), auto_pagination=True, cache_time=10)
+async def via_sender(update, context):
+    query = update.inline_query
+    #     user = User.validate_user(update.effective_user)
+    keywords = query.query
+    if not keywords:
+        results = [
+            InlineQueryResultArticle(
+                id=0,
+                title="输入播客名称以订阅…",
+                input_message_content=InputTextMessageContent("test", parse_mode=None),
+                description="test",
+            )
+        ]
+    else:
+        #     match = re.match(r"(.*?)#(.*)$", keywords)
+        #     try:
+        #         name, index = match[1], match[2]
+        #         podcast = Podcast.objects.get(Q(name=name) & Q(subscribers=user))
+        #         results = show_episodes(podcast, index)
+        #     except:
+        results = await search_podcast(keywords)
+    await query.answer(results, auto_pagination=True, cache_time=10)
 
 
 # async def via_private(update, context):
@@ -52,76 +57,83 @@
 #     via_private(update, context)
 
 
-# def search_podcast(user, keywords):
-#     searched_results = search_itunes(keywords)
-#     if not searched_results:
-#         podcasts = Podcast.objects(Q(name__icontains=keywords) & Q(subscribers=user))
-#         if not podcasts:
-#             yield InlineQueryResultArticle(
-#                 id="0",
-#                 title="没有找到相关的播客 :(",
-#                 description="换个关键词试试",
-#                 input_message_content=InputTextMessageContent(":("),
-#                 reply_markup=InlineKeyboardMarkup.from_button(
-#                     InlineKeyboardButton(
-#                         "返回搜索", switch_inline_query_current_chat=keywords
-#                     )
-#                 ),
-#             )
-#         else:
-#             yield InlineQueryResultArticle(
-#                 id="0",
-#                 title="没有找到相关的播客 :(",
-#                 description="以下是在订阅列表中搜索到的结果：",
-#                 input_message_content=InputTextMessageContent(":("),
-#                 reply_markup=InlineKeyboardMarkup.from_button(
-#                     InlineKeyboardButton(
-#                         "返回搜索", switch_inline_query_current_chat=keywords
-#                     )
-#                 ),
-#             )
-#             for index, podcast in enumerate(podcasts):
-#                 if podcast.logo.file_id:
-#                     yield InlineQueryResultCachedPhoto(
-#                         id=index,
-#                         photo_file_id=podcast.logo.file_id,
-#                         title=str(podcast.name),
-#                         description=podcast.host or podcast.name,
-#                         # photo_url=podcast.logo.url,
-#                         input_message_content=InputTextMessageContent(podcast.name),
-#                         caption=podcast.name,
-#                     )
-#                 else:
-#                     yield InlineQueryResultPhoto(
-#                         id=index,
-#                         description=podcast.host or podcast.name,
-#                         photo_url=podcast.logo.url,
-#                         thumb_url=podcast.logo.url,
-#                         photo_width=80,
-#                         photo_height=80,
-#                         title=str(podcast.name),
-#                         caption=podcast.name,
-#                         input_message_content=InputTextMessageContent(podcast.name),
-#                     )
-#     else:
-#         for result in searched_results:
-#             name = re.sub(r"[_*`]", " ", result["collectionName"])
-#             host = re.sub(r"[_*`]", " ", result["artistName"])
-#             feed = result.get("feedUrl") or "（此播客没有提供订阅源）"
-#             thumbnail_small = result.get("artworkUrl60")
+async def search_podcast(keywords):
+    searched_results = await search_itunes(keywords)
+    results = []
+    if not searched_results:
+        # podcasts = Podcast.objects(Q(name__icontains=keywords) & Q(subscribers=user))
+        # if not podcasts:
+        #     yield InlineQueryResultArticle(
+        #         id="0",
+        #         title="没有找到相关的播客 :(",
+        #         description="换个关键词试试",
+        #         input_message_content=InputTextMessageContent(":("),
+        #         reply_markup=InlineKeyboardMarkup.from_button(
+        #             InlineKeyboardButton(
+        #                 "返回搜索", switch_inline_query_current_chat=keywords
+        #             )
+        #         ),
+        #     )
+        # else:
+        #     yield InlineQueryResultArticle(
+        #         id="0",
+        #         title="没有找到相关播客 :(",
+        #         description="以下是在订阅列表中搜索到的结果：",
+        #         input_message_content=InputTextMessageContent(":("),
+        #         reply_markup=InlineKeyboardMarkup.from_button(
+        #             InlineKeyboardButton(
+        #                 "返回搜索", switch_inline_query_current_chat=keywords
+        #             )
+        #         ),
+        #     )
+        #     for index, podcast in enumerate(podcasts):
+        #         if podcast.logo.file_id:
+        #             yield InlineQueryResultCachedPhoto(
+        #                 id=index,
+        #                 photo_file_id=podcast.logo.file_id,
+        #                 title=str(podcast.name),
+        #                 description=podcast.host or podcast.name,
+        #                 # photo_url=podcast.logo.url,
+        #                 input_message_content=InputTextMessageContent(podcast.name),
+        #                 caption=podcast.name,
+        #             )
+        #         else:
+        #             yield InlineQueryResultPhoto(
+        #                 id=index,
+        #                 description=podcast.host or podcast.name,
+        #                 photo_url=podcast.logo.url,
+        #                 thumb_url=podcast.logo.url,
+        #                 photo_width=80,
+        #                 photo_height=80,
+        #                 title=str(podcast.name),
+        #                 caption=podcast.name,
+        #                 input_message_content=InputTextMessageContent(podcast.name),
+        #             )
+        pass
+    else:
+        for result in searched_results:
+            name = re.sub(r"[_*`]", " ", result["collectionName"])
+            host = re.sub(r"[_*`]", " ", result["artistName"])
+            feed = result.get("feedUrl") or "（此播客没有提供订阅源）"
+            thumbnail_small = result.get("artworkUrl60")
 
-#             # 如果不在 机器人主页，则：
-#             # [InlineKeyboardButton('前  往  B O T', url = f"https://t.me/{manifest.bot_id}")],
+            # 如果不在 机器人主页，则：
+            # [InlineKeyboardButton('前往 bot', url = f"https://t.me/{manifest.bot_id}")],
 
-#             yield InlineQueryResultArticle(
-#                 id=result["collectionId"],
-#                 title=name,
-#                 input_message_content=InputTextMessageContent(feed, parse_mode=None),
-#                 description=host,
-#                 thumb_url=thumbnail_small or None,
-#                 thumb_height=60,
-#                 thumb_width=60,
-#             )
+            results.append(
+                InlineQueryResultArticle(
+                    id=result["collectionId"],
+                    title=name,
+                    input_message_content=InputTextMessageContent(
+                        feed, parse_mode=None
+                    ),
+                    description=host,
+                    thumb_url=thumbnail_small or None,
+                    thumb_height=60,
+                    thumb_width=60,
+                )
+            )
+        return results
 
 
 # def show_subscription(user):
