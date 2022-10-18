@@ -20,5 +20,7 @@ test.py
 *.db
 *.db-shm
 *.db-wal
+*.session.sql
 
+# venv
 .venv/*
