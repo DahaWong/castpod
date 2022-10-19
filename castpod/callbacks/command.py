@@ -3,6 +3,8 @@ import re
 from telegram import (InlineKeyboardButton, InlineKeyboardMarkup,
                       InputMediaAudio, ReplyKeyboardMarkup, Update)
 
+from telegram.ext import CallbackContext
+
 from castpod.components import ManagePage, PodcastPage
 from castpod.models_new import Episode, Podcast, User
 from config import manifest
@@ -65,25 +67,7 @@ async def start(update: Update, context):
         )
 
 
-# async def manage(update, context):
-#     user = User.validate_user(update.effective_user)
-#     page = ManagePage(Podcast.subscribe_by(user, "name"))
-#     if context.chat_data.get("reply_keyboard"):
-#         await context.chat_data["reply_keyboard"].delete()
-#     msg = await update.message.reply_text(
-#         text=page.text,
-#         reply_markup=ReplyKeyboardMarkup(
-#             page.keyboard(null_text="还没有订阅播客～", jump_to=STAR_MARK),
-#             resize_keyboard=True,
-#             one_time_keyboard=True,
-#             selective=True,
-#         ),
-#     )
-#     context.chat_data.update(reply_keyboard=msg)
-#     await update.message.delete()
-
-
-# async def star(update, context):
+# async def star(update: Update, context: CallbackContext):
 #     user = User.validate_user(update.effective_user)
 #     page = ManagePage(Podcast.star_by(user, "name"), text="已启动收藏面板")
 #     if context.chat_data.get("reply_keyboard"):
@@ -101,7 +85,7 @@ async def start(update: Update, context):
 #     context.chat_data.update(reply_keyboard=msg)
 
 
-async def search(update, context):
+async def search(update: Update, context: CallbackContext):
     await update.message.reply_text(
         text=RIGHT_SEARCH_MARK,
         reply_markup=InlineKeyboardMarkup.from_button(
@@ -110,7 +94,7 @@ async def search(update, context):
     )
 
 
-async def about(update, context):
+async def about(update: Update, context: CallbackContext):
     keyboard = [
         [
             InlineKeyboardButton("源代码", url=manifest.repo),
@@ -127,7 +111,7 @@ async def about(update, context):
     )
 
 
-# async def favorite(update, context):
+# async def favorite(update: Update, context: CallbackContext):
 #     user = User.validate_user(update.effective_user)
 #     fav_episodes = Episode.objects(starrers=user)
 #     if len(fav_episodes) == 1:
@@ -154,22 +138,22 @@ async def about(update, context):
 #         )
 
 
-# async def share(update, context):
-#     await update.message.reply_text(
-#         text="💌",
-#         reply_markup=InlineKeyboardMarkup.from_button(
-#             InlineKeyboardButton("分享播客", switch_inline_query="")
-#         ),
-#     )
+async def share(update: Update, context: CallbackContext):
+    await update.message.reply_text(
+        text="💌",
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton("分享播客", switch_inline_query="")
+        ),
+    )
 
 
-# async def wander(update, context):
+# async def random(update: Update, context: CallbackContext):
 #     await update.message.reply_text(
 #         "功能开发中，敬请等待！", reply_to_message_id=update.effective_message.message_id
 #     )
 
 
-async def help_(update, context):
+async def help_(update: Update, context: CallbackContext):
     message = update.message
     text_handler = (
         message.reply_text if message else update.callback_query.edit_message_text

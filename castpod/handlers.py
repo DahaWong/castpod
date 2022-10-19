@@ -37,8 +37,9 @@ def register_handlers(application):
                 filters.ChatType.PRIVATE & filters.Entity("url"),
                 message.subscribe_feed,
             ),
-            # MessageHandler(
-            #     filters.Regex(f'{SPEAKER_MARK} (.+) #([0-9]+)'), message.download_episode, block=False),
+            MessageHandler(
+                filters.Regex(f"(.+) #([0-9]+)"), message.download_episode, block=False
+            ),
             # MessageHandler(
             #     filters.Regex(f'^{CLOSE_MARK}$'),
             #     message.close_reply_keyboard,
@@ -67,19 +68,13 @@ def register_handlers(application):
             #     message.save_subscription,
             #     block=False
             # ),
-            # MessageHandler(
-            #     (
-            #         filters.REPLY |
-            #         filters.ChatType.PRIVATE
-            #     ) &
-            #     filters.TEXT, message.show_podcast
-            # ),
+            MessageHandler(
+                (filters.REPLY | filters.ChatType.PRIVATE) & filters.TEXT,
+                message.show_podcast,
+            ),
             # MessageHandler(filters.Chat(username="podcast_vault_chat")
             #                & filters.AUDIO, message.handle_audio),
-            # MessageHandler(
-            #     filters.StatusUpdate.PINNED_MESSAGE,
-            #     message.delete_message
-            # ),
+            MessageHandler(filters.StatusUpdate.PINNED_MESSAGE, message.delete_message),
             InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
             # InlineQueryHandler(inline_query.via_private,
             #                    chat_types=[Chat.PRIVATE]),

@@ -1,11 +1,14 @@
 import errno
 import os
+from pprint import pprint
 import re
 from datetime import date, datetime
 from functools import wraps
 
 import httpx
 from bs4 import BeautifulSoup
+from telegram import Message
+from telegram.ext import CallbackContext
 
 
 # iTunes Search API
@@ -23,57 +26,33 @@ async def search_itunes(keyword: str):
     return results
 
 
-# # Download
+def validate_path(path):
+    if not os.path.exists(os.path.dirname(path)):
+        try:
+            os.makedirs(os.path.dirname(path))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
 
-# def validate_path(path):
-#     if not os.path.exists(os.path.dirname(path)):
-#         try:
-#             os.makedirs(os.path.dirname(path))
-#         except OSError as exc:  # Guard against race condition
-#             if exc.errno != errno.EEXIST:
-#                 raise
 
-# async def download(episode, context):
-#     async with httpx.AsyncClient() as client:
-#         async with client.stream('GET', 'https://www.example.com/') as response:
-#                 with open(path, 'wb') as f:
-#                 async for chunk in response.aiter_bytes():
-#                     f.write(chunk)
-#     with httpx.stream("GET", url) as res:
-#         if context.user_data:
-#             chat_id = context.user_data['chat_id']
-#             path = f"public/audio/{context.user_data['podcast']}/{title}.mp3"
-#             validate_path(path)
-#             total = int(res.headers['Content-Length'])
-#             progress_bar = tqdm(
-#                 total=total,
-#                 unit='iB',
-#                 token=bot_token,
-#                 chat_id=chat_id,
-#                 bar_format='{percentage:3.0f}% |{bar:6}|'
-#             )
-#             with open(path, 'wb') as f:
-#                 for data in res.iter_raw(1024): # 1024 bytes
-#                     progress_bar.update(len(data))
-#                     f.write(data)
-#                 message_id = progress_bar.tgio.message_id
-#             progress_bar.close()
-#             if total != 0 and progress_bar.n != total:
-#                 raise Exception(
-#                     "Error: Something went wrong with progress bar.")
-#         else:
-#             path = f"public/audio/new/{title}.mp3"
-#             validate_path(path)
-#             if not os.path.exists(os.path.dirname(path)):
-#                 try:
-#                     os.makedirs(os.path.dirname(path))
-#                 except OSError as exc:  # Guard against race condition
-#                     if exc.errno != errno.EEXIST:
-#                         raise
-#             with open(path, 'wb') as f:
-#                 for data in res.iter_content(block_size):
-#                     f.write(data)
-#     return (path, message_id)
+async def streaming_download(
+    from_podcast: str, title: str, url: str, progress_msg: Message
+):
+    message: Message = None
+    file_path = f"public/audio/{from_podcast}/{title}.mp3"
+    validate_path(file_path)
+    with httpx.stream("GET", url) as res:
+        total = int(res.headers["Content-Length"])
+        with open(file_path, "wb") as f:
+            s = 0
+            for chunk in res.iter_raw(4194304):
+                s += len(chunk)
+                percentage = round(s / total * 100)
+                message = await progress_msg.edit_text(
+                    f"<pre>{percentage}%</pre> | {percentage // 10 * '■'}{(10 - percentage // 10) * '□'}"
+                )
+                f.write(chunk)
+    return file_path, message
 
 
 # Parse Feed

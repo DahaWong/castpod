@@ -58,8 +58,6 @@ class Group(BaseModel):
 
 class Logo(BaseModel):
     url = TextField()
-    is_downloaded = BooleanField(default=False)
-    path = TextField(null=True)
     file_id = TextField(null=True)
 
 
@@ -70,7 +68,7 @@ class Podcast(BaseModel):
     host = TextField(null=True)
     website = TextField(null=True)
     email = TextField(null=True)
-    updated_time = DateTimeField(default=datetime.now)
+    updated_time = DateTimeField(null=True)
 
     def initialize(self):
         parsed = parse_feed(self.feed)
@@ -79,7 +77,7 @@ class Podcast(BaseModel):
         self.host = parsed["host"]
         self.website = parsed["website"]
         self.email = parsed["email"]
-        # self.updated_time = parsed["updated_time"]
+        self.updated_time = parsed["updated_time"]
         with db.atomic():
             for item in parsed["items"]:
                 kwargs = parse_episode(item, self)
@@ -198,7 +196,10 @@ def parse_feed(feed):
     podcast["host"] = unescape(feed.author_detail.get("name") or "")
     podcast["website"] = feed.get("link")
     podcast["email"] = unescape(feed.author_detail.get("email") or "")
-    podcast["updated_time"] = result.feed.get("updated_parsed")
+    podcast["updated_time"] = datetime.fromtimestamp(
+        mktime(result.feed.get("updated_parsed"))
+    )
+    # pprint(podcast["updated_time"])
     podcast["items"] = result["items"]
     return podcast
 
@@ -213,21 +214,20 @@ def parse_episode(item, podcast):
     # performer = self.name
     episode["title"] = unescape(item.get("title") or "")
 
-    # if item.get("image"):
-    #     episode["logo"] = Logo.get_or_create(url=item.image.href)[0]
-    # else:
-    #     episode["logo"] = podcast.logo
+    if item.get("image"):
+        episode["logo"] = Logo.get_or_create(url=item.image.href)[0]
+    else:
+        episode["logo"] = podcast.logo
 
     episode["duration"] = set_duration(item.get("itunes_duration"))
     episode["link"] = item.get("link")
     episode["subtitle"] = unescape(item.get("subtitle") or "")
     episode["summary"] = unescape(item.get("summary") or "")
-    # episode["shownotes"] = (
-    #     item.get("content")[0]["value"] if item.get("content") else episode["summary"]
-    # )
+    # TODO: error
+    # s = item.get("content")[0]["value"] if item.get("content") else episode["summary"]
+    # episode["shownotes"] = Shownotes.create(s)
     episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
     episode["updated_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
-    # pprint(episode)
     return episode
 
 
