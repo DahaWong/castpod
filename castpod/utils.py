@@ -38,21 +38,20 @@ def validate_path(path):
 async def streaming_download(
     from_podcast: str, title: str, url: str, progress_msg: Message
 ):
-    message: Message = None
     file_path = f"public/audio/{from_podcast}/{title}.mp3"
     validate_path(file_path)
-    with httpx.stream("GET", url) as res:
+    with httpx.stream("GET", url, follow_redirects=True) as res:
         total = int(res.headers["Content-Length"])
         with open(file_path, "wb") as f:
             s = 0
             for chunk in res.iter_raw(4194304):
                 s += len(chunk)
                 percentage = round(s / total * 100)
-                message = await progress_msg.edit_text(
+                await progress_msg.edit_text(
                     f"<pre>{percentage}%</pre> | {percentage // 10 * '■' }{(10 - percentage // 10) * '□'}"
                 )
                 f.write(chunk)
-    return file_path, message
+    return file_path
 
 
 # Parse Feed

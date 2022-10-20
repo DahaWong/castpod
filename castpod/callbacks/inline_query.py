@@ -115,7 +115,7 @@ async def search_podcast(keywords):
                         feed, parse_mode=None
                     ),
                     description=(
-                        f"{host if len(host)<=31 else host[:31]+'...'}\n{feed_short} · 共 {episode_count} 期"
+                        f"{host if len(host)<=31 else host[:31]+'...'}\n{feed_short} · {episode_count} 期"
                     ),
                     thumb_url=thumbnail_small or None,
                     thumb_height=60,
@@ -232,7 +232,7 @@ def show_episodes(podcast, index):
                     )
                 ),
                 reply_markup=InlineKeyboardMarkup.from_row(buttons),
-                description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",
+                description=podcast.name,
                 thumb_url=episode.logo.url,
                 thumb_width=60,
                 thumb_height=60,

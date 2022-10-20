@@ -143,13 +143,13 @@ async def download_episode(update: Update, context: CallbackContext):
         )
     else:
         progress_msg = await fetching_msg.edit_text("下载中…")
-        audio_file, final_msg = await streaming_download(
+        audio_file = await streaming_download(
             from_podcast=podcast.name,
             title=episode.title,
             url=episode.url,
             progress_msg=progress_msg,
         )
-        uploading_msg = await final_msg.edit_text("正在发送，请稍候…")
+        await progress_msg.edit_text("正在发送，请稍候…")
         audio_msg: Message = None
         try:
             audio_msg = await bot.send_audio(
@@ -173,24 +173,18 @@ async def download_episode(update: Update, context: CallbackContext):
         except Exception as e:
             raise e
         finally:
-            await uploading_msg.delete()
+            await progress_msg.delete()
         forwarded_message = await audio_msg.forward(chat.id)
         episode.message_id = audio_msg.id
         episode.file_id = audio_msg.audio.file_id
         episode.save()
     shownotes = episode.shownotes
-    timeline = (
-        shownotes.timeline if shownotes.timeline else shownotes.generate_timeline()
-    )
-    shownotes.save()
     await forwarded_message.edit_caption(
-        caption=(timeline or episode.summary[:127] + "…"),
+        caption=f"{episode.summary[:64]}…\n\n<a href='{shownotes.url or episode.link}'>本期附录</a>",
         reply_markup=InlineKeyboardMarkup(
             [
                 [
-                    InlineKeyboardButton(
-                        "简介", url=shownotes.url or episode.link or podcast.website
-                    ),
+                    InlineKeyboardButton("时间轴", callback_data="show_timeline_XXX"),
                     InlineKeyboardButton("收藏", callback_data=f"fav_ep_{episode.id}"),
                     InlineKeyboardButton(
                         "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
