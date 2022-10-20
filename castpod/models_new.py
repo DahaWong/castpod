@@ -66,6 +66,7 @@ class Podcast(BaseModel):
     feed = TextField(unique=True)
     name = CharField(null=True, max_length=64)
     logo = ForeignKeyField(Logo, null=True)
+    itunes_id = CharField(null=True, max_length=32)
     host = TextField(null=True)
     website = TextField(null=True)
     email = TextField(null=True)

@@ -69,7 +69,7 @@ async def via_sender(update, context):
 
 
 async def search_podcast(keywords):
-    searched_results = await search_itunes(keywords)
+    searched_results = await search_itunes(keyword=keywords)
     results = []
     if not searched_results:
         results.append(

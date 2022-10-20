@@ -12,15 +12,15 @@ from telegram.ext import CallbackContext
 
 
 # iTunes Search API
-api_root = "https://itunes.apple.com/search?"
-endpoints = {"search_podcast": "media=podcast&limit=25&term="}
-
-
-async def search_itunes(keyword: str):
+async def search_itunes(keyword: str = None, itunes_id: str = None):
+    url = (
+        f"https://itunes.apple.com/search?media=podcast&limit=25&term={keyword}"
+        if keyword and not itunes_id
+        else f"https://itunes.apple.com/lookup?id={itunes_id}"
+    )
     async with httpx.AsyncClient() as client:
-        res = await client.get(f"{api_root}{endpoints['search_podcast']}{keyword}")
-    status = str(res.status_code)
-    if not status.startswith("2"):
+        res = await client.get(url, follow_redirects=True)
+    if res.status_code != httpx.codes.OK:
         return None
     results = res.json()["results"]
     return results

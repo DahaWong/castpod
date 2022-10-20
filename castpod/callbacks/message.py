@@ -14,8 +14,8 @@ from telegram import (
 from telegram.constants import ChatAction, ParseMode
 from telegram.ext import CallbackContext
 
-from castpod.utils import streaming_download
-from ..models_new import User, Podcast, UserSubscribePodcast
+from castpod.utils import search_itunes, streaming_download
+from ..models_new import User, Podcast, UserSubscribePodcast, parse_feed
 from ..components import PodcastPage, ManagePage
 
 # from ..utils import download, parse_doc
@@ -32,7 +32,7 @@ async def subscribe_feed(update: Update, context: CallbackContext):
     message = update.message
     chat_type = update.effective_chat.type
     await context.bot.send_chat_action(chat_id=message.chat_id, action="typing")
-    subscribing_message = await message.reply_text(f"订阅中…")
+    message = await message.reply_text(f"订阅中…")
 
     user = User.get(id=update.effective_user.id)
     podcast, is_new_podcast = Podcast.get_or_create(feed=message.text)
@@ -43,7 +43,7 @@ async def subscribe_feed(update: Update, context: CallbackContext):
     in_group = (chat_type == "group") or (chat_type == "supergroup")
     kwargs = {"mode": "group"} if in_group else {}
     try:
-        await subscribing_message.edit_text(
+        await message.edit_text(
             f"成功订阅<b>{podcast.name}</b>",
         )
 
@@ -59,7 +59,8 @@ async def subscribe_feed(update: Update, context: CallbackContext):
         podcast.logo.save()
         await message.delete()
     except Exception as e:
-        await subscribing_message.edit_text("订阅失败 :(")
+        await message.edit_text("订阅失败 :(")
+        podcast.delete_instance()
         raise e
 
 
@@ -261,42 +262,58 @@ async def show_podcast(update: Update, context: CallbackContext):
 #     )
 
 
-async def from_xyz(update: Update, context: CallbackContext):
-    message = update.message
-    reply = await message.reply_text("正在解析来自小宇宙的链接…")
-    async with httpx.AsyncClient() as client:
-        r = await client.get(message.text)
-        s = BeautifulSoup(r.text, "html.parser")
-        match = re.match(r"(.+?) \| 小宇宙", s.title.text)
-        podcast_name = match[1]
-    await reply.delete()
-    await message.reply_photo(
-        photo=s.img["src"],
-        caption=f"<b>{podcast_name}</b>",
-        reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton("订阅此播客", switch_inline_query_current_chat=podcast_name)
-        ),
-    )
-
-
 async def from_url(update: Update, context: CallbackContext):
     message = update.message
     url = message.text
     domain = re.match(SHORT_DOMAIN, url)[1]
+    if not url.startswith("http"):
+        url = "https://" + url
     reply = await message.reply_text("解析链接中…")
     async with httpx.AsyncClient() as client:
-        r = await client.get(message.text)
-    s = BeautifulSoup(r.text, "html.parser")
+        r = await client.get(url, follow_redirects=True)
+    soup = BeautifulSoup(r.text, "html.parser")
     podcast_name = ""
-    if domain == "xiaoyuzhoufm.com":
-        podcast_name = re.match(r"(.+?) \| 小宇宙", s.title.text)[1]
-    elif domain == "google.com":
-        podcast_name = s.title.text
+    podcast_logo = soup.img["src"]
+    title_text = soup.title.text
     await reply.delete()
-    await message.reply_photo(
-        photo=s.img["src"],
-        caption=f"<b>{podcast_name}</b>",
-        reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton("订阅此播客", switch_inline_query_current_chat=podcast_name)
-        ),
-    )
+    if domain == "xiaoyuzhoufm.com":
+        match = re.search(r"([^(:?\- )]+?) \| 小宇宙", title_text)
+        podcast_name = match[1]
+    elif domain == "google.com" or domain == "pca.st":
+        podcast_name = title_text
+    elif domain == "apple.com" or domain == "overcast.fm":  # use itunes id
+        podcast_itunes_id = re.search(r"(?:id|itunes)([0-9]+)", url)[1]
+        results = await search_itunes(itunes_id=podcast_itunes_id)
+        podcast_name = results[0].get("collectionName")
+        podcast_logo = results[0].get("artworkUrl600")
+    elif domain == "castro.fm":
+        feed_url = soup.find_all("a")[-1]["href"]
+        podcast = parse_feed(feed_url)
+        podcast_name = podcast["name"]
+        podcast_logo = podcast["logo"].url
+    else:
+        await message.reply_text(
+            "目前还不支持解析这家播客链接 🙏🏻",
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton("联系我们", url="https://dahawong.t.me")
+            ),
+        )
+        return
+
+    if podcast_logo:
+        await message.reply_photo(
+            photo=podcast_logo,
+            caption=f"<b>{podcast_name}</b>",
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    "订阅此播客", switch_inline_query_current_chat=podcast_name
+                )
+            ),
+        )
+    else:
+        await message.reply_text(
+            "解析失败，链接可能已经损坏 😵‍💫",
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton("联系我们", url="https://dahawong.t.me")
+            ),
+        )
