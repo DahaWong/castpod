@@ -32,7 +32,7 @@ async def subscribe_feed(update: Update, context: CallbackContext):
     message = update.message
     chat_type = update.effective_chat.type
     await context.bot.send_chat_action(chat_id=message.chat_id, action="typing")
-    await message.reply_text(f"订阅中…")
+    reply_msg = await message.reply_text(f"订阅中…")
 
     user = User.get(id=update.effective_user.id)
     podcast, is_new_podcast = Podcast.get_or_create(feed=message.text)
@@ -43,10 +43,9 @@ async def subscribe_feed(update: Update, context: CallbackContext):
     in_group = (chat_type == "group") or (chat_type == "supergroup")
     kwargs = {"mode": "group"} if in_group else {}
     try:
-        await message.edit_text(
+        await reply_msg.edit_text(
             f"成功订阅<b>{podcast.name}</b>",
         )
-
         podcast_page = PodcastPage(podcast, **kwargs)
         photo = podcast.logo.file_id or podcast.logo.url
         msg = await message.reply_photo(
@@ -59,7 +58,7 @@ async def subscribe_feed(update: Update, context: CallbackContext):
         podcast.logo.save()
         await message.delete()
     except Exception as e:
-        await message.edit_text("订阅失败 :(")
+        await reply_msg.edit_text("订阅失败 :(")
         podcast.delete_instance()
         raise e
 
@@ -121,8 +120,7 @@ async def download_episode(update: Update, context: CallbackContext):
     message = update.message
     bot: Bot = context.bot
     chat = update.effective_chat
-    fetching_msg = await message.reply_text("正在获取节目…")
-    await chat.send_chat_action(ChatAction.RECORD_VOICE)
+    reply_msg = await message.reply_text("正在获取节目…")
     match = re.match(r"(.+) #([0-9]+)", message.text)
     podcast = (
         Podcast.select()
@@ -133,23 +131,27 @@ async def download_episode(update: Update, context: CallbackContext):
         .get()
     )
     episode = podcast.episodes[-int(match[2])]
-    await chat.send_chat_action(ChatAction.UPLOAD_VOICE)
     if episode.message_id:
-        await fetching_msg.delete()
+        await reply_msg.delete()
         forwarded_message = await bot.forward_message(
             chat_id=chat.id,
             from_chat_id=f"@{podcast_vault}",
             message_id=episode.message_id,
         )
     else:
-        progress_msg = await fetching_msg.edit_text("下载中…")
+        await reply_msg.edit_text("下载中…")
+        await chat.send_chat_action(ChatAction.RECORD_VOICE)
         audio_file = await streaming_download(
             from_podcast=podcast.name,
             title=episode.title,
             url=episode.url,
-            progress_msg=progress_msg,
+            progress_msg=reply_msg,
         )
-        await progress_msg.edit_text("正在发送，请稍候…")
+        await reply_msg.edit_text("正在发送，请稍候…")
+        await chat.send_chat_action(ChatAction.UPLOAD_VOICE)
+        logo = episode.logo
+        await logo.download()
+        logo.save()
         audio_msg: Message = None
         try:
             audio_msg = await bot.send_audio(
@@ -168,12 +170,12 @@ async def download_episode(update: Update, context: CallbackContext):
                 title=episode.title,
                 performer=podcast.name,
                 duration=episode.duration,
-                thumb=episode.logo.file_id or episode.logo.url,
+                thumb=logo.local_path or logo.file_id,
             )
         except Exception as e:
             raise e
         finally:
-            await progress_msg.delete()
+            await reply_msg.delete()
         forwarded_message = await audio_msg.forward(chat.id)
         episode.message_id = audio_msg.id
         episode.file_id = audio_msg.audio.file_id
