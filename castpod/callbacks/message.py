@@ -14,7 +14,7 @@ from telegram import (
 from telegram.constants import ChatAction, ParseMode
 from telegram.ext import CallbackContext
 
-from castpod.utils import search_itunes, streaming_download
+from castpod.utils import search_itunes, send_error_message, streaming_download
 from ..models_new import User, Podcast, UserSubscribePodcast, parse_feed
 from ..components import PodcastPage, ManagePage
 
@@ -32,7 +32,7 @@ async def subscribe_feed(update: Update, context: CallbackContext):
     message = update.message
     chat_type = update.effective_chat.type
     await context.bot.send_chat_action(chat_id=message.chat_id, action="typing")
-    message = await message.reply_text(f"订阅中…")
+    await message.reply_text(f"订阅中…")
 
     user = User.get(id=update.effective_user.id)
     podcast, is_new_podcast = Podcast.get_or_create(feed=message.text)
@@ -66,12 +66,12 @@ async def subscribe_feed(update: Update, context: CallbackContext):
 
 async def save_subscription(update: Update, context: CallbackContext):
     message = update.message
-    parsing_note = await message.reply_text("正在解析订阅文件…")
+    reply_msg = await message.reply_text("正在解析订阅文件…")
     user = User.validate_user(update.effective_user)
     try:
         feeds = await parse_doc(context, user, message.document)
         feeds_count = len(feeds)
-        subscribing_note = await parsing_note.edit_text(f"订阅中 (0/{feeds_count})")
+        await reply_msg.edit_text(f"订阅中 (0/{feeds_count})")
         podcasts_count = 0
         failed_feeds = []
         for feed in feeds:
@@ -84,7 +84,7 @@ async def save_subscription(update: Update, context: CallbackContext):
                 podcast.delete()
                 failed_feeds.append(feed["url"])
                 continue
-            await subscribing_note.edit_text(f"订阅中 ({podcasts_count}/{feeds_count})")
+            await reply_msg.edit_text(f"订阅中 ({podcasts_count}/{feeds_count})")
 
         if podcasts_count:
             newline = "\n"
@@ -105,20 +105,16 @@ async def save_subscription(update: Update, context: CallbackContext):
             podcasts=Podcast.subscribe_by(user, "name"), text=reply
         )
 
-        await subscribing_note.delete()
+        await reply_msg.delete()
         await message.reply_text(
             text=manage_page.text,
             reply_markup=ReplyKeyboardMarkup(
                 manage_page.keyboard(), resize_keyboard=True, one_time_keyboard=True
             ),
         )
-
     except Exception as e:
-        await parsing_note.delete()
-        await message.reply_text(
-            f"订阅失败 :(\n" f"请检查订阅文件是否完好无损；" f"若文件没有问题，请私信[开发者](tg://user?id={dev})。"
-        )
-        raise e
+        await reply_msg.delete()
+        await send_error_message("订阅失败 😢\ 请检查订阅文件是否受损。")
 
 
 async def download_episode(update: Update, context: CallbackContext):
@@ -292,12 +288,7 @@ async def from_url(update: Update, context: CallbackContext):
         podcast_name = podcast["name"]
         podcast_logo = podcast["logo"].url
     else:
-        await message.reply_text(
-            "目前还不支持解析这家播客链接 🙏🏻",
-            reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton("联系我们", url="https://dahawong.t.me")
-            ),
-        )
+        await send_error_message("请检查链接拼写是否有误 🖐🏻")
         return
 
     if podcast_logo:
@@ -311,9 +302,4 @@ async def from_url(update: Update, context: CallbackContext):
             ),
         )
     else:
-        await message.reply_text(
-            "解析失败，链接可能已经损坏 😵‍💫",
-            reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton("联系我们", url="https://dahawong.t.me")
-            ),
-        )
+        await send_error_message("解析失败，链接可能已经损坏 😵‍💫")

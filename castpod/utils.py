@@ -7,7 +7,7 @@ from functools import wraps
 
 import httpx
 from bs4 import BeautifulSoup
-from telegram import Message
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, Update
 from telegram.ext import CallbackContext
 
 
@@ -108,3 +108,12 @@ async def streaming_download(
 #     with open(path, 'w+') as f:
 #         f.write(opml)
 #     return path
+
+
+async def send_error_message(update: Update, text: str) -> None:
+    await update.message.reply_text(
+        text,
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton("联系我们", url="https://dahawong.t.me")
+        ),
+    )
