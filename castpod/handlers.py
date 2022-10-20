@@ -1,5 +1,11 @@
 from castpod.callbacks import *
-from .constants import CLOSE_MARK, SPEAKER_MARK, STAR_MARK, DOC_MARK
+from .constants import (
+    CLOSE_MARK,
+    OTHER_URL,
+    SPEAKER_MARK,
+    STAR_MARK,
+    DOC_MARK,
+)
 from telegram.ext import (
     MessageHandler,
     filters,
@@ -30,9 +36,14 @@ def register_handlers(application):
             # CommandHandler('star', command.star),
             CommandHandler("search", command.search, block=False),
             # CommandHandler('favorite', command.favorite, block=False),
-            # CommandHandler('share', command.share, block=False),
             CommandHandler("help", command.help_, block=False),
             CommandHandler("about", command.about, block=False),
+            MessageHandler(
+                filters.ChatType.PRIVATE
+                & filters.Entity("url")
+                & filters.Regex(OTHER_URL),
+                message.from_url,
+            ),
             MessageHandler(
                 filters.ChatType.PRIVATE & filters.Entity("url"),
                 message.subscribe_feed,

@@ -80,7 +80,7 @@ async def delete_account(update: Update, context: CallbackContext):
 #     await query.edit_message_reply_markup(
 #         InlineKeyboardMarkup([[InlineKeyboardButton('❤️', callback_data=f'unfav_ep_{episode_id}')], [
 #             InlineKeyboardButton(
-#                 "订阅列表", switch_inline_query_current_chat=""),
+#                 "我的订阅", switch_inline_query_current_chat=""),
 #             InlineKeyboardButton(
 #                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
 #         ]])
@@ -101,7 +101,7 @@ async def delete_account(update: Update, context: CallbackContext):
 #     await query.edit_message_reply_markup(
 #         InlineKeyboardMarkup([[InlineKeyboardButton('收藏', callback_data=f'fav_ep_{episode_id}')], [
 #             InlineKeyboardButton(
-#                 "订阅列表", switch_inline_query_current_chat=""),
+#                 "我的订阅", switch_inline_query_current_chat=""),
 #             InlineKeyboardButton(
 #                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
 #         ]]))

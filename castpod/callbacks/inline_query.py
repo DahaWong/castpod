@@ -12,7 +12,7 @@ import re
 from config import manifest
 from ..models_new import User, Podcast, Episode, UserSubscribePodcast
 import datetime
-from ..constants import SPEAKER_MARK
+from ..constants import SHORT_DOMAIN, SPEAKER_MARK
 
 
 async def via_sender(update, context):
@@ -25,14 +25,7 @@ async def via_sender(update, context):
     )
     keywords = query.query
     if not keywords:
-        results = [
-            InlineQueryResultArticle(
-                id=0,
-                title="🔍",
-                input_message_content=InputTextMessageContent("test", parse_mode=None),
-                description="输入播客名称…",
-            )
-        ]
+        results = []
         for podcast in subscribed_podcasts:
             new_result = InlineQueryResultArticle(
                 id=podcast.id,
@@ -72,7 +65,7 @@ async def via_sender(update, context):
 
 
 # async def via_channel(update, context):
-#     via_private(update, context)
+#     via_private(update, context)「pllp
 
 
 async def search_podcast(keywords):
@@ -98,10 +91,7 @@ async def search_podcast(keywords):
             host = re.sub(r"[_*`]", " ", result["artistName"])
             episode_count = result["trackCount"]
             feed = result.get("feedUrl")
-            feed_short = re.match(
-                r"^(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%._\+~#=]{1,256}\.)?((?:[-a-zA-Z0-9@:%._\+~#=]{1,256}\.)+[a-zA-Z0-9()]{1,6})",
-                feed.lower(),
-            )[1]
+            feed_short = re.match(SHORT_DOMAIN, feed.lower())[1]
             thumbnail_small = result.get("artworkUrl60")
 
             # 如果不在 机器人主页，则：

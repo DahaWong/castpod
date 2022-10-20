@@ -44,7 +44,7 @@ webhook_info = {
 # commands
 private_commands = [
     ("search", "搜索播客"),
-    ("manage", "订阅列表"),
+    ("manage", "我的订阅"),
     ("favorite", "单集收藏"),
     ("help", "使用指南"),
     ("about", "关于我们"),
@@ -52,7 +52,7 @@ private_commands = [
 
 dev_commands = [
     ("search", "搜索播客"),
-    ("manage", "订阅列表"),
+    ("manage", "我的订阅"),
     ("favorite", "单集收藏"),
     ("help", "使用指南"),
     ("about", "关于我们"),

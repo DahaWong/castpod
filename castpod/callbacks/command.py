@@ -1,7 +1,12 @@
 import re
 
-from telegram import (InlineKeyboardButton, InlineKeyboardMarkup,
-                      InputMediaAudio, ReplyKeyboardMarkup, Update)
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InputMediaAudio,
+    ReplyKeyboardMarkup,
+    Update,
+)
 
 from telegram.ext import CallbackContext
 
@@ -133,18 +138,9 @@ async def about(update: Update, context: CallbackContext):
 #         await update.message.reply_text(
 #             text="还没有收藏的单集～",
 #             reply_markup=InlineKeyboardMarkup.from_button(
-#                 InlineKeyboardButton("订阅列表", switch_inline_query_current_chat="")
+#                 InlineKeyboardButton("我的订阅", switch_inline_query_current_chat="")
 #             ),
 #         )
-
-
-async def share(update: Update, context: CallbackContext):
-    await update.message.reply_text(
-        text="💌",
-        reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton("分享播客", switch_inline_query="")
-        ),
-    )
 
 
 # async def random(update: Update, context: CallbackContext):

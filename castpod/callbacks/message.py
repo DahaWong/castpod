@@ -1,4 +1,7 @@
+from email import message
 from webbrowser import get
+from bs4 import BeautifulSoup
+import httpx
 from telegram import (
     Bot,
     InlineKeyboardButton,
@@ -17,7 +20,7 @@ from ..components import PodcastPage, ManagePage
 
 # from ..utils import download, parse_doc
 from config import podcast_vault, manifest, dev
-from ..constants import RIGHT_SEARCH_MARK, SPEAKER_MARK, STAR_MARK
+from ..constants import RIGHT_SEARCH_MARK, SHORT_DOMAIN, SPEAKER_MARK, STAR_MARK
 import re
 
 
@@ -191,7 +194,7 @@ async def download_episode(update: Update, context: CallbackContext):
                     ),
                 ],
                 [
-                    InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
+                    InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
                     InlineKeyboardButton(
                         "单集列表", switch_inline_query_current_chat=f"{podcast.name}#"
                     ),
@@ -256,3 +259,44 @@ async def show_podcast(update: Update, context: CallbackContext):
 #                 '搜索播客', switch_inline_query_current_chat='')
 #         )
 #     )
+
+
+async def from_xyz(update: Update, context: CallbackContext):
+    message = update.message
+    reply = await message.reply_text("正在解析来自小宇宙的链接…")
+    async with httpx.AsyncClient() as client:
+        r = await client.get(message.text)
+        s = BeautifulSoup(r.text, "html.parser")
+        match = re.match(r"(.+?) \| 小宇宙", s.title.text)
+        podcast_name = match[1]
+    await reply.delete()
+    await message.reply_photo(
+        photo=s.img["src"],
+        caption=f"<b>{podcast_name}</b>",
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton("订阅此播客", switch_inline_query_current_chat=podcast_name)
+        ),
+    )
+
+
+async def from_url(update: Update, context: CallbackContext):
+    message = update.message
+    url = message.text
+    domain = re.match(SHORT_DOMAIN, url)[1]
+    reply = await message.reply_text("解析链接中…")
+    async with httpx.AsyncClient() as client:
+        r = await client.get(message.text)
+    s = BeautifulSoup(r.text, "html.parser")
+    podcast_name = ""
+    if domain == "xiaoyuzhoufm.com":
+        podcast_name = re.match(r"(.+?) \| 小宇宙", s.title.text)[1]
+    elif domain == "google.com":
+        podcast_name = s.title.text
+    await reply.delete()
+    await message.reply_photo(
+        photo=s.img["src"],
+        caption=f"<b>{podcast_name}</b>",
+        reply_markup=InlineKeyboardMarkup.from_button(
+            InlineKeyboardButton("订阅此播客", switch_inline_query_current_chat=podcast_name)
+        ),
+    )
