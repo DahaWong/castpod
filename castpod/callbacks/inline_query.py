@@ -40,20 +40,20 @@ async def via_sender(update, context):
                 input_message_content=InputTextMessageContent(
                     podcast.name, parse_mode=None
                 ),
-                description="test",
+                description=f"{podcast.host}",
                 thumb_url=podcast.logo.url,
                 thumb_height=60,
                 thumb_width=60,
             )
             results.append(new_result)
     else:
-        match = re.match(r"(.*?)#(.*)$", keywords)
-        # try:
-        name, index = match[1], match[2]
-        podcast = Podcast.get(Podcast.name == name)
-        results = show_episodes(podcast, index)
-        # except:
-        #     results = await search_podcast(keywords)
+        try:
+            match = re.match(r"(.*?)#(.*)$", keywords)
+            name, index = match[1], match[2]
+            podcast = Podcast.get(Podcast.name == name)
+            results = show_episodes(podcast, index)
+        except:
+            results = await search_podcast(keywords)
     await query.answer(results, auto_pagination=True, cache_time=10)
 
 
@@ -96,7 +96,12 @@ async def search_podcast(keywords):
         for result in searched_results:
             name = re.sub(r"[_*`]", " ", result["collectionName"])
             host = re.sub(r"[_*`]", " ", result["artistName"])
-            feed = result.get("feedUrl") or "（此播客没有提供订阅源）"
+            episode_count = result["trackCount"]
+            feed = result.get("feedUrl")
+            feed_short = re.match(
+                r"^(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%._\+~#=]{1,256}\.)?((?:[-a-zA-Z0-9@:%._\+~#=]{1,256}\.)+[a-zA-Z0-9()]{1,6})",
+                feed.lower(),
+            )[1]
             thumbnail_small = result.get("artworkUrl60")
 
             # 如果不在 机器人主页，则：
@@ -109,7 +114,9 @@ async def search_podcast(keywords):
                     input_message_content=InputTextMessageContent(
                         feed, parse_mode=None
                     ),
-                    description=host,
+                    description=(
+                        f"{host if len(host)<=31 else host[:31]+'...'}\n{feed_short} · 共 {episode_count} 期"
+                    ),
                     thumb_url=thumbnail_small or None,
                     thumb_height=60,
                     thumb_width=60,

@@ -1,5 +1,6 @@
 from webbrowser import get
 from telegram import (
+    Bot,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
@@ -118,7 +119,7 @@ async def save_subscription(update: Update, context: CallbackContext):
 
 async def download_episode(update: Update, context: CallbackContext):
     message = update.message
-    bot = context.bot
+    bot: Bot = context.bot
     chat = update.effective_chat
     fetching_msg = await message.reply_text("正在获取节目…")
     await chat.send_chat_action(ChatAction.RECORD_VOICE)
@@ -154,20 +155,20 @@ async def download_episode(update: Update, context: CallbackContext):
             audio_msg = await bot.send_audio(
                 chat_id=f"@{podcast_vault}",
                 audio=audio_file,
-                caption=(f"{SPEAKER_MARK} *{podcast.name}*\n" f"#{podcast.id}"),
+                caption=(f"{SPEAKER_MARK} <b>{podcast.name}</b>\n" f"#{podcast.id}"),
                 reply_markup=InlineKeyboardMarkup.from_row(
                     [
                         InlineKeyboardButton(
                             "订阅",
                             url=f"https://t.me/{manifest.bot_id}?start=p{podcast.id}",
                         ),
-                        InlineKeyboardButton("相关链接", url=episode.shownotes.url),
+                        # InlineKeyboardButton("相关链接", url=episode.shownotes.url),
                     ]
                 ),
                 title=episode.title,
                 performer=podcast.name,
                 duration=episode.duration,
-                thumb=episode.logo.path,
+                thumb=episode.logo.file_id or episode.logo.url,
             )
         except Exception as e:
             raise e
@@ -177,13 +178,18 @@ async def download_episode(update: Update, context: CallbackContext):
         episode.message_id = audio_msg.id
         episode.file_id = audio_msg.audio.file_id
         episode.save()
+    shownotes = episode.shownotes
+    timeline = (
+        shownotes.timeline if shownotes.timeline else shownotes.generate_timeline()
+    )
+    shownotes.save()
     await forwarded_message.edit_caption(
-        caption=(f"{episode.timeline}"),
+        caption=(timeline or episode.summary[:127] + "…"),
         reply_markup=InlineKeyboardMarkup(
             [
                 [
                     InlineKeyboardButton(
-                        "简介", url=episode.shownotes_url or podcast.website
+                        "简介", url=shownotes.url or episode.link or podcast.website
                     ),
                     InlineKeyboardButton("收藏", callback_data=f"fav_ep_{episode.id}"),
                     InlineKeyboardButton(

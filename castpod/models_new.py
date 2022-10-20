@@ -1,3 +1,4 @@
+from distutils.text_file import TextFile
 import re
 from datetime import date, datetime, timedelta
 from html import unescape
@@ -68,7 +69,6 @@ class Podcast(BaseModel):
     host = TextField(null=True)
     website = TextField(null=True)
     email = TextField(null=True)
-    updated_time = DateTimeField(null=True)
 
     def initialize(self):
         parsed = parse_feed(self.feed)
@@ -77,7 +77,6 @@ class Podcast(BaseModel):
         self.host = parsed["host"]
         self.website = parsed["website"]
         self.email = parsed["email"]
-        self.updated_time = parsed["updated_time"]
         with db.atomic():
             for item in parsed["items"]:
                 kwargs = parse_episode(item, self)
@@ -86,7 +85,20 @@ class Podcast(BaseModel):
 
 class Shownotes(BaseModel):
     content = TextField()
-    url = TextField()
+    url = TextField(null=True)
+    timeline = TextField(null=True)
+
+    def generate_timeline(self):
+        shownotes = re.sub(r"</?(?:br|p|li).*?>", "\n", self.content)
+        pattern = r".+(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9].+"
+        matches = re.finditer(pattern, shownotes)
+        self.timeline = "\n\n".join(
+            [
+                re.sub(r"</?(?:cite|del|span|div|s).*?>", "", match[0].lstrip())
+                for match in matches
+            ]
+        )
+        return self.timeline
 
 
 class ShownotesIndex(FTSModel):
@@ -111,7 +123,6 @@ class Episode(BaseModel):
     updated_time = DateTimeField(default=datetime.now)
     message_id = IntegerField(null=True)
     file_id = TextField(null=True)
-    # timeline
     is_downloaded = BooleanField(default=False)
     url = TextField(null=True)
     performer = TextField(null=True)
@@ -196,9 +207,6 @@ def parse_feed(feed):
     podcast["host"] = unescape(feed.author_detail.get("name") or "")
     podcast["website"] = feed.get("link")
     podcast["email"] = unescape(feed.author_detail.get("email") or "")
-    podcast["updated_time"] = datetime.fromtimestamp(
-        mktime(result.feed.get("updated_parsed"))
-    )
     # pprint(podcast["updated_time"])
     podcast["items"] = result["items"]
     return podcast
@@ -224,8 +232,10 @@ def parse_episode(item, podcast):
     episode["subtitle"] = unescape(item.get("subtitle") or "")
     episode["summary"] = unescape(item.get("summary") or "")
     # TODO: error
-    # s = item.get("content")[0]["value"] if item.get("content") else episode["summary"]
-    # episode["shownotes"] = Shownotes.create(s)
+    content = (
+        item.get("content")[0]["value"] if item.get("content") else episode["summary"]
+    )
+    episode["shownotes"] = Shownotes.create(content=content)
     episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
     episode["updated_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
     return episode

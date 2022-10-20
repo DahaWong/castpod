@@ -49,7 +49,7 @@ async def streaming_download(
                 s += len(chunk)
                 percentage = round(s / total * 100)
                 message = await progress_msg.edit_text(
-                    f"<pre>{percentage}%</pre> | {percentage // 10 * '■'}{(10 - percentage // 10) * '□'}"
+                    f"<pre>{percentage}%</pre> | {percentage // 10 * '■' }{(10 - percentage // 10) * '□'}"
                 )
                 f.write(chunk)
     return file_path, message
