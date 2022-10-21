@@ -187,8 +187,15 @@ async def download_episode(update: Update, context: CallbackContext):
         episode.file_id = audio_msg.audio.file_id
         episode.save()
     shownotes = episode.shownotes
+    shownotes.extract_chapters()
+    timeline = ""
+    if episode.chapters:
+        timeline = "\n\n".join(
+            [f"{chapter.start_time}  {chapter.title}" for chapter in episode.chapters]
+        )
     await forwarded_message.edit_caption(
-        caption=f"{episode.summary[:64]}…\n\n<a href='{shownotes.url or episode.link}'>本期附录</a>",
+        # caption=f"{episode.summary[:64]}…\n\n<a href='{shownotes.url or episode.link}'>本期附录</a>",
+        caption=timeline,
         reply_markup=InlineKeyboardMarkup(
             [
                 [
@@ -217,11 +224,15 @@ async def show_podcast(update: Update, context: CallbackContext):
     ):
         return
     try:
-        podcast = Podcast.get(Podcast.name == message.text)
-        podcast.join(UserSubscribePodcast).join(User).where(
-            User.id == update.effective_user.id
+        podcast = (
+            Podcast.select()
+            .where(Podcast.name == message.text)
+            .join(UserSubscribePodcast)
+            .join(User)
+            .where(User.id == update.effective_user.id)
+            .get()
         )
-    except DoesNotExist:
+    except:
         await send_error_message(update, "没有找到相应的播客，请重新尝试 😔")
         return
     page = PodcastPage(podcast)

@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from html import unescape
 from time import mktime
 from pprint import pprint
+from bs4 import BeautifulSoup
 
 import feedparser
 import httpx
@@ -16,6 +17,7 @@ from peewee import (
     Model,
     SqliteDatabase,
     TextField,
+    TimeField,
 )
 from PIL import Image
 from playhouse.sqlite_ext import FTSModel, SearchField
@@ -100,19 +102,27 @@ class Podcast(BaseModel):
 class Shownotes(BaseModel):
     content = TextField()
     url = TextField(null=True)
-    timeline = TextField(null=True)
 
-    def generate_timeline(self):
-        shownotes = re.sub(r"</?(?:br|p|li).*?>", "\n", self.content)
-        pattern = r".+(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9].+"
-        matches = re.finditer(pattern, shownotes)
-        self.timeline = "\n\n".join(
-            [
-                re.sub(r"</?(?:cite|del|span|div|s).*?>", "", match[0].lstrip())
-                for match in matches
-            ]
-        )
-        return self.timeline
+    def extract_chapters(self):
+        INLINE = r"<\/?(?:s|strong|b|em|i|del|u|cite|span|a).*?>"
+        content = re.sub(INLINE, "", self.content)
+        TIME_DELTA = r"(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9]"
+        soup = BeautifulSoup(content, "html.parser")
+        results = soup.find_all(string=re.compile(TIME_DELTA))
+        # print(results)
+        if not results:
+            return
+        for result in results:
+            # print(result.parent)
+            result = str(result)
+            # print(result)
+            start_time = re.search(TIME_DELTA, result)[0]
+            # print(start_time)
+            title = re.sub(TIME_DELTA, "", result).strip()
+            title = re.sub(r"^(?:\(\)|\{\}|\<\>|【】|（|\[]|\||·|)", "", title)
+            Chapter.create(
+                from_episode=self.episode, start_time=start_time, title=title
+            )
 
 
 class ShownotesIndex(FTSModel):
@@ -142,6 +152,15 @@ class Episode(BaseModel):
     performer = TextField(null=True)
     size = IntegerField(null=True)
     duration = IntegerField(null=True)
+    timeline = TextField(null=True)
+
+
+class Chapter(BaseModel):
+    """Represent a single chapter item which contains title, start time, and end time."""
+
+    from_episode = ForeignKeyField(Episode, backref="chapters")
+    start_time = IntegerField()
+    title = TextField()
 
 
 # Middle models
@@ -187,6 +206,7 @@ def db_init():
             Podcast,
             Shownotes,
             ShownotesIndex,
+            Chapter,
             Episode,
             UserSubscribePodcast,
             FavPodcast,
