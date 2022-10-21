@@ -263,13 +263,16 @@ def parse_episode(item, podcast):
 
     episode["duration"] = set_duration(item.get("itunes_duration"))
     episode["link"] = item.get("link")
-    episode["subtitle"] = unescape(item.get("subtitle") or "")
     episode["summary"] = unescape(item.get("summary") or "")
     # TODO: error
     content = (
         item.get("content")[0]["value"] if item.get("content") else episode["summary"]
     )
     episode["shownotes"] = Shownotes.create(content=content)
+    excerpt = re.sub(r"\<.*?\>", "", episode["summary"]).strip()
+    if len(excerpt) >= 31:
+        excerpt = excerpt[:31] + "…"
+    episode["subtitle"] = unescape(item.get("subtitle") or excerpt or "")
     episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
     episode["updated_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
     return episode
