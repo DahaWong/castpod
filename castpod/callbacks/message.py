@@ -13,6 +13,7 @@ from telegram import (
 )
 from telegram.constants import ChatAction, ParseMode
 from telegram.ext import CallbackContext
+from telegram.error import TimedOut
 
 from castpod.utils import search_itunes, send_error_message, streaming_download
 from ..models_new import (
@@ -124,8 +125,6 @@ async def save_subscription(update: Update, context: CallbackContext):
 
 async def download_episode(update: Update, context: CallbackContext):
     message = update.message
-    bot: Bot = context.bot
-    chat = update.effective_chat
     reply_msg = await message.reply_text("正在获取节目…")
     match = re.match(r"(.+) #([0-9]+)", message.text)
     podcast = (
@@ -137,16 +136,12 @@ async def download_episode(update: Update, context: CallbackContext):
         .get()
     )
     episode = podcast.episodes[-int(match[2])]
-    if episode.message_id:
-        await reply_msg.delete()
-        forwarded_message = await bot.forward_message(
-            chat_id=chat.id,
-            from_chat_id=f"@{podcast_vault}",
-            message_id=episode.message_id,
-        )
+    logo = episode.logo
+    if episode.file_id:
+        audio_file = episode.file_id
     else:
         await reply_msg.edit_text("下载中…")
-        await chat.send_chat_action(ChatAction.RECORD_VOICE)
+        await message.reply_chat_action(ChatAction.RECORD_VOICE)
         audio_file = await streaming_download(
             from_podcast=podcast.name,
             title=episode.title,
@@ -154,66 +149,38 @@ async def download_episode(update: Update, context: CallbackContext):
             progress_msg=reply_msg,
         )
         await reply_msg.edit_text("正在发送，请稍候…")
-        await chat.send_chat_action(ChatAction.UPLOAD_VOICE)
-        logo = episode.logo
+        await message.reply_chat_action(ChatAction.UPLOAD_VOICE)
         await logo.download()
         logo.save()
-        audio_msg: Message = None
-        try:
-            audio_msg = await bot.send_audio(
-                chat_id=f"@{podcast_vault}",
-                audio=audio_file,
-                caption=(f"{SPEAKER_MARK} <b>{podcast.name}</b>\n" f"#{podcast.id}"),
-                reply_markup=InlineKeyboardMarkup.from_row(
-                    [
-                        InlineKeyboardButton(
-                            "订阅",
-                            url=f"https://t.me/{manifest.bot_id}?start=p{podcast.id}",
-                        ),
-                        # InlineKeyboardButton("相关链接", url=episode.shownotes.url),
-                    ]
-                ),
-                title=episode.title,
-                performer=podcast.name,
-                duration=episode.duration,
-                thumb=logo.local_path or logo.file_id,
+        shownotes = episode.shownotes
+        shownotes.extract_chapters()
+    try:
+        timeline = ""
+        if episode.chapters:
+            timeline = "\n\n".join(
+                [
+                    f"{chapter.start_time}  {chapter.title}"
+                    for chapter in episode.chapters
+                ]
             )
-        except Exception as e:
-            raise e
-        finally:
-            await reply_msg.delete()
-        forwarded_message = await audio_msg.forward(chat.id)
-        episode.message_id = audio_msg.id
-        episode.file_id = audio_msg.audio.file_id
-        episode.save()
-    shownotes = episode.shownotes
-    shownotes.extract_chapters()
-    timeline = ""
-    if episode.chapters:
-        timeline = "\n\n".join(
-            [f"{chapter.start_time}  {chapter.title}" for chapter in episode.chapters]
+        audio_msg = await message.reply_audio(
+            audio=audio_file,
+            caption=f"<b>{episode.title}</b>\n\n{timeline}",
+            title=episode.title,
+            performer=podcast.name,
+            duration=episode.duration,
+            thumb=logo.local_path or logo.file_id,
         )
-    await forwarded_message.edit_caption(
-        # caption=f"{episode.summary[:64]}…\n\n<a href='{shownotes.url or episode.link}'>本期附录</a>",
-        caption=timeline,
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton("时间轴", callback_data="show_timeline_XXX"),
-                    InlineKeyboardButton("收藏", callback_data=f"fav_ep_{episode.id}"),
-                    InlineKeyboardButton(
-                        "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
-                    ),
-                ],
-                [
-                    InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
-                    InlineKeyboardButton(
-                        "单集列表", switch_inline_query_current_chat=f"{podcast.name}#"
-                    ),
-                ],
-            ]
-        ),
-    )
+        if not episode.file_id:
+            episode.file_id = audio_msg.audio.file_id
+            episode.save()
+    except TimedOut:
+        await send_error_message(update, "这期节目的体积较大，请稍等片刻 🕛")
+    except Exception as e:
+        await send_error_message(update, "下载失败，稍后再试试吧 😞")
+        raise e
+    finally:
+        await reply_msg.delete()
 
 
 async def show_podcast(update: Update, context: CallbackContext):

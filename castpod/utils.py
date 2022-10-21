@@ -47,8 +47,9 @@ async def streaming_download(
             for chunk in res.iter_raw(4194304):
                 s += len(chunk)
                 percentage = round(s / total * 100)
+                percentage_hint = str(percentage) + "%"
                 await progress_msg.edit_text(
-                    f"<pre>{percentage}%</pre> | {percentage // 10 * '■' }{(10 - percentage // 10) * '□'}"
+                    f"<pre>{percentage_hint:<4}</pre> | {percentage // 10 * '■' }{(10 - percentage // 10) * '□'}"
                 )
                 f.write(chunk)
     return file_path
