@@ -32,7 +32,6 @@ def register_handlers(application):
     handlers.extend(
         [
             CommandHandler("start", command.start, filters=filters.ChatType.PRIVATE),
-            # CommandHandler('manage', command.manage),
             # CommandHandler('star', command.star),
             CommandHandler("search", command.search, block=False),
             # CommandHandler('favorite', command.favorite, block=False),
@@ -42,7 +41,7 @@ def register_handlers(application):
                 filters.ChatType.PRIVATE
                 & filters.Entity("url")
                 & filters.Regex(OTHER_URL),
-                message.from_url,
+                message.subscribe_from_url,
             ),
             MessageHandler(
                 filters.ChatType.PRIVATE & filters.Entity("url"),
@@ -51,40 +50,20 @@ def register_handlers(application):
             MessageHandler(
                 filters.Regex(f"(.+) #([0-9]+)"), message.download_episode, block=False
             ),
-            # MessageHandler(
-            #     filters.Regex(f'^{CLOSE_MARK}$'),
-            #     message.close_reply_keyboard,
-            #     block=False
-            # ),
-            # MessageHandler(
-            #     filters.Regex(f'^{STAR_MARK}$'),
-            #     command.star,
-            #     block=False
-            # ),
-            # MessageHandler(
-            #     filters.Regex(f'^{DOC_MARK}$'),
-            #     command.manage,
-            #     block=False
-            # ),
-            # MessageHandler(
-            #     filters.Regex(r'^探索播客世界$'),
-            #     message.search_podcast,
-            #     block=False
-            # ),
-            # MessageHandler(
-            #     filters.ChatType.PRIVATE &
-            #     (filters.Document.MimeType('text/xml') |
-            #      filters.Document.FileExtension("opml") |
-            #      filters.Document.FileExtension("opm")),
-            #     message.save_subscription,
-            #     block=False
-            # ),
+            MessageHandler(
+                filters.ChatType.PRIVATE
+                & (
+                    filters.Document.MimeType("text/xml")
+                    | filters.Document.FileExtension("opml")
+                    | filters.Document.FileExtension("opm")
+                ),
+                message.save_subscription,
+                block=False,
+            ),
             MessageHandler(
                 (filters.REPLY | filters.ChatType.PRIVATE) & filters.TEXT,
                 message.show_podcast,
             ),
-            # MessageHandler(filters.Chat(username="podcast_vault_chat")
-            #                & filters.AUDIO, message.handle_audio),
             MessageHandler(filters.StatusUpdate.PINNED_MESSAGE, message.delete_message),
             InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
             # InlineQueryHandler(inline_query.via_private,

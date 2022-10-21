@@ -82,7 +82,7 @@ async def delete_account(update: Update, context: CallbackContext):
 #             InlineKeyboardButton(
 #                 "我的订阅", switch_inline_query_current_chat=""),
 #             InlineKeyboardButton(
-#                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
+#                 "更多单集", switch_inline_query_current_chat=f"{podcast.name}#")
 #         ]])
 #     )
 #     await update.effective_message.pin()
@@ -103,7 +103,7 @@ async def delete_account(update: Update, context: CallbackContext):
 #             InlineKeyboardButton(
 #                 "我的订阅", switch_inline_query_current_chat=""),
 #             InlineKeyboardButton(
-#                 "单集列表", switch_inline_query_current_chat=f"{podcast.name}#")
+#                 "更多单集", switch_inline_query_current_chat=f"{podcast.name}#")
 #         ]]))
 #     await update.effective_message.unpin()
 

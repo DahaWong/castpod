@@ -1,4 +1,4 @@
-from ..utils import search_itunes
+from ..utils import search_itunes, send_error_message
 from telegram import (
     InlineQueryResultArticle,
     InputTextMessageContent,
@@ -7,23 +7,25 @@ from telegram import (
     InlineQueryResultCachedPhoto,
     InlineQueryResultPhoto,
     InlineQueryResultCachedAudio,
+    Update,
 )
 import re
 from config import manifest
 from ..models_new import User, Podcast, Episode, UserSubscribePodcast
 import datetime
 from ..constants import SHORT_DOMAIN, SPEAKER_MARK
+from peewee import DoesNotExist
 
 
-async def via_sender(update, context):
-    query = update.inline_query
+async def via_sender(update: Update, context):
+    inline_query = update.inline_query
     subscribed_podcasts = (
         Podcast.select()
         .join(UserSubscribePodcast)
         .join(User)
         .where(User.id == update.effective_user.id)
     )
-    keywords = query.query
+    keywords = inline_query.query
     if not keywords:
         results = []
         for podcast in subscribed_podcasts:
@@ -39,15 +41,22 @@ async def via_sender(update, context):
                 thumb_width=60,
             )
             results.append(new_result)
+        await inline_query.answer(results, auto_pagination=True, cache_time=10)
     else:
+        match = re.match(r"(.*?)#(.*)$", keywords)
         try:
-            match = re.match(r"(.*?)#(.*)$", keywords)
-            name, index = match[1], match[2]
-            podcast = Podcast.get(Podcast.name == name)
-            results = show_episodes(podcast, index)
+            if match:
+                name, index = match[1], match[2]
+                podcast = Podcast.get(Podcast.name == name)
+                results = show_episodes(podcast, index)
+                await inline_query.answer(results, auto_pagination=True, cache_time=900)
+            else:
+                results = await search_podcast(keywords)
+                await inline_query.answer(results, auto_pagination=True, cache_time=450)
+        except DoesNotExist:
+            await send_error_message(update, "该播客不在订阅列表中 🫧")
         except:
-            results = await search_podcast(keywords)
-    await query.answer(results, auto_pagination=True, cache_time=10)
+            await send_error_message(update, "列表获取失败，请稍后再试 🏃🏻")
 
 
 # async def via_private(update, context):
@@ -105,7 +114,7 @@ async def search_podcast(keywords):
                         feed, parse_mode=None
                     ),
                     description=(
-                        f"{host if len(host)<=31 else host[:31]+'...'}\n{feed_short} · {episode_count} 期"
+                        f"{host if len(host)<=31 else host[:31]+'...'}\n{feed_short} · 共 {episode_count} 期"
                     ),
                     thumb_url=thumbnail_small or None,
                     thumb_height=60,
@@ -158,7 +167,7 @@ def show_episodes(podcast, index):
     buttons = [
         InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
         InlineKeyboardButton(
-            "单集列表", switch_inline_query_current_chat=f"{podcast.name}#"
+            "更多单集", switch_inline_query_current_chat=f"{podcast.name}#"
         ),
     ]
     # if index:

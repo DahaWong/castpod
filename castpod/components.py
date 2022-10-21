@@ -37,7 +37,7 @@ class PodcastPage(object):
                 [
                     InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=f""),
                     InlineKeyboardButton(
-                        "分集列表", switch_inline_query_current_chat=f"{self.podcast.name}#"
+                        "更多单集", switch_inline_query_current_chat=f"{self.podcast.name}#"
                     ),
                 ],
             ]
@@ -46,7 +46,7 @@ class PodcastPage(object):
                 [
                     InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=f""),
                     InlineKeyboardButton(
-                        "分集列表", switch_inline_query_current_chat=f"{self.podcast.name}#"
+                        "更多单集", switch_inline_query_current_chat=f"{self.podcast.name}#"
                     ),
                 ]
             ]

@@ -140,7 +140,7 @@ async def download_episode(update: Update, context: CallbackContext):
     episode = podcast.episodes[-int(match[2])]
     # todo:not only mp3
     audio_local_path = f"public/audio/{podcast.name}/{episode.title}.mp3"
-    logo_path = "public/logo/{episode.logo.id}.jpeg"
+    logo_path = "public/logo/{podcast.name}/{episode.logo.id}.jpeg"
     if not episode.file_id:
         await reply_msg.edit_text("下载中…")
         await message.reply_chat_action(ChatAction.RECORD_VOICE)
@@ -189,7 +189,7 @@ async def download_episode(update: Update, context: CallbackContext):
                 [
                     InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
                     InlineKeyboardButton(
-                        "单集列表",
+                        "更多单集",
                         switch_inline_query_current_chat=f"{podcast.name}#",
                     ),
                 ],
@@ -252,23 +252,6 @@ async def show_podcast(update: Update, context: CallbackContext):
     await message.delete()
 
 
-# async def handle_audio(update:Update, context:CallbackContext):
-#     message = update.message
-#     if not (message and (message.from_user.id == 777000)):
-#         return
-#     match = re.match(f'{SPEAKER_MARK} .+?\n总第 ([0-9]+) 期', message.caption)
-#     index = int(match[1])
-#     podcast_id = list(message.parse_caption_entities().values()
-#                       )[-1].replace('#', '')
-#     podcast = Podcast.objects(id=podcast_id).only('episodes').first()
-#     episodes = podcast.episodes
-#     episodes[-index].update(set__message_id=message.forward_from_message_id)
-#     episodes[-index].update(set__file_id=message.audio.file_id)
-#     podcast.update(set__episodes=episodes)
-#     episodes[-index].reload()
-#     podcast.reload()
-
-
 # async def search_podcast(update:Update, context:CallbackContext):
 #     await update.message.reply_text(
 #         text=RIGHT_SEARCH_MARK,
@@ -279,7 +262,7 @@ async def show_podcast(update: Update, context: CallbackContext):
 #     )
 
 
-async def from_url(update: Update, context: CallbackContext):
+async def subscribe_from_url(update: Update, context: CallbackContext):
     message = update.message
     url = message.text
     domain = re.match(SHORT_DOMAIN, url)[1]
@@ -294,8 +277,8 @@ async def from_url(update: Update, context: CallbackContext):
     title_text = soup.title.text
     await reply.delete()
     if domain == "xiaoyuzhoufm.com":
-        match = re.search(r"([^(:?\- )]+?) \| 小宇宙", title_text)
-        podcast_name = match[1]
+        match = re.search(r"([^\-]+?) \| 小宇宙", title_text)
+        podcast_name = match[1].lstrip()
     elif domain == "google.com" or domain == "pca.st":
         podcast_name = title_text
     elif domain == "apple.com" or domain == "overcast.fm":  # use itunes id

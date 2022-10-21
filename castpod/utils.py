@@ -46,7 +46,7 @@ async def streaming_download(path: str, url: str, progress_msg: Message):
                 percentage = round(s / total * 100)
                 percentage_hint = str(percentage) + "%"
                 await progress_msg.edit_text(
-                    f"<pre>{percentage_hint:<4}</pre> | {percentage // 10 * '■' }{(10 - percentage // 10) * '□'}"
+                    f"<pre>{percentage_hint:<4}</pre> | {percentage // 8 * '■' }{(8 - percentage // 8) * '□'}"
                 )
                 f.write(chunk)
     return path
@@ -110,7 +110,7 @@ async def streaming_download(path: str, url: str, progress_msg: Message):
 
 async def send_error_message(update: Update, text: str) -> None:
     # TODO：播客同名的情况，须返回多个结果。（虽然很少见）
-    await update.message.reply_text(
+    await update.effective_chat.send_message(
         text,
         reply_markup=InlineKeyboardMarkup.from_row(
             [

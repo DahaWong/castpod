@@ -63,7 +63,6 @@ class Group(BaseModel):
 class Logo(BaseModel):
     url = TextField()
     file_id = TextField(null=True)
-    path = TextField(null=True)
 
 
 class Podcast(BaseModel):
