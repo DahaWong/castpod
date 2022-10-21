@@ -15,7 +15,13 @@ from telegram.constants import ChatAction, ParseMode
 from telegram.ext import CallbackContext
 
 from castpod.utils import search_itunes, send_error_message, streaming_download
-from ..models_new import User, Podcast, UserSubscribePodcast, parse_feed
+from ..models_new import (
+    User,
+    Podcast,
+    UserSubscribePodcast,
+    parse_feed,
+)
+from peewee import DoesNotExist
 from ..components import PodcastPage, ManagePage
 
 # from ..utils import download, parse_doc
@@ -113,7 +119,7 @@ async def save_subscription(update: Update, context: CallbackContext):
         )
     except Exception as e:
         await reply_msg.delete()
-        await send_error_message("订阅失败 😢\ 请检查订阅文件是否受损。")
+        await send_error_message(update, "订阅失败 😢\ 请检查订阅文件是否受损。")
 
 
 async def download_episode(update: Update, context: CallbackContext):
@@ -210,16 +216,13 @@ async def show_podcast(update: Update, context: CallbackContext):
         and message.reply_to_message.from_user.username != manifest.bot_id
     ):
         return
-    podcast = (
-        Podcast.select()
-        .where(Podcast.name == message.text)
-        .join(UserSubscribePodcast)
-        .join(User)
-        .where(User.id == update.effective_user.id)
-        .get()
-    )
-    if not podcast:
-        await message.reply_text("抱歉，没能理解这条指令。")
+    try:
+        podcast = Podcast.get(Podcast.name == message.text)
+        podcast.join(UserSubscribePodcast).join(User).where(
+            User.id == update.effective_user.id
+        )
+    except DoesNotExist:
+        await send_error_message(update, "没有找到相应的播客，请重新尝试 😔")
         return
     page = PodcastPage(podcast)
     photo = podcast.logo.file_id or podcast.logo.url
@@ -290,7 +293,7 @@ async def from_url(update: Update, context: CallbackContext):
         podcast_name = podcast["name"]
         podcast_logo = podcast["logo"].url
     else:
-        await send_error_message("请检查链接拼写是否有误 🖐🏻")
+        await send_error_message(update, "请检查链接拼写是否有误 🖐🏻")
         return
 
     if podcast_logo:
@@ -304,4 +307,4 @@ async def from_url(update: Update, context: CallbackContext):
             ),
         )
     else:
-        await send_error_message("解析失败，链接可能已经损坏 😵‍💫")
+        await send_error_message(update, "解析失败，链接可能已经损坏 😵‍💫")

@@ -111,9 +111,13 @@ async def streaming_download(
 
 
 async def send_error_message(update: Update, text: str) -> None:
+    # TODO：播客同名的情况，须返回多个结果。（虽然很少见）
     await update.message.reply_text(
         text,
-        reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton("联系我们", url="https://dahawong.t.me")
+        reply_markup=InlineKeyboardMarkup.from_row(
+            [
+                InlineKeyboardButton("联系我们", url="https://dahawong.t.me"),
+                InlineKeyboardButton("查阅说明书", url="https://telegra.ph"),
+            ]
         ),
     )

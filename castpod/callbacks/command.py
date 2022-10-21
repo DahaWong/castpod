@@ -108,9 +108,9 @@ async def about(update: Update, context: CallbackContext):
     ]
     await update.message.reply_text(
         text=(
-            f"*{manifest.name}*  "
-            f"`{manifest.version}`"
-            f"\nby [{manifest.author}](https://t.me/{manifest.author_id})\n"
+            f"<b>{manifest.name}</b>  "
+            f"<pre>{manifest.version}</pre> "
+            f"by <a href='https://t.me/{manifest.author_id}'>{manifest.author}</a>\n"
         ),
         reply_markup=InlineKeyboardMarkup(keyboard),
     )

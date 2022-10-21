@@ -4,3 +4,4 @@ feedparser
 telegraph
 peewee
 Pillow
+mutagen

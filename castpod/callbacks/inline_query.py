@@ -200,33 +200,21 @@ def show_episodes(podcast, index):
     #     return
     # else:
     for index, episode in enumerate(podcast.episodes):
-        if episode.file_id:
-            new_result = InlineQueryResultCachedAudio(
-                id=index,
-                audio_file_id=episode.file_id,
-                reply_markup=InlineKeyboardMarkup.from_row(buttons),
-                input_message_content=InputTextMessageContent(
-                    (
-                        f"[{SPEAKER_MARK}]({podcast.logo.url}) *{podcast.name}* #{len(podcast.episodes)-index}"
-                    )
-                ),
-            )
-        else:
-            new_result = InlineQueryResultArticle(
-                id=index,
-                title=episode.title,
-                input_message_content=InputTextMessageContent(
-                    (
-                        f"{podcast.name} #{len(podcast.episodes)-index}\n"
-                        # f"{episode.title}"
-                    )
-                ),
-                reply_markup=InlineKeyboardMarkup.from_row(buttons),
-                description=podcast.name,
-                thumb_url=episode.logo.url,
-                thumb_width=60,
-                thumb_height=60,
-            )
+        new_result = InlineQueryResultArticle(
+            id=index,
+            title=episode.title,
+            input_message_content=InputTextMessageContent(
+                (
+                    f"{podcast.name} #{len(podcast.episodes)-index}\n"
+                    # f"{episode.title}"
+                )
+            ),
+            reply_markup=InlineKeyboardMarkup.from_row(buttons),
+            description=f"{episode.subtitle}\n{datetime.timedelta(seconds=episode.duration) or podcast.name}",
+            thumb_url=episode.logo.url,
+            thumb_width=60,
+            thumb_height=60,
+        )
         results.append(new_result)
     return results
 
