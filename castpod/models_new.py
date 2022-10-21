@@ -270,8 +270,8 @@ def parse_episode(item, podcast):
     )
     episode["shownotes"] = Shownotes.create(content=content)
     excerpt = re.sub(r"\<.*?\>", "", episode["summary"]).strip()
-    if len(excerpt) >= 31:
-        excerpt = excerpt[:31] + "…"
+    if len(excerpt) >= 47:
+        excerpt = excerpt[:47] + "…"
     episode["subtitle"] = unescape(item.get("subtitle") or excerpt or "")
     episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
     episode["updated_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))

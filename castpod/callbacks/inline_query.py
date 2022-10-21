@@ -210,7 +210,7 @@ def show_episodes(podcast, index):
                 )
             ),
             reply_markup=InlineKeyboardMarkup.from_row(buttons),
-            description=f"{episode.subtitle}\n{datetime.timedelta(seconds=episode.duration) or podcast.name}",
+            description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",
             thumb_url=episode.logo.url,
             thumb_width=60,
             thumb_height=60,
