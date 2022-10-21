@@ -63,19 +63,7 @@ class Group(BaseModel):
 class Logo(BaseModel):
     url = TextField()
     file_id = TextField(null=True)
-    local_path = TextField(null=True)
-
-    async def download(self):
-        async with httpx.AsyncClient() as client:
-            res = await client.get(self.url, follow_redirects=True)
-        if res.status_code != httpx.codes.OK:
-            return
-        path = f"public/logo/{self.id}"
-        extension = "." + res.headers["content-type"].replace("image/", "")
-        path += extension
-        with open(path, "wb") as f:
-            f.write(res.content)
-        self.local_path = path
+    path = TextField(null=True)
 
 
 class Podcast(BaseModel):

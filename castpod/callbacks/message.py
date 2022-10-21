@@ -1,4 +1,5 @@
 from email import message
+from pickletools import optimize
 from webbrowser import get
 from bs4 import BeautifulSoup
 import httpx
@@ -14,6 +15,7 @@ from telegram import (
 from telegram.constants import ChatAction, ParseMode
 from telegram.ext import CallbackContext
 from telegram.error import TimedOut
+from mutagen import File
 
 from castpod.utils import search_itunes, send_error_message, streaming_download
 from ..models_new import (
@@ -22,7 +24,7 @@ from ..models_new import (
     UserSubscribePodcast,
     parse_feed,
 )
-from peewee import DoesNotExist
+from PIL import Image
 from ..components import PodcastPage, ManagePage
 
 # from ..utils import download, parse_doc
@@ -136,24 +138,36 @@ async def download_episode(update: Update, context: CallbackContext):
         .get()
     )
     episode = podcast.episodes[-int(match[2])]
-    logo = episode.logo
-    if episode.file_id:
-        audio_file = episode.file_id
-    else:
+    # todo:not only mp3
+    audio_local_path = f"public/audio/{podcast.name}/{episode.title}.mp3"
+    logo_path = "public/logo/{episode.logo.id}.jpeg"
+    if not episode.file_id:
         await reply_msg.edit_text("下载中…")
         await message.reply_chat_action(ChatAction.RECORD_VOICE)
-        audio_file = await streaming_download(
-            from_podcast=podcast.name,
-            title=episode.title,
+        audio_local_path = await streaming_download(
+            path=audio_local_path,
             url=episode.url,
             progress_msg=reply_msg,
         )
         await reply_msg.edit_text("正在发送，请稍候…")
         await message.reply_chat_action(ChatAction.UPLOAD_VOICE)
-        await logo.download()
-        logo.save()
         shownotes = episode.shownotes
         shownotes.extract_chapters()
+        audio_metadata = File(audio_local_path)
+        apic = audio_metadata.tags.get("APIC:")
+        if apic:
+            logo_data = apic.data
+            with open(logo_path, "wb") as f:
+                f.write(logo_data)
+            with Image.open(logo_path) as im:
+                # then process image to fit restriction:
+                # 1. jpeg format
+                im = im.convert("RGB")
+                # 2. < 320*320
+                size = (80, 80)
+                im.thumbnail(size)
+                # 3. less than 200 kB !!
+                im.save(logo_path, "JPEG", optimize=True)
     try:
         timeline = ""
         if episode.chapters:
@@ -163,19 +177,43 @@ async def download_episode(update: Update, context: CallbackContext):
                     for chapter in episode.chapters
                 ]
             )
+        markup = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("时间轴", callback_data="show_timeline_XXX"),
+                    InlineKeyboardButton("收藏", callback_data=f"fav_ep_{episode.id}"),
+                    InlineKeyboardButton(
+                        "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
+                    InlineKeyboardButton(
+                        "单集列表",
+                        switch_inline_query_current_chat=f"{podcast.name}#",
+                    ),
+                ],
+            ]
+        )
         audio_msg = await message.reply_audio(
-            audio=audio_file,
+            audio=episode.file_id or audio_local_path,
             caption=f"<b>{episode.title}</b>\n\n{timeline}",
+            reply_markup=markup,
             title=episode.title,
             performer=podcast.name,
             duration=episode.duration,
-            thumb=logo.local_path or logo.file_id,
+            thumb=logo_path,
         )
         if not episode.file_id:
             episode.file_id = audio_msg.audio.file_id
             episode.save()
     except TimedOut:
-        await send_error_message(update, "这期节目的体积较大，请稍等片刻 🕛")
+        await message.reply_text(
+            "这期节目的体积略大，请稍等 🕛",
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton("好", callback_data="delete_message")
+            ),
+        )
     except Exception as e:
         await send_error_message(update, "下载失败，稍后再试试吧 😞")
         raise e
