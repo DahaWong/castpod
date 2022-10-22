@@ -11,7 +11,7 @@ from telegram import (
 from telegram.ext import CallbackContext
 
 from castpod.components import ManagePage, PodcastPage
-from castpod.models_new import Episode, Podcast, User
+from castpod.models_new import Episode, Podcast, User, UserSubscribePodcast
 from config import manifest
 from manifest import manifest
 
@@ -43,18 +43,32 @@ async def start(update: Update, context):
     if context.args and context.args[0] != "login":
         match = re.match(r"^([0-9]*)$", context.args[0])
         podcast_id = int(match[1])
-        podcast = Podcast.objects(id=podcast_id).first()
+        podcast = Podcast.get(Podcast.id == podcast_id)
         if not podcast:
             await update.reply_message(
-                f"抱歉，该播客不存在。如需订阅，请尝试在对话框输入 `@{manifest.bot_id} 播客关键词` 检索。"
+                f"抱歉，该播客不存在。请尝试在对话框输入 <code>@{manifest.bot_id} {podcast.name}</code> 检索。",
+                reply_markup=InlineKeyboardMarkup.from_button(
+                    InlineKeyboardButton(
+                        "开始搜索", switch_inline_query_current_chat=podcast.name
+                    )
+                ),
             )
             return
-        if not user in podcast.subscribers:
+        if (
+            not UserSubscribePodcast.select()
+            .where(
+                UserSubscribePodcast.user == user,
+                UserSubscribePodcast.podcast == Podcast,
+            )
+            .execute()
+        ):
             subscribing_note = await message.reply_text("正在订阅…")
-            user.subscribe(podcast)
+            UserSubscribePodcast.create(user=user, podcast=podcast)
             await subscribing_note.delete()
         page = PodcastPage(podcast)
-        manage_page = ManagePage(Podcast.subscribe_by(user), f"`{podcast.name}` 订阅成功！")
+        manage_page = ManagePage(
+            Podcast.subscribe_by(user), f"<b>{podcast.name}</b> 订阅成功！"
+        )
         photo = podcast.logo.file_id or podcast.logo.url
         msg = await message.reply_photo(
             photo=photo,
@@ -63,29 +77,6 @@ async def start(update: Update, context):
         )
         podcast.logo.file_id = msg.photo[0].file_id
         podcast.save()
-
-        await message.reply_text(
-            text=manage_page.text,
-            reply_markup=ReplyKeyboardMarkup(manage_page.keyboard()),
-        )
-
-
-# async def star(update: Update, context: CallbackContext):
-#     user = User.validate_user(update.effective_user)
-#     page = ManagePage(Podcast.star_by(user, "name"), text="已启动收藏面板")
-#     if context.chat_data.get("reply_keyboard"):
-#         await context.chat_data["reply_keyboard"].delete()
-#     msg = await update.message.reply_text(
-#         text=page.text,
-#         reply_markup=ReplyKeyboardMarkup(
-#             page.keyboard(null_text="还没有收藏播客～", jump_to=DOC_MARK),
-#             resize_keyboard=True,
-#             one_time_keyboard=True,
-#             selective=True,
-#         ),
-#     )
-#     await update.message.delete()
-#     context.chat_data.update(reply_keyboard=msg)
 
 
 async def search(update: Update, context: CallbackContext):
@@ -112,39 +103,6 @@ async def about(update: Update, context: CallbackContext):
         ),
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-
-
-# async def favorite(update: Update, context: CallbackContext):
-#     user = User.validate_user(update.effective_user)
-#     fav_episodes = Episode.objects(starrers=user)
-#     if len(fav_episodes) == 1:
-#         await update.message.reply_audio(audio=fav_episodes.first().file_id)
-#     elif len(fav_episodes) >= 2 and len(fav_episodes) <= 5:
-#         await update.message.reply_media_group(
-#             media=list(
-#                 map(
-#                     lambda episode: InputMediaAudio(media=episode.file_id), fav_episodes
-#                 )
-#             )
-#         )
-#     elif len(fav_episodes) > 5:
-#         #!!!
-#         await update.message.reply_media_group(
-#             media=list(map(lambda x: InputMediaAudio(x.file_id), fav_episodes))
-#         )
-#     else:
-#         await update.message.reply_text(
-#             text="还没有收藏的单集～",
-#             reply_markup=InlineKeyboardMarkup.from_button(
-#                 InlineKeyboardButton("我的订阅", switch_inline_query_current_chat="")
-#             ),
-#         )
-
-
-# async def random(update: Update, context: CallbackContext):
-#     await update.message.reply_text(
-#         "功能开发中，敬请等待！", reply_to_message_id=update.effective_message.message_id
-#     )
 
 
 async def show_help_info(update: Update, context: CallbackContext):

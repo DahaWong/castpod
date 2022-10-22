@@ -29,14 +29,11 @@ from castpod.utils import (
     validate_path,
 )
 from ..models_new import (
-    Chapter,
-    Shownotes,
     User,
     Podcast,
     UserSubscribePodcast,
     parse_feed,
 )
-from PIL import Image
 from ..components import PodcastPage, ManagePage
 
 # from ..utils import download, parse_doc
