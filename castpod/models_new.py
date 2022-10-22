@@ -78,18 +78,24 @@ class Podcast(BaseModel):
     host = TextField(null=True)
     website = TextField(null=True)
     email = TextField(null=True)
-    abbr = TextField(null=True)
+    pinyin_abbr = TextField(null=True)
+    pinyin_full = TextField(null=True)
 
     def initialize(self):
-        parsed = parse_feed(self.feed)
+        parsed = parse_feed("https://" + self.feed)
+        if not parsed:
+            parse_feed("http://" + self.feed)
         self.name = parsed["name"]
         match = re.search(
             r"[\u4E00-\u9FFF\u3400-\u4DBF\u20000-\u2A6DF\u2A700-\u2B73F\u2B740-\u2B81F\u2B820-\u2CEAF\u2CEB0-\u2EBEF\u30000-\u3134F\uF900-\uFAFF\u2E80-\u2EFF\u31C0-\u31EF\u3000-\u303F\u2FF0-\u2FFF\u3300-\u33FF\uFE30-\uFE4F\uF900-\uFAFF\u2F800-\u2FA1F\u3200-\u32FF\u1F200-\u1F2FF\u2F00-\u2FDF]+",
             parsed["name"],
         )
         if match:
-            self.abbr = "".join(
-                ch[0] for ch in pinyin(match[0], style=Style.FIRST_LETTER, strict=False)
+            self.pinyin_abbr = "".join(
+                x[0] for x in pinyin(match[0], style=Style.FIRST_LETTER, strict=False)
+            )
+            self.pinyin_full = "".join(
+                x[0] for x in pinyin(match[0], style=Style.NORMAL, strict=False)
             )
         self.logo = parsed["logo"]
         self.host = parsed["host"]

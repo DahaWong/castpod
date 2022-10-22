@@ -26,16 +26,15 @@ async def start(update: Update, context):
     if is_new_user:
         user.name = effective_user.full_name
         user.save()
-        await message.reply_text(
+        msg = await message.reply_text(
             text=(
-                f"欢迎使用 {manifest.name}！                                            "
-                f"\n\n发送 OPML 文件或者 RSS 链接均可以导入播客订阅。\n"
-                f"\n⚠️ 目前还<b>没有正式上线</b>，主要的问题是订阅的播客还不能更新。遇到问题或提供建议请移步<a href='https://t.me/castpodchat'>内测聊天室</a>。"
+                f"欢迎使用 {manifest.name}！\n\n疑问或建议请询<a href='https://t.me/castpodchat'>内测聊天室</a>。"
             ),
             reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton("搜索播客 · 我的订阅", switch_inline_query_current_chat="")
+                InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="")
             ),
         )
+        await msg.pin()
     elif not context.args:
         await message.reply_text("欢迎回来！")
         return

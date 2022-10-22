@@ -61,7 +61,7 @@ async def subscribe_feed(update: Update, context: CallbackContext):
         feed = list(urls)[0]
     await message.reply_chat_action(action=ChatAction.TYPING)
     reply_msg = await message.reply_text(f"订阅中…")
-
+    feed = re.sub(r"^https?:\/\/", "", feed).lower()  # normalize
     podcast, is_new_podcast = Podcast.get_or_create(feed=feed)
     user = User.get(User.id == update.effective_user.id)
     if is_new_podcast:
@@ -245,7 +245,12 @@ async def show_podcast(update: Update, context: CallbackContext):
         keywords = message.text
         podcast = (
             Podcast.select()
-            .where(Podcast.name.contains(keywords))
+            .where(
+                Podcast.name.contains(keywords)
+                | Podcast.pinyin_abbr.startswith(keywords)
+                | Podcast.pinyin_full.contains(keywords)
+                | Podcast.host.contains(keywords)
+            )
             .join(UserSubscribePodcast)
             .join(User)
             .where(User.id == user.id)
@@ -256,7 +261,7 @@ async def show_podcast(update: Update, context: CallbackContext):
             "😔 你的订阅里没有相关的播客",
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
-                    f"搜索「{keywords}…」",
+                    f"搜索「{keywords}」",
                     switch_inline_query_current_chat=keywords,
                 )
             ),

@@ -244,8 +244,7 @@ def show_episodes(podcast, index):
         else:
             episodes = (
                 Episode.select().where(
-                    (Episode.from_podcast == podcast.id)
-                    & (Episode.title.contains(index) | Episode.abbr.startswith(index))
+                    (Episode.from_podcast == podcast.id) & Episode.title.contains(index)
                 )
                 # .join(Shownotes)
                 # .where(Shownotes.content.contains(index))

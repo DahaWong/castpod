@@ -142,7 +142,7 @@ async def unsubscribe_podcast(update: Update, context: CallbackContext):
     podcast_id = re.match(r"unsubscribe_podcast_(.+)", query.data)[1]
     podcast_name = Podcast.get(Podcast.id == podcast_id).name
     await update.effective_message.edit_caption(
-        f"即将退订 <b>{podcast_name}</b>…",
+        f"确认退订 <b>{podcast_name}</b> 吗",
         reply_markup=InlineKeyboardMarkup.from_row(
             [
                 InlineKeyboardButton(
@@ -154,7 +154,7 @@ async def unsubscribe_podcast(update: Update, context: CallbackContext):
             ]
         ),
     )
-    await query.answer(f"⚠️ 确认退订播客《{podcast_name}》吗？", show_alert=True)
+    await query.answer(f"⚠️ 即将退订播客《{podcast_name}》…", show_alert=True)
 
 
 async def confirm_unsubscribe(update: Update, context: CallbackContext):
