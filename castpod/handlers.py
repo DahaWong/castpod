@@ -1,11 +1,5 @@
 from castpod.callbacks import *
-from .constants import (
-    CLOSE_MARK,
-    OTHER_URL,
-    SPEAKER_MARK,
-    STAR_MARK,
-    DOC_MARK,
-)
+from .constants import OTHER_URL
 from telegram.ext import (
     MessageHandler,
     filters,
@@ -35,7 +29,7 @@ def register_handlers(application):
             # CommandHandler('star', command.star),
             CommandHandler("search", command.search, block=False),
             # CommandHandler('favorite', command.favorite, block=False),
-            CommandHandler("help", command.help_, block=False),
+            CommandHandler("help", command.show_help_info, block=False),
             CommandHandler("about", command.about, block=False),
             MessageHandler(
                 filters.ChatType.PRIVATE
@@ -61,7 +55,7 @@ def register_handlers(application):
                 block=False,
             ),
             MessageHandler(
-                (filters.REPLY | filters.ChatType.PRIVATE) & filters.TEXT,
+                (filters.REPLY | filters.ChatType.PRIVATE) & filters.TEXT & filters.Regex('[^🔍]'),
                 message.show_podcast,
             ),
             MessageHandler(filters.StatusUpdate.PINNED_MESSAGE, message.delete_message),

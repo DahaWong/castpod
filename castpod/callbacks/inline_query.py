@@ -6,27 +6,47 @@ from telegram import (
     InlineKeyboardMarkup,
     InlineQueryResultCachedPhoto,
     InlineQueryResultPhoto,
-    InlineQueryResultCachedAudio,
     Update,
 )
+from telegram.error import BadRequest, TimedOut
 import re
 from config import manifest
 from ..models_new import User, Podcast, Episode, UserSubscribePodcast
 import datetime
 from ..constants import SHORT_DOMAIN, SPEAKER_MARK
 from peewee import DoesNotExist
+from uuid import uuid4
 
 
 async def via_sender(update: Update, context):
+    user = update.effective_user
     inline_query = update.inline_query
-    subscribed_podcasts = (
-        Podcast.select()
-        .join(UserSubscribePodcast)
-        .join(User)
-        .where(User.id == update.effective_user.id)
-    )
     keywords = inline_query.query
+    subscribed_podcasts = (
+        Podcast.select().join(UserSubscribePodcast).join(User).where(User.id == user.id)
+    )
     if not keywords:
+        if not subscribed_podcasts:
+            results = [
+                InlineQueryResultArticle(
+                    id=uuid4(),
+                    title="🔎 继续输入关键词，搜索并订阅新播客",
+                    description="订阅后，这里将显示你的订阅列表。",
+                    input_message_content=InputTextMessageContent("🔍"),
+                    reply_markup=InlineKeyboardMarkup.from_button(
+                        InlineKeyboardButton(
+                            "返回搜索", switch_inline_query_current_chat=""
+                        )
+                    ),
+                )
+            ]
+            await inline_query.answer(
+                results,
+                switch_pm_text="欢迎使用搜索功能！",
+                switch_pm_parameter="welcome_search",
+                cache_time=3600,
+            )
+            return
         results = []
         for podcast in subscribed_podcasts:
             new_result = InlineQueryResultArticle(
@@ -41,7 +61,13 @@ async def via_sender(update: Update, context):
                 thumb_width=60,
             )
             results.append(new_result)
-        await inline_query.answer(results, auto_pagination=True, cache_time=10)
+        await inline_query.answer(
+            results,
+            auto_pagination=True,
+            cache_time=15,
+            switch_pm_text="订阅列表",
+            switch_pm_parameter="add_podcast",
+        )
     else:
         match = re.match(r"(.*?)#(.*)$", keywords)
         try:
@@ -49,23 +75,36 @@ async def via_sender(update: Update, context):
                 name, index = match[1], match[2]
                 podcast = Podcast.get(Podcast.name == name)
                 results = show_episodes(podcast, index)
-                await inline_query.answer(results, auto_pagination=True, cache_time=900)
+                await inline_query.answer(
+                    results,
+                    auto_pagination=True,
+                    cache_time=3600,
+                    switch_pm_text=name,
+                    switch_pm_parameter="podcast",
+                )
             else:
                 results = await search_podcast(keywords)
-                await inline_query.answer(results, auto_pagination=True, cache_time=450)
+                await inline_query.answer(
+                    results,
+                    auto_pagination=True,
+                    cache_time=450,
+                    switch_pm_text=f"「{keywords}」的搜索结果",
+                    switch_pm_parameter="search_podcast",
+                )
         except DoesNotExist:
-            await send_error_message(update, "该播客不在订阅列表中 🫧")
-        except:
-            await send_error_message(update, "列表获取失败，请稍后再试 🏃🏻")
+            await send_error_message(user, "🫧 该播客不在订阅列表中")
+        except BadRequest or TimedOut:
+            # TODO
+            await send_error_message(user, "该播客节目较多，暂时无法收听")
 
 
 # async def via_private(update, context):
-#     query = update.inline_query
+#     inline_query = update.inline_query
 #     user = User.validate_user(update.effective_user)
-#     if not query.query:
+#     if not inline_query.query:
 #         results = get_invitation(user)
 #     else:
-#         results = share_podcast(user, query.query)
+#         results = share_podcast(user, inline_query.query)
 #     await query.answer(list(results), auto_pagination=True, cache_time=600)
 
 
@@ -74,7 +113,7 @@ async def via_sender(update: Update, context):
 
 
 # async def via_channel(update, context):
-#     via_private(update, context)「pllp
+#     via_private(update, context)
 
 
 async def search_podcast(keywords):
@@ -83,7 +122,7 @@ async def search_podcast(keywords):
     if not searched_results:
         results.append(
             InlineQueryResultArticle(
-                id="0",
+                id=uuid4(),
                 title="没有找到相关的播客 :(",
                 description="换个关键词试试",
                 input_message_content=InputTextMessageContent(":("),
@@ -98,14 +137,15 @@ async def search_podcast(keywords):
         for result in searched_results:
             name = re.sub(r"[_*`]", " ", result["collectionName"])
             host = re.sub(r"[_*`]", " ", result["artistName"])
-            episode_count = result["trackCount"]
             feed = result.get("feedUrl")
+            if not feed:
+                continue
             feed_short = re.match(SHORT_DOMAIN, feed.lower())[1]
             thumbnail_small = result.get("artworkUrl60")
+            episode_count = f'共 {result["trackCount"]} 期'
 
             # 如果不在 机器人主页，则：
             # [InlineKeyboardButton('前往 bot', url = f"https://t.me/{manifest.bot_id}")],
-
             results.append(
                 InlineQueryResultArticle(
                     id=result["collectionId"],
@@ -114,7 +154,7 @@ async def search_podcast(keywords):
                         feed, parse_mode=None
                     ),
                     description=(
-                        f"{host if len(host)<=31 else host[:31]+'...'}\n{feed_short} · 共 {episode_count} 期"
+                        f"{host if len(host)<=31 else host[:31]+'...'}\n{episode_count} · {feed_short}"
                     ),
                     thumb_url=thumbnail_small or None,
                     thumb_height=60,
@@ -230,7 +270,7 @@ def show_episodes(podcast, index):
 
 # def get_invitation(user):
 #     yield InlineQueryResultArticle(
-#         id="0",
+#         id=uuid4(),
 #         title="点击发送 Castpod 邀请函",
 #         description="或者继续输入关键词同好友分享播客",
 #         input_message_content=InputTextMessageContent("一起用 Castpod 听播客吧！"),

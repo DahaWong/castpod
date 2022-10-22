@@ -7,8 +7,9 @@ from functools import wraps
 
 import httpx
 from bs4 import BeautifulSoup
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, Update, User
 from telegram.ext import CallbackContext
+from telegram.error import BadRequest
 
 
 # iTunes Search API
@@ -33,6 +34,7 @@ def validate_path(path):
         except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
+    return path
 
 
 async def streaming_download(path: str, url: str, progress_msg: Message):
@@ -45,9 +47,12 @@ async def streaming_download(path: str, url: str, progress_msg: Message):
                 s += len(chunk)
                 percentage = round(s / total * 100)
                 percentage_hint = str(percentage) + "%"
-                await progress_msg.edit_text(
-                    f"<pre>{percentage_hint:<4}</pre> | {percentage // 8 * '■' }{(8 - percentage // 8) * '□'}"
-                )
+                try:
+                    await progress_msg.edit_text(
+                        f"<pre>{percentage_hint:<4}</pre> | {percentage // 10 * '■' }{(10 - percentage // 10) * '□'}"
+                    )
+                except BadRequest:
+                    pass
                 f.write(chunk)
     return path
 
@@ -108,9 +113,11 @@ async def streaming_download(path: str, url: str, progress_msg: Message):
 #     return path
 
 
-async def send_error_message(update: Update, text: str) -> None:
+async def send_error_message(user: User, text: str) -> None:
     # TODO：播客同名的情况，须返回多个结果。（虽然很少见）
-    await update.effective_chat.send_message(
+    if not user:
+        return
+    await user.send_message(
         text,
         reply_markup=InlineKeyboardMarkup.from_row(
             [

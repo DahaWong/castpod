@@ -10,7 +10,7 @@ from telegram.ext import CallbackContext
 from castpod.models_new import User, Podcast, Episode
 
 # from castpod.utils import save_manage_starter, generate_opml
-from .command import help_ as command_help
+from .command import show_help_info as command_help
 
 from config import manifest
 
@@ -232,7 +232,7 @@ async def confirm_delete_account(update: Update, context: CallbackContext):
     ]
 
     await update.callback_query.edit_message_text(
-        "确认删除账号吗？该操作将会*清除您的全部数据*\n", reply_markup=InlineKeyboardMarkup(keyboard)
+        "确认删除账号吗？该操作将会<b>清空</b>您的全部数据\n", reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
     # Tips('logout', "⦿ 这将清除所有存储在后台的个人数据。").send(update: Update, context: CallbackContext)

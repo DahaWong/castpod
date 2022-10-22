@@ -41,7 +41,7 @@ register_handlers(application)
 db_init()
 
 # Webhook:
-# application.run_webhook(**config.webhook_info)
+application.run_webhook(**config.webhook_info)
 
 # Polling:
-application.run_polling()
+# application.run_polling()

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from email import message
 from pickletools import optimize
 from webbrowser import get
@@ -17,8 +18,15 @@ from telegram.ext import CallbackContext
 from telegram.error import TimedOut
 from mutagen import File
 
-from castpod.utils import search_itunes, send_error_message, streaming_download
+from castpod.utils import (
+    search_itunes,
+    send_error_message,
+    streaming_download,
+    validate_path,
+)
 from ..models_new import (
+    Chapter,
+    Shownotes,
     User,
     Podcast,
     UserSubscribePodcast,
@@ -28,7 +36,7 @@ from PIL import Image
 from ..components import PodcastPage, ManagePage
 
 # from ..utils import download, parse_doc
-from config import podcast_vault, manifest, dev
+from config import manifest, dev
 from ..constants import RIGHT_SEARCH_MARK, SHORT_DOMAIN, SPEAKER_MARK, STAR_MARK
 import re
 
@@ -53,7 +61,7 @@ async def subscribe_feed(update: Update, context: CallbackContext):
     kwargs = {"mode": "group"} if in_group else {}
     try:
         await reply_msg.edit_text(
-            f"成功订阅<b>{podcast.name}</b>",
+            f"成功订阅 <b>{podcast.name}</b>",
         )
         podcast_page = PodcastPage(podcast, **kwargs)
         photo = podcast.logo.file_id or podcast.logo.url
@@ -122,11 +130,12 @@ async def save_subscription(update: Update, context: CallbackContext):
         )
     except Exception as e:
         await reply_msg.delete()
-        await send_error_message(update, "订阅失败 😢\ 请检查订阅文件是否受损。")
+        await send_error_message(user, "订阅失败 😢\ 请检查订阅文件是否受损。")
 
 
 async def download_episode(update: Update, context: CallbackContext):
     message = update.message
+    user = update.effective_user
     reply_msg = await message.reply_text("正在获取节目…")
     match = re.match(r"(.+) #([0-9]+)", message.text)
     podcast = (
@@ -139,8 +148,8 @@ async def download_episode(update: Update, context: CallbackContext):
     )
     episode = podcast.episodes[-int(match[2])]
     # todo:not only mp3
-    audio_local_path = f"public/audio/{podcast.name}/{episode.title}.mp3"
-    logo_path = "public/logo/{podcast.name}/{episode.logo.id}.jpeg"
+    audio_local_path = f"public/audio/{podcast.id}/{episode.title}.mp3"
+    logo_path = validate_path("public/logo/{podcast.id}/{episode.logo.id}.jpeg")
     if not episode.file_id:
         await reply_msg.edit_text("下载中…")
         await message.reply_chat_action(ChatAction.RECORD_VOICE)
@@ -151,25 +160,37 @@ async def download_episode(update: Update, context: CallbackContext):
         )
         await reply_msg.edit_text("正在发送，请稍候…")
         await message.reply_chat_action(ChatAction.UPLOAD_VOICE)
-        shownotes = episode.shownotes
+        shownotes = Shownotes.get(Shownotes.episode == episode)
         shownotes.extract_chapters()
         audio_metadata = File(audio_local_path)
-        apic = audio_metadata.tags.get("APIC:")
-        if apic:
-            logo_data = apic.data
-            with open(logo_path, "wb") as f:
-                f.write(logo_data)
-            with Image.open(logo_path) as im:
-                # then process image to fit restriction:
-                # 1. jpeg format
-                im = im.convert("RGB")
-                # 2. < 320*320
-                size = (80, 80)
-                im.thumbnail(size)
-                # 3. less than 200 kB !!
-                im.save(logo_path, "JPEG", optimize=True)
+        audio_tags = audio_metadata.tags
+        if audio_tags:
+            apic = audio_tags.get("APIC:")
+            if hasattr(audio_tags, "getall"):
+                chaps = audio_tags.getall("CHAP")  # TODO chaps[0]['sub_frames']
+                for chap in chaps:
+                    start_time = str(timedelta(milliseconds=float(chap.start_time)))
+                    title = chap.sub_frames.getall("TIT2")[0].text[0]
+                    Chapter.create(
+                        from_episode=episode, start_time=start_time, title=title
+                    )
+            if apic:
+                with open(logo_path, "wb") as f:
+                    f.write(apic.data)
+                # else:
+                #     logo_path = "public/logo/{podcast.id}/cover.jpeg"
+                with Image.open(logo_path) as im:
+                    # then process image to fit restriction:
+                    # 1. jpeg format
+                    im = im.convert("RGB")
+                    # 2. < 320*320
+                    size = (80, 80)
+                    im.thumbnail(size)
+                    # 3. less than 200 kB !!
+                    im.save(logo_path, "JPEG", optimize=True, quality=85)
     try:
         timeline = ""
+        shownotes = episode.shownotes[0]
         if episode.chapters:
             timeline = "\n\n".join(
                 [
@@ -177,6 +198,10 @@ async def download_episode(update: Update, context: CallbackContext):
                     for chapter in episode.chapters
                 ]
             )
+        if not shownotes.url:
+            r = await shownotes.generate_telegraph()
+            if r:
+                shownotes.save()
         markup = InlineKeyboardMarkup(
             [
                 [
@@ -197,31 +222,27 @@ async def download_episode(update: Update, context: CallbackContext):
         )
         audio_msg = await message.reply_audio(
             audio=episode.file_id or audio_local_path,
-            caption=f"<b>{episode.title}</b>\n\n{timeline}",
+            caption=f"<a href='{shownotes.url}'>本期附录</a>\n\n{timeline}",
             reply_markup=markup,
             title=episode.title,
             performer=podcast.name,
             duration=episode.duration,
-            thumb=logo_path,
+            thumb=logo_path or episode.logo.url or podcast.logo.url,
         )
         if not episode.file_id:
             episode.file_id = audio_msg.audio.file_id
             episode.save()
     except TimedOut:
-        await message.reply_text(
-            "这期节目的体积略大，请稍等 🕛",
-            reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton("好", callback_data="delete_message")
-            ),
-        )
+        await message.reply_text("🕛 这期节目的体积略大，请稍等")
     except Exception as e:
-        await send_error_message(update, "下载失败，稍后再试试吧 😞")
+        await send_error_message(user, "😞 下载失败，稍后再试试吧")
         raise e
     finally:
         await reply_msg.delete()
 
 
 async def show_podcast(update: Update, context: CallbackContext):
+    user = update.effective_user
     message = update.message
     if (
         message.reply_to_message
@@ -234,11 +255,11 @@ async def show_podcast(update: Update, context: CallbackContext):
             .where(Podcast.name == message.text)
             .join(UserSubscribePodcast)
             .join(User)
-            .where(User.id == update.effective_user.id)
+            .where(User.id == user.id)
             .get()
         )
     except:
-        await send_error_message(update, "没有找到相应的播客，请重新尝试 😔")
+        await send_error_message(user, "😔 你的订阅中没有这个播客，请重新尝试")
         return
     page = PodcastPage(podcast)
     photo = podcast.logo.file_id or podcast.logo.url
@@ -263,12 +284,13 @@ async def show_podcast(update: Update, context: CallbackContext):
 
 
 async def subscribe_from_url(update: Update, context: CallbackContext):
+    user = update.effective_user
     message = update.message
     url = message.text
     domain = re.match(SHORT_DOMAIN, url)[1]
     if not url.startswith("http"):
         url = "https://" + url
-    reply = await message.reply_text("解析链接中…")
+    reply = await message.reply_text("正在解析链接…")
     async with httpx.AsyncClient() as client:
         r = await client.get(url, follow_redirects=True)
     soup = BeautifulSoup(r.text, "html.parser")
@@ -292,7 +314,7 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
         podcast_name = podcast["name"]
         podcast_logo = podcast["logo"].url
     else:
-        await send_error_message(update, "请检查链接拼写是否有误 🖐🏻")
+        await send_error_message(user, "请检查链接拼写是否有误 🖐🏻")
         return
 
     if podcast_logo:
@@ -306,4 +328,4 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
             ),
         )
     else:
-        await send_error_message(update, "解析失败，链接可能已经损坏 😵‍💫")
+        await send_error_message(user, "解析失败，链接可能已经损坏 😵‍💫")

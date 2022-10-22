@@ -8,9 +8,9 @@ config.read("config.ini")  # Read the configuration file on your machine.
 
 
 # Bot
-bot_token = config["BOT"]["TOKEN_TEST"]
+bot_token = config["BOT"]["TOKEN"]
 bot_api = config["BOT"]["API"]
-podcast_vault = config["BOT"]["PODCAST_VAULT"]
+# podcast_vault = config["BOT"]["PODCAST_VAULT"]
 defaults = Defaults(parse_mode=ParseMode.HTML, disable_notification=True)
 
 # Dev
@@ -18,26 +18,12 @@ dev = config["DEV"]["USER_ID"]
 dev_name = config["DEV"]["USER_NAME"]
 dev_email = config["DEV"]["EMAIL"]
 
-# Server
-webhook_port = int(config["WEBHOOK"]["PORT"])
-
-# MongoDB
-
-
-class Mongo(object):
-    mongo = config["MONGODB"]
-    db = mongo["DB_NAME"]
-    user = mongo["USER"]
-    pwd = mongo["PWD"]
-    remote_host = mongo["REMOTE_HOST"]  # test
-
-
 webhook_info = {
-    "listen": "136.244.105.159",
+    "listen": "127.0.0.1",
     "port": 8848,
     "url_path": bot_token,
     "webhook_url": f"http://127.0.0.1:8848/{bot_token}",
-    "max_connections": 1000,
+    "max_connections": 2000,
     "drop_pending_updates": True,
 }
 

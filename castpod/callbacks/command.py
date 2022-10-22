@@ -30,10 +30,10 @@ async def start(update: Update, context):
             text=(
                 f"欢迎使用 {manifest.name}！                                            "
                 f"\n\n发送 OPML 文件或者 RSS 链接均可以导入播客订阅。\n"
-                f"\n⚠️ 目前还*没有正式上线*，主要的问题是订阅的播客还不能更新。遇到问题或提供建议请移步[内测聊天室](https://t.me/castpodchat)。"
+                f"\n⚠️ 目前还<b>没有正式上线</b>，主要的问题是订阅的播客还不能更新。遇到问题或提供建议请移步<a href='https://t.me/castpodchat'>内测聊天室</a>。"
             ),
             reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="")
+                InlineKeyboardButton("搜索播客 · 我的订阅", switch_inline_query_current_chat="")
             ),
         )
     elif not context.args:
@@ -149,19 +149,20 @@ async def about(update: Update, context: CallbackContext):
 #     )
 
 
-async def help_(update: Update, context: CallbackContext):
+async def show_help_info(update: Update, context: CallbackContext):
     message = update.message
     text_handler = (
         message.reply_text if message else update.callback_query.edit_message_text
     )
+    doc_link = (
+        "https://github.com/DahaWong/castpod/wiki/%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97"
+    )
     await text_handler(
-        text=f"[{manifest.name} 入门指南](https://github.com/DahaWong/castpod/wiki/%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97)\n\n",
-        reply_markup=InlineKeyboardMarkup(
+        text=f"<a href='{doc_link}'>{manifest.name} 入门指南</a>",
+        reply_markup=InlineKeyboardMarkup.from_row(
             [
-                [
-                    InlineKeyboardButton("删除账号", callback_data="logout"),
-                    InlineKeyboardButton("导出订阅", callback_data="export"),
-                ]
+                InlineKeyboardButton("删除账号", callback_data="logout"),
+                InlineKeyboardButton("导出订阅", callback_data="export"),
             ]
         ),
     )

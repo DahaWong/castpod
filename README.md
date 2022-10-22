@@ -47,28 +47,15 @@
 
 ```config.ini
 [BOT]
-TOKEN_TEST = 机器人测试token，可选。
-TOKEN = 机器人token，找 @BotFather 领取
-PROXY = 本地测试代理 http 链接，避开网路封锁
-API = 自部署的 telegram-bot-api 地址，播客文件一般较大，如果不自己部署会超出 Telegram 的传输限制。
-PODCAST_VAULT = Telegram「播客广场」的频道ID，即@后面的内容。这与本机器人的播客分发模式有关，可能不太好理解。
+TOKEN = 机器人 token，找 @BotFather 领取
+API = 自部署的 telegram-bot-api 地址。播客文件一般较大，若不自己部署，则会超出 Telegram 的传输限制。
 
 [WEBHOOK]
-PORT = Webhook 端口数字，不使用请无视
+PORT = Webhook 端口（建议数值：443, 80, 88 或 8443）
 
 [DEV]
 USER_ID = 开发者（您）的 Telegram ID，整数。
-
-[MONGODB]
-USER = 用户名，可选
-PWD = 密码，可选
-DB_NAME = 数据库的名字
-REMOTE_HOST = 服务器IP，用于本地测试（但并不安全），可选。
 ```
-
-### 数据库
-
-安装 MongoDB，运行 `mongod`。
 
 ### Polling v.s Webhook
 
