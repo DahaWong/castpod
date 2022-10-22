@@ -6,17 +6,17 @@ from telegram import (
 )
 from telegram.ext import CallbackContext
 
-# from castpod.components import PodcastPage, ManagePage
-from castpod.models_new import User, Podcast, Episode
+from castpod.components import PodcastPage, ManagePage
+from castpod.models_new import User, Podcast, Episode, UserSubscribePodcast
 
-# from castpod.utils import save_manage_starter, generate_opml
+# from castpod.utils import generate_opml
 from .command import show_help_info as command_help
 
 from config import manifest
 
-# from ..constants import TICK_MARK, STAR_MARK
-# from datetime import date
-# import re
+from ..constants import TICK_MARK, STAR_MARK
+from datetime import date
+import re
 
 
 async def delete_message(update: Update, context: CallbackContext):
@@ -137,26 +137,46 @@ async def delete_account(update: Update, context: CallbackContext):
 #     await query.edit_message_reply_markup(InlineKeyboardMarkup(keyboard))
 
 
-# async def unsubscribe_podcast(update: Update, context: CallbackContext):
-#     query = update.callback_query
-#     podcast_id = re.match(r'unsubscribe_podcast_(.+)', query.data)[1]
-#     podcast_name = Podcast.objects(id=podcast_id).only('name').first().name
-#     await query.message.edit_text(
-#         text=f"确认退订 {podcast_name} 吗？",
-#         reply_markup=InlineKeyboardMarkup.from_row([
-#             InlineKeyboardButton(
-#                 "返回", callback_data=f"back_to_actions_{podcast_id}"),
-#             InlineKeyboardButton("退订", callback_data=f"confirm_unsubscribe_{podcast_id}")]
-#         ))
-#     await query.answer(f"退订后，未来将不会收到 {podcast_name} 的更新。")
+async def unsubscribe_podcast(update: Update, context: CallbackContext):
+    query = update.callback_query
+    podcast_id = re.match(r"unsubscribe_podcast_(.+)", query.data)[1]
+    podcast_name = Podcast.get(Podcast.id == podcast_id).name
+    await update.effective_message.edit_caption(
+        f"即将退订 <b>{podcast_name}</b>…",
+        reply_markup=InlineKeyboardMarkup.from_row(
+            [
+                InlineKeyboardButton(
+                    "确认", callback_data=f"confirm_unsubscribe_{podcast_id}"
+                ),
+                InlineKeyboardButton(
+                    "返回", callback_data=f"back_to_actions_{podcast_id}"
+                ),
+            ]
+        ),
+    )
+    await query.answer(f"⚠️ 确认退订播客《{podcast_name}》吗？", show_alert=True)
 
 
-# async def confirm_unsubscribe(update: Update, context: CallbackContext):
-#     query = update.callback_query
-#     podcast_id = re.match(r'confirm_unsubscribe_(.+)', query.data)[1]
-#     user = User.objects.get(user_id=query.from_user.id)
-#     podcast = Podcast.objects.get(id=podcast_id)
-#     user.unsubscribe(podcast)
+async def confirm_unsubscribe(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user_id = update.effective_user.id
+    podcast_id = re.match(r"confirm_unsubscribe_(.+)", query.data)[1]
+    UserSubscribePodcast.delete().where(
+        UserSubscribePodcast.user == user_id,
+        UserSubscribePodcast.podcast == podcast_id,
+    ).execute()
+    await update.effective_message.edit_caption(
+        f"已退订 <b>{Podcast.get(Podcast.id==podcast_id).name}</b>！",
+        reply_markup=InlineKeyboardMarkup.from_row(
+            [
+                InlineKeyboardButton(
+                    "重新订阅", callback_data=f"subscribe_podcast_{podcast_id}"  # TODO
+                ),
+                InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
+            ]
+        ),
+    )
+
 
 #     manage_page = ManagePage(
 #         podcasts=Podcast.subscribe_by(user, 'name'),

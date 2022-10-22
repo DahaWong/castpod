@@ -51,7 +51,7 @@ async def start(update: Update, context):
             )
             return
         if not user in podcast.subscribers:
-            subscribing_note = await update.message.reply_text("正在订阅…")
+            subscribing_note = await message.reply_text("正在订阅…")
             user.subscribe(podcast)
             await subscribing_note.delete()
         page = PodcastPage(podcast)
@@ -61,12 +61,11 @@ async def start(update: Update, context):
             photo=photo,
             caption=page.text(),
             reply_markup=InlineKeyboardMarkup(page.keyboard()),
-            parse_mode="HTML",
         )
         podcast.logo.file_id = msg.photo[0].file_id
         podcast.save()
 
-        await update.message.reply_text(
+        await message.reply_text(
             text=manage_page.text,
             reply_markup=ReplyKeyboardMarkup(manage_page.keyboard()),
         )

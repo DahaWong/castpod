@@ -40,4 +40,4 @@ async def handle_error(update, context):
     )
 
     # Finally, send the message
-    await context.bot.send_message(chat_id=dev, text=message, parse_mode=ParseMode.HTML)
+    await context.bot.send_message(chat_id=dev, text=message)

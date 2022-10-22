@@ -1,14 +1,8 @@
 import errno
 import os
-from pprint import pprint
-import re
-from datetime import date, datetime
-from functools import wraps
-
+from PIL import Image
 import httpx
-from bs4 import BeautifulSoup
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, Update, User
-from telegram.ext import CallbackContext
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, User
 from telegram.error import BadRequest
 
 
@@ -126,3 +120,14 @@ async def send_error_message(user: User, text: str) -> None:
             ]
         ),
     )
+
+
+def modify_logo(path: str, size: int):
+    with Image.open(path) as im:
+        # 1. to jpeg format
+        im = im.convert("RGB")
+        # 2. < 320*320
+        size = (size, size)
+        im.thumbnail(size)
+        # 3. less than 200 kB !!
+        im.save(path, "JPEG", optimize=True, quality=85)

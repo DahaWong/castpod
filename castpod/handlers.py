@@ -55,7 +55,9 @@ def register_handlers(application):
                 block=False,
             ),
             MessageHandler(
-                (filters.REPLY | filters.ChatType.PRIVATE) & filters.TEXT & filters.Regex('[^🔍]'),
+                (filters.REPLY | filters.ChatType.PRIVATE)
+                & filters.TEXT
+                & filters.Regex("[^🔍]"),
                 message.show_podcast,
             ),
             MessageHandler(filters.StatusUpdate.PINNED_MESSAGE, message.delete_message),

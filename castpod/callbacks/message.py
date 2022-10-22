@@ -4,6 +4,8 @@ from pickletools import optimize
 from webbrowser import get
 from bs4 import BeautifulSoup
 import httpx
+from httpx import Response
+from requests import delete
 from telegram import (
     Bot,
     InlineKeyboardButton,
@@ -12,6 +14,7 @@ from telegram import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
+    MessageEntity,
 )
 from telegram.constants import ChatAction, ParseMode
 from telegram.ext import CallbackContext
@@ -19,6 +22,7 @@ from telegram.error import TimedOut
 from mutagen import File
 
 from castpod.utils import (
+    modify_logo,
     search_itunes,
     send_error_message,
     streaming_download,
@@ -48,32 +52,41 @@ async def delete_message(update: Update, context: CallbackContext):
 async def subscribe_feed(update: Update, context: CallbackContext):
     message = update.message
     chat_type = update.effective_chat.type
-    await context.bot.send_chat_action(chat_id=message.chat_id, action="typing")
+    await message.delete()
+    urls = message.parse_entities([MessageEntity.URL]).values()
+    thumbnail_large = thumbnail_small = None
+    if len(urls) == 3:
+        feed, thumbnail_large, thumbnail_small = urls
+    else:
+        feed = list(urls)[0]
+    await message.reply_chat_action(action=ChatAction.TYPING)
     reply_msg = await message.reply_text(f"订阅中…")
 
-    user = User.get(id=update.effective_user.id)
-    podcast, is_new_podcast = Podcast.get_or_create(feed=message.text)
+    podcast, is_new_podcast = Podcast.get_or_create(feed=feed)
+    user = User.get(User.id == update.effective_user.id)
     if is_new_podcast:
         podcast.initialize()
+        # print(podcast.logo)
+        podcast.logo.thumbnail_url = thumbnail_small
+        podcast.logo.save()
         podcast.save()
-    UserSubscribePodcast.create(user=user, podcast=podcast)
+    UserSubscribePodcast.get_or_create(user=user, podcast=podcast)
     in_group = (chat_type == "group") or (chat_type == "supergroup")
     kwargs = {"mode": "group"} if in_group else {}
     try:
-        await reply_msg.edit_text(
-            f"成功订阅 <b>{podcast.name}</b>",
-        )
         podcast_page = PodcastPage(podcast, **kwargs)
-        photo = podcast.logo.file_id or podcast.logo.url
+        logo = podcast.logo
+        photo = logo.file_id or thumbnail_large or logo.url
         msg = await message.reply_photo(
             photo=photo,
             caption=podcast_page.text(),
             reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
-            parse_mode="HTML",
         )
-        podcast.logo.file_id = msg.photo[0].file_id
-        podcast.logo.save()
-        await message.delete()
+        if not logo.file_id:
+            podcast.logo.file_id = msg.photo[0].file_id
+            podcast.logo.save()
+            # TODO:then delete the local logo file.
+        await reply_msg.delete()
     except Exception as e:
         await reply_msg.edit_text("订阅失败 :(")
         podcast.delete_instance()
@@ -147,9 +160,40 @@ async def download_episode(update: Update, context: CallbackContext):
         .get()
     )
     episode = podcast.episodes[-int(match[2])]
+    shownotes = episode.shownotes[0]
+    shownotes.extract_chapters()
+    timeline = ""
+    if not shownotes.url:
+        shownotes = await shownotes.generate_telegraph()
+        shownotes.save()
+    markup = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("时间轴", callback_data="show_timeline_XXX"),
+                InlineKeyboardButton("收藏", callback_data=f"fav_ep_{episode.id}"),
+                InlineKeyboardButton(
+                    "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
+                ),
+            ],
+            [
+                InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
+                InlineKeyboardButton(
+                    "更多单集",
+                    switch_inline_query_current_chat=f"{podcast.name}#",
+                ),
+            ],
+        ]
+    )
+    if not episode.url:
+        await message.reply_text(
+            text=f"<b>{episode.title}</b>\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
+            reply_markup=markup,
+        )
+        await reply_msg.delete()
+        return
     # todo:not only mp3
     audio_local_path = f"public/audio/{podcast.id}/{episode.title}.mp3"
-    logo_path = validate_path("public/logo/{podcast.id}/{episode.logo.id}.jpeg")
+    logo_path = validate_path(f"public/logo/{podcast.id}/{episode.logo.id}.jpeg")
     if not episode.file_id:
         await reply_msg.edit_text("下载中…")
         await message.reply_chat_action(ChatAction.RECORD_VOICE)
@@ -160,37 +204,7 @@ async def download_episode(update: Update, context: CallbackContext):
         )
         await reply_msg.edit_text("正在发送，请稍候…")
         await message.reply_chat_action(ChatAction.UPLOAD_VOICE)
-        shownotes = Shownotes.get(Shownotes.episode == episode)
-        shownotes.extract_chapters()
-        audio_metadata = File(audio_local_path)
-        audio_tags = audio_metadata.tags
-        if audio_tags:
-            apic = audio_tags.get("APIC:")
-            if hasattr(audio_tags, "getall"):
-                chaps = audio_tags.getall("CHAP")  # TODO chaps[0]['sub_frames']
-                for chap in chaps:
-                    start_time = str(timedelta(milliseconds=float(chap.start_time)))
-                    title = chap.sub_frames.getall("TIT2")[0].text[0]
-                    Chapter.create(
-                        from_episode=episode, start_time=start_time, title=title
-                    )
-            if apic:
-                with open(logo_path, "wb") as f:
-                    f.write(apic.data)
-                # else:
-                #     logo_path = "public/logo/{podcast.id}/cover.jpeg"
-                with Image.open(logo_path) as im:
-                    # then process image to fit restriction:
-                    # 1. jpeg format
-                    im = im.convert("RGB")
-                    # 2. < 320*320
-                    size = (80, 80)
-                    im.thumbnail(size)
-                    # 3. less than 200 kB !!
-                    im.save(logo_path, "JPEG", optimize=True, quality=85)
     try:
-        timeline = ""
-        shownotes = episode.shownotes[0]
         if episode.chapters:
             timeline = "\n\n".join(
                 [
@@ -198,31 +212,9 @@ async def download_episode(update: Update, context: CallbackContext):
                     for chapter in episode.chapters
                 ]
             )
-        if not shownotes.url:
-            r = await shownotes.generate_telegraph()
-            if r:
-                shownotes.save()
-        markup = InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton("时间轴", callback_data="show_timeline_XXX"),
-                    InlineKeyboardButton("收藏", callback_data=f"fav_ep_{episode.id}"),
-                    InlineKeyboardButton(
-                        "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
-                    ),
-                ],
-                [
-                    InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
-                    InlineKeyboardButton(
-                        "更多单集",
-                        switch_inline_query_current_chat=f"{podcast.name}#",
-                    ),
-                ],
-            ]
-        )
         audio_msg = await message.reply_audio(
             audio=episode.file_id or audio_local_path,
-            caption=f"<a href='{shownotes.url}'>本期附录</a>\n\n{timeline}",
+            caption=f"<b>{episode.title}</b>\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
             reply_markup=markup,
             title=episode.title,
             performer=podcast.name,
@@ -250,26 +242,32 @@ async def show_podcast(update: Update, context: CallbackContext):
     ):
         return
     try:
+        keywords = message.text
         podcast = (
             Podcast.select()
-            .where(Podcast.name == message.text)
+            .where(Podcast.name.contains(keywords))
             .join(UserSubscribePodcast)
             .join(User)
             .where(User.id == user.id)
             .get()
         )
     except:
-        await send_error_message(user, "😔 你的订阅中没有这个播客，请重新尝试")
+        await user.send_message(
+            "😔 你的订阅里没有相关的播客",
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    f"搜索「{keywords}…」",
+                    switch_inline_query_current_chat=keywords,
+                )
+            ),
+        )
         return
     page = PodcastPage(podcast)
-    photo = podcast.logo.file_id or podcast.logo.url
-    msg = await message.reply_photo(
-        photo=photo,
+    await message.reply_photo(
+        photo=podcast.logo.file_id,
         caption=page.text(),
         reply_markup=InlineKeyboardMarkup(page.keyboard()),
     )
-    podcast.logo.file_id = msg.photo[0].file_id
-    podcast.logo.save()
     await message.delete()
 
 

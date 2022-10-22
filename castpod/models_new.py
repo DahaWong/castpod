@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from telegraph.aio import Telegraph
 from telegraph.utils import ALLOWED_TAGS
 import urllib.parse
+from pypinyin import Style, pinyin
 
 import feedparser
 from peewee import (
@@ -21,7 +22,6 @@ from peewee import (
     TextField,
     TimeField,
 )
-from PIL import Image
 from playhouse.sqlite_ext import FTSModel, SearchField
 
 from config import manifest
@@ -67,6 +67,7 @@ class Group(BaseModel):
 class Logo(BaseModel):
     url = TextField()
     file_id = TextField(null=True)
+    thumbnail_url = TextField(null=True)
 
 
 class Podcast(BaseModel):
@@ -77,10 +78,19 @@ class Podcast(BaseModel):
     host = TextField(null=True)
     website = TextField(null=True)
     email = TextField(null=True)
+    abbr = TextField(null=True)
 
     def initialize(self):
         parsed = parse_feed(self.feed)
         self.name = parsed["name"]
+        match = re.search(
+            r"[\u4E00-\u9FFF\u3400-\u4DBF\u20000-\u2A6DF\u2A700-\u2B73F\u2B740-\u2B81F\u2B820-\u2CEAF\u2CEB0-\u2EBEF\u30000-\u3134F\uF900-\uFAFF\u2E80-\u2EFF\u31C0-\u31EF\u3000-\u303F\u2FF0-\u2FFF\u3300-\u33FF\uFE30-\uFE4F\uF900-\uFAFF\u2F800-\u2FA1F\u3200-\u32FF\u1F200-\u1F2FF\u2F00-\u2FDF]+",
+            parsed["name"],
+        )
+        if match:
+            self.abbr = "".join(
+                ch[0] for ch in pinyin(match[0], style=Style.FIRST_LETTER, strict=False)
+            )
         self.logo = parsed["logo"]
         self.host = parsed["host"]
         self.website = parsed["website"]
@@ -103,15 +113,15 @@ class Episode(BaseModel):
     subtitle = TextField(null=True)
     summary = TextField(null=True)
     logo = ForeignKeyField(Logo, null=True)
-    published_time = DateTimeField(default=datetime.now)
-    updated_time = DateTimeField(default=datetime.now)
+    published_time = DateTimeField(null=True)
+    updated_time = DateTimeField(null=True)
     message_id = IntegerField(null=True)
     file_id = TextField(null=True)
-    is_downloaded = BooleanField(default=False)
-    url = TextField(null=True)
+    url = TextField(null=True)  # audio file url
     performer = TextField(null=True)
     size = IntegerField(null=True)
     duration = IntegerField(null=True)
+    is_downloaded = BooleanField(default=False)
 
 
 class Shownotes(BaseModel):
@@ -173,7 +183,7 @@ class Shownotes(BaseModel):
                 html_content=content,
             )
             self.url = res["url"]
-            return self.url
+            return self
         except:
             return None
 
@@ -282,10 +292,16 @@ def parse_episode(item, podcast):
     episode = {}
     episode["from_podcast"] = podcast.id
     episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
-    audio = item.enclosures[0]
-    episode["url"] = audio.get("href")
-    episode["size"] = audio.get("length") if isinstance(audio.get("length"), int) else 0
-    # performer = self.name
+    # print(item.title)
+    enclosures = item.enclosures
+    if enclosures:
+        audio = enclosures[0]
+        episode["url"] = audio.get("href")
+        size = audio.get("length")
+        if not size:
+            episode["size"] = 0
+        else:
+            episode["size"] = size
     episode["title"] = unescape(item.get("title") or "")
 
     if item.get("image"):
