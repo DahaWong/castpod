@@ -1,25 +1,17 @@
 from datetime import timedelta
-from email import message
-from pickletools import optimize
-from webbrowser import get
 from bs4 import BeautifulSoup
 import httpx
-from httpx import Response
-from requests import delete
 from telegram import (
-    Bot,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    InputFile,
-    InputMediaAudio,
-    Message,
+    InputMediaPhoto,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
     MessageEntity,
 )
-import pathlib
-from telegram.constants import ChatAction, ParseMode
+from telegram.constants import MessageLimit
+from telegram.constants import ChatAction
 from telegram.ext import CallbackContext
 from telegram.error import TimedOut
 from mutagen import File
@@ -216,7 +208,7 @@ async def download_episode(update: Update, context: CallbackContext):
         audio_tags = audio_metadata.tags
         if audio_tags:
             if hasattr(audio_tags, "getall"):
-                chaps = audio_tags.getall("CHAP") 
+                chaps = audio_tags.getall("CHAP")
                 for chap in chaps:
                     start_time = str(timedelta(milliseconds=float(chap.start_time)))
                     title = chap.sub_frames.getall("TIT2")[0].text[0]
@@ -248,9 +240,7 @@ async def download_episode(update: Update, context: CallbackContext):
             title=episode.title,
             performer=podcast.name,
             duration=episode.duration,
-            thumb=logo.file_id
-            or open(logo_path, "rb")
-            or episode.logo.url
+            thumb=logo.file_id or open(logo_path, "rb") or episode.logo.url,
             write_timeout=60,
         )
         if not episode.file_id:
@@ -276,38 +266,60 @@ async def show_podcast(update: Update, context: CallbackContext):
         and message.reply_to_message.from_user.username != manifest.bot_id
     ):
         return
-    try:
-        keywords = message.text
-        podcast = (
-            Podcast.select()
-            .where(
-                Podcast.name.contains(keywords)
-                | Podcast.pinyin_abbr.startswith(keywords)
-                | Podcast.pinyin_full.contains(keywords)
-                | Podcast.host.contains(keywords)
-            )
-            .join(UserSubscribePodcast)
-            .join(User)
-            .where(User.id == user.id)
-            .get()
+    keywords = message.text
+    podcasts = (
+        Podcast.select()
+        .where(
+            Podcast.name.contains(keywords)
+            | Podcast.pinyin_abbr.startswith(keywords)
+            | Podcast.pinyin_full.startswith(keywords)
+            | Podcast.host.contains(keywords)
         )
-    except:
+        .join(UserSubscribePodcast)
+        .join(User)
+        .where(User.id == user.id)
+    )
+    count = len(podcasts)
+    if count == 0:
         await user.send_message(
-            "😔 你的订阅里没有相关的播客",
+            "你还没有订阅相关的播客",
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
-                    f"搜索「{keywords}」",
+                    f"去搜索「{keywords}」",
                     switch_inline_query_current_chat=keywords,
                 )
             ),
         )
-        return
-    page = PodcastPage(podcast)
-    await message.reply_photo(
-        photo=podcast.logo.file_id,
-        caption=page.text(),
-        reply_markup=InlineKeyboardMarkup(page.keyboard()),
-    )
+    elif count == 1:
+        podcast = podcasts[0]
+        msg = await message.reply_text(
+            f"找到播客 <b>{podcast.name}</b>！", reply_markup=ReplyKeyboardRemove()
+        )
+        await msg.delete()
+        page = PodcastPage(podcast)
+        await message.reply_photo(
+            photo=podcast.logo.file_id,
+            caption=page.text(),
+            reply_markup=InlineKeyboardMarkup(page.keyboard()),
+        )
+    elif count > 1:
+        msg = await message.reply_text(
+            f"在订阅列表中找到 {count} 档相关的播客",
+            reply_markup=ReplyKeyboardMarkup.from_row(
+                [p.name for p in podcasts[: MessageLimit.MESSAGE_ENTITIES]],
+                one_time_keyboard=True,
+                input_field_placeholder=f"「{message.text}」的检索结果",
+            ),
+        )
+        context.chat_data["reply_markup_message"] = msg.id
+        await message.reply_media_group(
+            media=[
+                InputMediaPhoto(
+                    podcast.logo.file_id, caption=podcast.name, filename=podcast.name
+                )
+                for podcast in podcasts[:5]
+            ]
+        )
     await message.delete()
 
 
