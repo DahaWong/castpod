@@ -14,6 +14,7 @@ from ..constants import SHORT_DOMAIN
 from peewee import DoesNotExist
 from uuid import uuid4
 from zhconv import convert
+from config import manifest
 
 
 async def via_sender(update: Update, context):
@@ -70,8 +71,6 @@ async def via_sender(update: Update, context):
             results,
             auto_pagination=True,
             cache_time=15,
-            # switch_pm_text="订阅列表",
-            # switch_pm_parameter="add_podcast",
         )
     else:
         match = re.search(r"(.*?)#(.*)$", keywords)
@@ -83,15 +82,14 @@ async def via_sender(update: Update, context):
                 await inline_query.answer(
                     list(results),
                     auto_pagination=True,
-                    cache_time=10,
-                    # cache_time=3600,
+                    cache_time=3600,
                 )
             else:
                 results = await search_podcast(keywords)
                 await inline_query.answer(
                     results,
                     auto_pagination=True,
-                    cache_time=450,
+                    cache_time=500,
                     # switch_pm_text=f"「{keywords}」的搜索结果",
                     # switch_pm_parameter="search_podcast",
                 )
@@ -103,22 +101,23 @@ async def via_sender(update: Update, context):
 
 
 async def via_private(update, context):
-    print("!!!")
     inline_query = update.inline_query
-    user = User.validate_user(update.effective_user)
-    if not inline_query.query:
-        results = get_invitation(user)
+    keywords = inline_query.query
+    results = None
+    if not keywords:
+        results = get_invitation()
     else:
-        results = share_podcast(user, inline_query.query)
-    await inline_query.answer(list(results), auto_pagination=True, cache_time=600)
+        results = share_podcast(keywords)
+    await inline_query.answer(list(results), auto_pagination=True, cache_time=10)
+    # await inline_query.answer(list(results), auto_pagination=True, cache_time=3600)
 
 
-# async def via_group(update, context):
-#     via_private(update, context)
+async def via_group(update, context):
+    await via_private(update, context)
 
 
-# async def via_channel(update, context):
-#     via_private(update, context)
+async def via_channel(update, context):
+    await via_private(update, context)
 
 
 async def search_podcast(keywords):
@@ -243,7 +242,11 @@ def show_episodes(podcast, index):
         else:
             episodes = (
                 Episode.select().where(
-                    (Episode.from_podcast == podcast.id) & (Episode.title.contains(index) | Episode.title.contains(convert(index,'zh-tw')))
+                    (Episode.from_podcast == podcast.id)
+                    & (
+                        Episode.title.contains(index)
+                        | Episode.title.contains(convert(index, "zh-tw"))
+                    )
                 )
                 # .join(Shownotes)
                 # .where(Shownotes.content.contains(index))
@@ -260,7 +263,7 @@ def show_episodes(podcast, index):
             id=uuid4(),
             title=episode.title,
             input_message_content=InputTextMessageContent(
-                f"{podcast.name} #{len(episodes)-i}\n"
+                f"<b>{podcast.name}</b> <i>#{len(episodes)-i}</i>\n{episode.title}"
             ),
             reply_markup=InlineKeyboardMarkup.from_row(buttons),
             description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",
@@ -271,76 +274,57 @@ def show_episodes(podcast, index):
 
 
 def get_invitation():
+    # TODO: send photo instead
     yield InlineQueryResultArticle(
         id=uuid4(),
         title="点击发送 Castpod 邀请函",
-        description="或者继续输入关键词以分享播客",
-        input_message_content=InputTextMessageContent("来 Castpod 一起听播客！"),
+        description="或继续输入关键词，以分享播客",
+        input_message_content=InputTextMessageContent(
+            f"来 <a href='https://t.me/{manifest.bot_id}'>Castpod</a>，一起听播客！",
+            disable_web_page_preview=False,
+        ),
         reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton("🏖️ 开启播客之旅", url=f"https://t.me/{manifest.bot_id}")
+            InlineKeyboardButton(
+                "🏖️ 开启播客之旅", url=f"https://t.me/{manifest.bot_id}?start"
+            )
         ),
     )
 
 
-# def share_podcast(user, keywords):
-#     podcasts = Podcast.objects(Q(name__icontains=keywords) & Q(subscribers=user))
-#     if not podcasts:
-#         podcasts_of_user = Podcast.objects(subscribers=user).only("episodes")
-#         episodes = Episode.objects(
-#             Q(title__icontains=keywords) & Q(from_podcast__in=podcasts_of_user)
-#         )
-#         if not episodes:
-#             yield InlineQueryResultArticle(
-#                 id=0,
-#                 title="没有找到相关的播客",
-#                 description=f"换个关键词试试 :)",
-#                 input_message_content=InputTextMessageContent(":)"),
-#             )
-#             return
-#         else:
-#             for index, episode in enumerate(episodes):
-#                 podcast = episode.from_podcast
-#                 email = f"\n✉️  {podcast.email}" if podcast.email else ""
-#                 yield InlineQueryResultArticle(
-#                     id=index,
-#                     title=episode.title,
-#                     description=podcast.name,
-#                     thumb_url=episode.logo.url,
-#                     thumb_width=60,
-#                     thumb_height=60,
-#                     input_message_content=InputTextMessageContent(
-#                         message_text=(
-#                             f"*{podcast.name}*"
-#                             f"\n[{SPEAKER_MARK}]({podcast.logo.url}) {podcast.host or podcast.name}"
-#                             f"{email}"
-#                         )
-#                     ),
-#                     reply_markup=InlineKeyboardMarkup.from_button(
-#                         InlineKeyboardButton(
-#                             "订阅",
-#                             url=f"https://t.me/{manifest.bot_id}?start=p{podcast.id}",
-#                         )
-#                     ),
-#                 )
-#     for index, podcast in enumerate(podcasts):
-#         email = f"\n✉️  {podcast.email}" if podcast.email else ""
-#         yield InlineQueryResultArticle(
-#             id=index,
-#             title=podcast.name,
-#             description=podcast.host,
-#             thumb_url=podcast.logo.url,
-#             thumb_width=60,
-#             thumb_height=60,
-#             input_message_content=InputTextMessageContent(
-#                 message_text=(
-#                     f"*{podcast.name}*"
-#                     f"\n[{SPEAKER_MARK}]({podcast.logo.url}) {podcast.host or podcast.name}"
-#                     f"{email}"
-#                 )
-#             ),
-#             reply_markup=InlineKeyboardMarkup.from_button(
-#                 InlineKeyboardButton(
-#                     "订阅", url=f"https://t.me/{manifest.bot_id}?start=p{podcast.id}"
-#                 )
-#             ),
-#         )
+def share_podcast(keywords):
+    try:
+        podcast = Podcast.get(Podcast.name == keywords)
+        logo = podcast.logo
+        yield InlineQueryResultArticle(
+            id=uuid4(),
+            thumb_url=logo.thumbnail_url or logo.url,
+            thumb_height=60,
+            thumb_width=60,
+            title=podcast.name,
+            description="点击分享此播客",
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    "订阅",
+                    url=f"https://t.me/{manifest.bot_id}?start=podcast_{podcast.id}",
+                )
+            ),
+            input_message_content=InputTextMessageContent(
+                f"<b>{podcast.name}</b><a href='{podcast.logo.url}'> · </a>\n{podcast.host}",
+                disable_web_page_preview=False,
+            ),
+        )
+    except DoesNotExist:
+        yield InlineQueryResultArticle(
+            id=uuid4(),
+            title="没有找到相关的播客，换个关键词试试 :)",
+            description=f"点击此处直接向朋友推荐 Castpod",
+            input_message_content=InputTextMessageContent(
+                f"来 <a href='https://t.me/{manifest.bot_id}'>Castpod</a>，一起听播客！",
+                disable_web_page_preview=False,
+            ),
+            reply_markup=InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    "🏖️ 开启播客之旅", url=f"https://t.me/{manifest.bot_id}?start"
+                )
+            ),
+        )

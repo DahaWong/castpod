@@ -155,11 +155,11 @@ async def download_episode(update: Update, context: CallbackContext):
         [
             InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
             InlineKeyboardButton(
-                "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
-            ),
-            InlineKeyboardButton(
                 "更多单集",
                 switch_inline_query_current_chat=f"{podcast.name}#",
+            ),
+            InlineKeyboardButton(
+                "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
             ),
         ],
     )
@@ -225,7 +225,7 @@ async def download_episode(update: Update, context: CallbackContext):
             performer=podcast.name,
             duration=episode.duration,
             thumb=logo.file_id or open(logo_path, "rb") or episode.logo.url,
-            write_timeout=90,
+            write_timeout=150,
         )
         if not episode.file_id:
             audio = audio_msg.audio
@@ -340,8 +340,8 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
     podcast_logo = soup.img["src"]
     title_text = soup.title.text
     await reply.delete()
-    if domain == "xiaoyuzhoufm.com":
-        match = re.search(r"([^\-]+?) \| 小宇宙", title_text)
+    if domain == "xiaoyuzhoufm.com" or domain == "spotify.com":
+        match = re.search(r"([^\-]+?) \| ", title_text)
         podcast_name = match[1].lstrip()
     elif domain == "google.com" or domain == "pca.st":
         podcast_name = title_text

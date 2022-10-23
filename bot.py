@@ -33,9 +33,8 @@ application = (
     .token(config.bot_token)
     .defaults(config.defaults)
     .base_url(config.bot_api)
-    # .base_file_url
     .post_init(post_init)
-    .write_timeout(90)
+    .write_timeout(120)
     .build()
 )
 

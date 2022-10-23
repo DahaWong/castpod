@@ -276,11 +276,12 @@ def parse_feed(feed):
         if len(feed.title) <= 63
         else unescape(feed.title)[:63] + "…"
     )
+    author = feed.get("author_detail")
+    if author:
+        podcast["host"] = unescape(author.get("name") or "")
+        podcast["email"] = unescape(author.get("email") or "")
     podcast["logo"] = Logo.create(url=feed["image"]["href"])
-    podcast["host"] = unescape(feed.author_detail.get("name") or "")
     podcast["website"] = feed.get("link")
-    podcast["email"] = unescape(feed.author_detail.get("email") or "")
-    # pprint(podcast["updated_time"])
     podcast["items"] = result["items"]
     return podcast
 

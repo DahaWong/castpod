@@ -11,7 +11,7 @@ config.read("config.ini")  # Read the configuration file on your machine.
 bot_token = config["BOT"]["TOKEN"]
 bot_api = config["BOT"]["API"]
 # podcast_vault = config["BOT"]["PODCAST_VAULT"]
-defaults = Defaults(parse_mode=ParseMode.HTML, disable_notification=True)
+defaults = Defaults(parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 # Dev
 dev = config["DEV"]["USER_ID"]
@@ -20,13 +20,13 @@ dev_email = config["DEV"]["EMAIL"]
 
 # commands
 private_commands = [
-    ("search", "我的订阅 · 搜寻新播客"),
+    ("search", "订阅列表 · 搜寻新播客"),
     ("help", "Castpod 说明书"),
     ("about", "其他信息"),
 ]
 
 dev_commands = [
-    ("search", "我的订阅 · 搜寻新播客"),
+    ("search", "订阅列表 · 搜寻新播客"),
     ("help", "Castpod 说明书"),
     ("about", "关于"),
     ("stat", "数据汇总"),

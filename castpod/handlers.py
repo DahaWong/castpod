@@ -34,9 +34,7 @@ def register_handlers(application):
                 filters.Entity("mention") & filters.Regex(f"@{manifest.bot_id}"),
                 message.handle_mention_bot,
             ),
-            MessageHandler(
-                filters.Regex("[ 关闭 ]") & filters.TEXT, message.close_reply_keyboard
-            ),
+            MessageHandler(filters.Regex("^\[ 关闭 \]$"), message.close_reply_keyboard),
             MessageHandler(
                 filters.ChatType.PRIVATE
                 & filters.Entity("url")
@@ -68,12 +66,12 @@ def register_handlers(application):
             ),
             MessageHandler(filters.StatusUpdate.PINNED_MESSAGE, message.delete_message),
             InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
-            # InlineQueryHandler(inline_query.via_private,
-            #                    chat_types=[Chat.PRIVATE]),
-            # InlineQueryHandler(inline_query.via_group, chat_types=[
-            #                    Chat.GROUP, Chat.SUPERGROUP]),
-            # InlineQueryHandler(inline_query.via_channel,
-            #                    chat_types=[Chat.CHANNEL]),
+            InlineQueryHandler(inline_query.via_private,
+                               chat_types=[Chat.PRIVATE]),
+            InlineQueryHandler(inline_query.via_group, chat_types=[
+                               Chat.GROUP, Chat.SUPERGROUP]),
+            InlineQueryHandler(inline_query.via_channel,
+                               chat_types=[Chat.CHANNEL]),
         ]
     )
 
