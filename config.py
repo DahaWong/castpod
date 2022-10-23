@@ -20,17 +20,15 @@ dev_email = config["DEV"]["EMAIL"]
 
 # commands
 private_commands = [
-    ("search", "搜索播客"),
-    ("manage", "我的订阅"),
-    ("help", "使用指南"),
-    ("about", "关于我们"),
+    ("search", "我的订阅 · 添加播客"),
+    ("help", "Castpod 说明书"),
+    ("about", "其他信息"),
 ]
 
 dev_commands = [
-    ("search", "搜索播客"),
-    ("manage", "我的订阅"),
-    ("help", "使用指南"),
-    ("about", "关于我们"),
+    ("search", "我的订阅 · 添加播客"),
+    ("help", "Castpod 说明书"),
+    ("about", "关于"),
     ("stat", "数据汇总"),
 ]
 
@@ -56,10 +54,10 @@ group_commands = [
 
 class manifest:
     name = "Castpod"
-    bot_id = "testdahabot"
+    bot_id = "cspdbot"
     author = "Daha"
     author_id = "dahawong"
-    author_url = "https://office.daha.me/"
+    author_url = "https://daha.me/"
     version = "0.1.8"
     discription = ""
     repo = "https://github.com/dahawong/castpod"

@@ -32,11 +32,11 @@ from ..models_new import (
     UserSubscribePodcast,
     parse_feed,
 )
-from ..components import PodcastPage, ManagePage
+from ..components import PodcastPage
 
 # from ..utils import download, parse_doc
 from config import manifest, dev
-from ..constants import RIGHT_SEARCH_MARK, SHORT_DOMAIN, SPEAKER_MARK, STAR_MARK
+from ..constants import SHORT_DOMAIN
 import re
 
 
@@ -124,18 +124,7 @@ async def save_subscription(update: Update, context: CallbackContext):
             )
         else:
             reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
-
-        manage_page = ManagePage(
-            podcasts=Podcast.subscribe_by(user, "name"), text=reply
-        )
-
         await reply_msg.delete()
-        await message.reply_text(
-            text=manage_page.text,
-            reply_markup=ReplyKeyboardMarkup(
-                manage_page.keyboard(), resize_keyboard=True, one_time_keyboard=True
-            ),
-        )
     except Exception as e:
         await reply_msg.delete()
         await send_error_message(user, "订阅失败 😢\ 请检查订阅文件是否受损。")
@@ -162,22 +151,17 @@ async def download_episode(update: Update, context: CallbackContext):
     if not shownotes.url:
         shownotes = await shownotes.generate_telegraph()
         shownotes.save()
-    markup = InlineKeyboardMarkup(
+    markup = InlineKeyboardMarkup.from_row(
         [
-            [
-                InlineKeyboardButton("时间轴", callback_data="show_timeline_XXX"),
-                InlineKeyboardButton(
-                    "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
-                ),
-            ],
-            [
-                InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
-                InlineKeyboardButton(
-                    "更多单集",
-                    switch_inline_query_current_chat=f"{podcast.name}#",
-                ),
-            ],
-        ]
+            InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
+            InlineKeyboardButton(
+                "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
+            ),
+            InlineKeyboardButton(
+                "更多单集",
+                switch_inline_query_current_chat=f"{podcast.name}#",
+            ),
+        ],
     )
     if not episode.url:
         await message.reply_text(
@@ -250,23 +234,26 @@ async def download_episode(update: Update, context: CallbackContext):
             logo.file_id = audio.thumb.file_id
             logo.save()
     except TimedOut:
-        await message.reply_text("🕛 这期节目的体积略大，请稍等")
+        await message.reply_text("这期节目的体积略大，请稍等…")
     except Exception as e:
-        await send_error_message(user, "😞 下载失败，稍后再试试")
+        await send_error_message(user, "下载失败，稍后再试试 😞")
         raise e
     finally:
         await reply_msg.delete()
 
 
-async def show_podcast(update: Update, context: CallbackContext):
+async def show_podcast(
+    update: Update, context: CallbackContext, keywords: str | None = None
+):
     user = update.effective_user
     message = update.message
+    if not keywords:
+        keywords = message.text
     if (
         message.reply_to_message
         and message.reply_to_message.from_user.username != manifest.bot_id
     ):
         return
-    keywords = message.text
     podcasts = (
         Podcast.select()
         .where(
@@ -282,7 +269,7 @@ async def show_podcast(update: Update, context: CallbackContext):
     count = len(podcasts)
     if count == 0:
         await user.send_message(
-            "你还没有订阅相关的播客",
+            "你还没有订阅相关的播客~",
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
                     f"去搜索「{keywords}」",
@@ -292,10 +279,12 @@ async def show_podcast(update: Update, context: CallbackContext):
         )
     elif count == 1:
         podcast = podcasts[0]
-        msg = await message.reply_text(
-            f"找到播客 <b>{podcast.name}</b>", reply_markup=ReplyKeyboardRemove()
-        )
-        await msg.delete()
+        is_using_reply_keyboard = context.chat_data.get("is_using_reply_keyboard")
+        if is_using_reply_keyboard:
+            await message.reply_text(
+                f"找到播客 <b>{podcast.name}</b>", reply_markup=ReplyKeyboardRemove()
+            )
+            context.chat_data["is_using_reply_keyboard"] = False
         page = PodcastPage(podcast)
         await message.reply_photo(
             photo=podcast.logo.file_id,
@@ -303,16 +292,26 @@ async def show_podcast(update: Update, context: CallbackContext):
             reply_markup=InlineKeyboardMarkup(page.keyboard()),
         )
     elif count > 1:
+        podcasts = podcasts[: MessageLimit.MESSAGE_ENTITIES - 1]
+        keyboard = []
+        for index, podcast in enumerate(podcasts):
+            print(index)
+            name = podcast.name
+            if index % 2 == 0:
+                keyboard.append([name])
+                print(keyboard)
+            else:
+                keyboard[index // 2].append(name)
         msg = await message.reply_text(
             f"在订阅列表中找到 {count} 档相关的播客：",
-            reply_markup=ReplyKeyboardMarkup.from_column(
-                [p.name for p in podcasts[: MessageLimit.MESSAGE_ENTITIES]],
+            reply_markup=ReplyKeyboardMarkup(
+                [["[ 关闭 ]"]] + keyboard,
                 one_time_keyboard=True,
                 input_field_placeholder=f"{message.text} 的检索结果",
                 resize_keyboard=True,
             ),
         )
-        context.chat_data["reply_markup_message"] = msg.id
+        context.chat_data["is_using_reply_keyboard"] = True
         await message.reply_media_group(
             media=[
                 InputMediaPhoto(
@@ -321,8 +320,6 @@ async def show_podcast(update: Update, context: CallbackContext):
                 for podcast in podcasts[:5]
             ]
         )
-
-    await message.delete()
 
 
 async def subscribe_from_url(update: Update, context: CallbackContext):
@@ -371,3 +368,12 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
         )
     else:
         await send_error_message(user, "解析失败，链接可能已经损坏 😵‍💫")
+
+
+async def close_reply_keyboard(update: Update, context: CallbackContext):
+    await update.message.reply_text("键盘已关闭", reply_markup=ReplyKeyboardRemove())
+
+
+async def handle_mention_bot(update: Update, context: CallbackContext):
+    keywords = re.sub(f"@{manifest.bot_id} +", "", update.message.text)
+    await show_podcast(update, context, keywords=keywords)

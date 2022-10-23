@@ -10,12 +10,10 @@ from telegram import (
 
 from telegram.ext import CallbackContext
 
-from castpod.components import ManagePage, PodcastPage
+from castpod.components import PodcastPage
 from castpod.models_new import Episode, Podcast, User, UserSubscribePodcast
 from config import manifest
 from manifest import manifest
-
-from ..constants import DOC_MARK, RIGHT_SEARCH_MARK, STAR_MARK
 
 
 async def start(update: Update, context):
@@ -78,7 +76,7 @@ async def start(update: Update, context):
 
 async def search(update: Update, context: CallbackContext):
     await update.message.reply_text(
-        text=RIGHT_SEARCH_MARK,
+        text="🔍",
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="")
         ),

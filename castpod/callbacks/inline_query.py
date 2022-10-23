@@ -34,7 +34,7 @@ async def via_sender(update: Update, context):
                     input_message_content=InputTextMessageContent("🔍"),
                     reply_markup=InlineKeyboardMarkup.from_button(
                         InlineKeyboardButton(
-                            "返回搜索", switch_inline_query_current_chat=""
+                            "返回搜索栏", switch_inline_query_current_chat=""
                         )
                     ),
                 )
@@ -130,10 +130,10 @@ async def search_podcast(keywords):
                 id=uuid4(),
                 title="没有找到相关的播客 :(",
                 description="换个关键词试试",
-                input_message_content=InputTextMessageContent(":("),
+                input_message_content=InputTextMessageContent("🔍"),
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
-                        "返回搜索", switch_inline_query_current_chat=keywords
+                        "返回搜索栏", switch_inline_query_current_chat=keywords
                     )
                 ),
             )

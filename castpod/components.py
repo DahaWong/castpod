@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from .constants import CLOSE_MARK, TICK_MARK, SPEAKER_MARK, STAR_MARK
+from config import manifest
 
 
 class PodcastPage(object):
@@ -9,11 +9,7 @@ class PodcastPage(object):
 
     def text(self):
         email = f"\n✉️  {self.podcast.email}" if self.podcast.email else ""
-        return (
-            f"<b>{self.podcast.name}</b>"
-            f"\n{SPEAKER_MARK} {self.podcast.host or self.podcast.name}"
-            f"{email}"
-        )
+        return f"<b>{self.podcast.name}</b>" f"\n{self.podcast.host}" f"{email}"
 
     def keyboard(self):
         if self.mode == "private":
@@ -25,57 +21,16 @@ class PodcastPage(object):
                     InlineKeyboardButton(
                         "分享", switch_inline_query=f"{self.podcast.name}"
                     ),
-                ],
-                [
-                    InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=f""),
                     InlineKeyboardButton(
-                        "更多单集", switch_inline_query_current_chat=f"{self.podcast.name}#"
+                        "查看单集", switch_inline_query_current_chat=f"{self.podcast.name}#"
                     ),
                 ],
             ]
         elif self.mode == "group":
             return [
                 [
-                    InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=f""),
                     InlineKeyboardButton(
-                        "更多单集", switch_inline_query_current_chat=f"{self.podcast.name}#"
+                        "订阅", url=f"https://t.me/{manifest.bot_id}?start={podcast.id}"
                     ),
                 ]
             ]
-
-
-class ManagePage(object):
-    def __init__(self, podcasts, text="已启动管理面板"):
-        self.podcasts = podcasts
-        self.text = text
-
-    def row(self, i):
-        row = [
-            podcast.name
-            for index, podcast in enumerate(self.podcasts)
-            if index // 3 == i
-        ]
-        return row
-
-    def keyboard(self, null_text="探索播客世界", jump_to=STAR_MARK):
-        podcasts_count = self.podcasts.count()
-        if not podcasts_count:
-            return [[CLOSE_MARK, jump_to], [null_text]]
-        rows_count = podcasts_count // 3 + bool(podcasts_count % 3)
-        return [[CLOSE_MARK, jump_to]] + [self.row(i) for i in range(rows_count)]
-
-
-class Tips(object):
-    def __init__(self, from_command, text):
-        self.command = from_command
-        self.text = text
-
-    def keyboard(self):
-        return InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton(TICK_MARK, callback_data=f"close_tips_{self.command}")
-        )
-
-    async def send(self, update, context):
-        if self.command not in context.user_data.get("tips"):
-            return
-        await update.message.reply_text(text=self.text, reply_markup=self.keyboard())

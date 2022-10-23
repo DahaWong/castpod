@@ -1,4 +1,5 @@
 from castpod.callbacks import *
+from config import manifest
 from .constants import OTHER_URL
 from telegram.ext import (
     MessageHandler,
@@ -7,7 +8,7 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
 )
-from telegram import Chat
+from telegram import Chat, MessageEntity
 import inspect
 
 RSS, CONFIRM, PHOTO = range(3)
@@ -29,6 +30,13 @@ def register_handlers(application):
             CommandHandler("search", command.search, block=False),
             CommandHandler("help", command.show_help_info, block=False),
             CommandHandler("about", command.about, block=False),
+            MessageHandler(
+                filters.Entity("mention") & filters.Regex(f"@{manifest.bot_id}"),
+                message.handle_mention_bot,
+            ),
+            MessageHandler(
+                filters.Regex("[ 关闭 ]") & filters.TEXT, message.close_reply_keyboard
+            ),
             MessageHandler(
                 filters.ChatType.PRIVATE
                 & filters.Entity("url")

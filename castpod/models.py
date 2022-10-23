@@ -13,7 +13,6 @@
 # from castpod.utils import download
 # from config import dev, manifest, podcast_vault
 
-# from .constants import SPEAKER_MARK
 
 # telegraph = Telegraph()
 # telegraph.create_account(
