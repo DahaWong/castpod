@@ -53,6 +53,11 @@ def register_handlers(application):
                 & (
                     filters.Document.MimeType("text/xml")
                     | filters.Document.FileExtension("opml")
+                    | filters.Document.FileExtension("xml")
+                    | filters.Document.MimeType("application/rss+xml")
+                    | filters.Document.MimeType("application/rdf+xml")
+                    | filters.Document.MimeType("application/atom+xml")
+                    | filters.Document.MimeType("application/xml")
                     | filters.Document.FileExtension("opm")
                 ),
                 message.save_subscription,
@@ -66,12 +71,11 @@ def register_handlers(application):
             ),
             MessageHandler(filters.StatusUpdate.PINNED_MESSAGE, message.delete_message),
             InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
-            InlineQueryHandler(inline_query.via_private,
-                               chat_types=[Chat.PRIVATE]),
-            InlineQueryHandler(inline_query.via_group, chat_types=[
-                               Chat.GROUP, Chat.SUPERGROUP]),
-            InlineQueryHandler(inline_query.via_channel,
-                               chat_types=[Chat.CHANNEL]),
+            InlineQueryHandler(inline_query.via_private, chat_types=[Chat.PRIVATE]),
+            InlineQueryHandler(
+                inline_query.via_group, chat_types=[Chat.GROUP, Chat.SUPERGROUP]
+            ),
+            InlineQueryHandler(inline_query.via_channel, chat_types=[Chat.CHANNEL]),
         ]
     )
 

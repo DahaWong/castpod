@@ -8,7 +8,7 @@ class PodcastPage(object):
         self.mode = mode
 
     def text(self):
-        email = f"\n写信： {self.podcast.email}" if self.podcast.email else ""
+        email = f"\n信箱： {self.podcast.email}" if self.podcast.email else ""
         return f"<b>{self.podcast.name}</b>\n\n主播：{self.podcast.host}{email}"
 
     def keyboard(self):

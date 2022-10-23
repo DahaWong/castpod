@@ -1,6 +1,9 @@
+from datetime import date
 import errno
 import os
+import re
 from PIL import Image
+from bs4 import BeautifulSoup
 import httpx
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, User
 from telegram.error import BadRequest
@@ -51,60 +54,46 @@ async def streaming_download(path: str, url: str, progress_msg: Message):
     return path
 
 
-# Parse Feed
-# async def parse_doc(context, user, doc):
-#     doc_file = await context.bot.getFile(doc['file_id'])
-#     doc_name = re.sub(r'.+(?=\.xml|\.opml?)',
-#                       str(user.user_id), doc['file_name'])
-#     path = f'public/import/{doc_name}'
-#     doc_file.download(path)
-#     with open(path, 'r') as f:
-#         feeds = parse_opml(f)
-#         return feeds
+async def parse_doc(context, user, doc):
+    doc_file = await context.bot.getFile(doc["file_id"])
+    doc_name = re.sub(r".+(?=\.xml|\.opml?)", str(user.id), doc["file_name"])
+    path = f"public/import/{doc_name}"
+    await doc_file.download(path)
+    with open(path, "r") as f:
+        feeds = parse_opml(f)
+    return feeds
 
 
-# def parse_opml(f):
-#     feeds = []
-#     soup = BeautifulSoup(f, 'lxml', from_encoding="utf-8")
-#     for podcast in soup.find_all(type="rss"):
-#         feeds.append({"name": podcast.attrs.get('text'),
-#                       "url": podcast.attrs.get('xmlurl')})
-#     return feeds
-
-# # Manage page
-
-
-# def save_manage_starter(chat_data, message):
-#     if chat_data.get('manage_starter'):
-#         chat_data['manage_starter'].append(message)
-#     else:
-#         chat_data.update({'manage_starter': [message]})
+def parse_opml(f):
+    feeds = []
+    soup = BeautifulSoup(f, "lxml", from_encoding="utf-8")
+    for podcast in soup.find_all(type="rss"):
+        feeds.append(
+            {"name": podcast.attrs.get("text"), "url": podcast.attrs.get("xmlurl")}
+        )
+    return feeds
 
 
-# def generate_opml(user, podcasts):
-#     body = ''
-#     for podcast in podcasts:
-#         outline = f'\t\t\t\t<outline type="rss" text="{podcast.name}" xmlUrl="{podcast.feed}"/>\n'
-#         body += outline
-#     head = (
-#         "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
-#         "\t<opml version='1.0'>\n"
-#         "\t\t<head>\n"
-#         f"\t\t\t<title>Castpod 订阅 {date.today()}</title>\n"
-#         "\t\t</head>\n"
-#         "\t\t<body>\n"
-#         "\t\t\t<outline text='feeds'>\n"
-#     )
-#     tail = (
-#         "\t\t\t</outline>\n"
-#         "\t\t</body>\n"
-#         "\t</opml>\n"
-#     )
-#     opml = head + body + tail
-#     path = f"./public/subscriptions/Castpod_{date.today().strftime('%Y%m%d')}.xml"
-#     with open(path, 'w+') as f:
-#         f.write(opml)
-#     return path
+def generate_opml(user, podcasts):
+    body = ""
+    for podcast in podcasts:
+        outline = f'\t\t\t\t<outline type="rss" text="{podcast.name}" xmlUrl="{podcast.feed}"/>\n'
+        body += outline
+    head = (
+        "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
+        "\t<opml version='1.0'>\n"
+        "\t\t<head>\n"
+        f"\t\t\t<title>Castpod 订阅 {date.today()}</title>\n"
+        "\t\t</head>\n"
+        "\t\t<body>\n"
+        "\t\t\t<outline text='feeds'>\n"
+    )
+    tail = "\t\t\t</outline>\n" "\t\t</body>\n" "\t</opml>\n"
+    opml = head + body + tail
+    path = f"./public/subscriptions/Castpod_{date.today().strftime('%Y%m%d')}.xml"
+    with open(path, "w+") as f:
+        f.write(opml)
+    return path
 
 
 async def send_error_message(user: User, text: str) -> None:

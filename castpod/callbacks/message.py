@@ -34,8 +34,8 @@ from ..models_new import (
 )
 from ..components import PodcastPage
 
-# from ..utils import download, parse_doc
-from config import manifest, dev
+from ..utils import parse_doc
+from config import manifest
 from ..constants import SHORT_DOMAIN
 import re
 
@@ -89,45 +89,51 @@ async def subscribe_feed(update: Update, context: CallbackContext):
 
 
 async def save_subscription(update: Update, context: CallbackContext):
+    # TODO: use asyncio, and use multiple subscribe feed in sql.
     message = update.message
+    user = update.effective_user
     reply_msg = await message.reply_text("正在解析订阅文件…")
-    user = User.validate_user(update.effective_user)
+    podcasts_count = 0
     try:
         feeds = await parse_doc(context, user, message.document)
-        feeds_count = len(feeds)
-        await reply_msg.edit_text(f"订阅中 (0/{feeds_count})")
-        podcasts_count = 0
         failed_feeds = []
         for feed in feeds:
             podcast = None
             try:
-                podcast = Podcast.validate_feed(feed["url"].lower())
-                user.subscribe(podcast)
-                podcasts_count += 1
-            except Exception as e:
-                podcast.delete()
+                podcast = Podcast.get_or_create(
+                    feed=re.sub(r"https?:\/\/", "", feed["url"]).lower()
+                )[0]
+                is_new_subscription = UserSubscribePodcast.get_or_create(
+                    user=user.id, podcast=podcast
+                )[1]
+                podcast.initialize()
+                podcast.save()
+                if is_new_subscription:
+                    podcasts_count += 1
+            except:
+                if podcast:
+                    podcast.delete_instance()
                 failed_feeds.append(feed["url"])
                 continue
-            await reply_msg.edit_text(f"订阅中 ({podcasts_count}/{feeds_count})")
-
         if podcasts_count:
             newline = "\n"
-            reply = (
-                f"成功订阅 {feeds_count} 部播客！"
+            await message.reply_text(
+                f"成功订阅 {podcasts_count} 部播客！"
                 if not len(failed_feeds)
                 else (
                     f"成功订阅 {podcasts_count} 部播客，部分订阅源解析失败。"
-                    f"\n\n可能损坏的订阅源："
+                    f"\n\n订阅失败的源："
                     # use Reduce ?
-                    f"\n{newline.join(['`'+feed+'`' for feed in failed_feeds])}"
+                    f"\n{newline.join([f'<code>{feed}</code>' for feed in failed_feeds])}"
                 )
             )
         else:
-            reply = "订阅失败:( \n\n请检查订阅文件以及其中的订阅源是否受损"
+            await message.reply_text("订阅失败 :( \n\n请检查订阅文件，以及其中的订阅源是否受损")
         await reply_msg.delete()
     except Exception as e:
         await reply_msg.delete()
-        await send_error_message(user, "订阅失败 😢\ 请检查订阅文件是否受损。")
+        await send_error_message(user, "订阅失败 :( \n\n请检查订阅文件，以及其中的订阅源是否受损")
+        raise e
 
 
 async def download_episode(update: Update, context: CallbackContext):
@@ -289,20 +295,22 @@ async def show_podcast(
             )
             context.chat_data["is_using_reply_keyboard"] = False
         page = PodcastPage(podcast)
-        await message.reply_photo(
-            photo=podcast.logo.file_id,
+        logo = podcast.logo
+        msg = await message.reply_photo(
+            photo=logo.file_id or logo.url,
             caption=page.text(),
             reply_markup=InlineKeyboardMarkup(page.keyboard()),
         )
+        if not logo.file_id:
+            logo.file_id = msg.photo[0].file_id
+            logo.save()
     elif count > 1:
         podcasts = podcasts[: MessageLimit.MESSAGE_ENTITIES - 1]
         keyboard = []
         for index, podcast in enumerate(podcasts):
-            print(index)
             name = podcast.name
             if index % 2 == 0:
                 keyboard.append([name])
-                print(keyboard)
             else:
                 keyboard[index // 2].append(name)
         msg = await message.reply_text(

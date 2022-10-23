@@ -288,7 +288,7 @@ def parse_episode(item, podcast):
     episode = {}
     episode["from_podcast"] = podcast.id
     episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
-    # print(item.title)
+    print(item.title)
     enclosures = item.enclosures
     if enclosures:
         audio = enclosures[0]
@@ -299,14 +299,13 @@ def parse_episode(item, podcast):
         else:
             episode["size"] = size
     episode["title"] = unescape(item.get("title") or "")
-    print(episode["title"])
+    # print(episode["title"])
     if item.get("image"):
         episode["logo"] = Logo.get_or_create(url=item.image.href)[0]
     else:
         episode["logo"] = podcast.logo
 
     episode["duration"] = set_duration(item.get("itunes_duration"))
-    print(episode["duration"])
     episode["link"] = item.get("link")
     episode["summary"] = unescape(item.get("summary") or "")
     # TODO: error
@@ -325,7 +324,6 @@ def parse_episode(item, podcast):
 
 def set_duration(duration: str) -> int:
     duration = duration.replace("：", ":")
-    print(f"duration: {duration}")
     duration_timedelta = None
     if not duration:
         return 0
