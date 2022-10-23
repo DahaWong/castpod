@@ -108,11 +108,9 @@ class Podcast(BaseModel):
 
 class Episode(BaseModel):
     # guid = TextField(unique=True)
-    from_podcast = ForeignKeyField(
-        Podcast, null=True, backref="episodes", on_delete="CASCADE"
-    )
-    title = TextField()
-    link = TextField()
+    from_podcast = ForeignKeyField(Podcast, backref="episodes", on_delete="CASCADE")
+    title = TextField(null=True)
+    link = TextField(null=True)
     subtitle = TextField(null=True)
     summary = TextField(null=True)
     logo = ForeignKeyField(Logo, null=True)
@@ -301,13 +299,14 @@ def parse_episode(item, podcast):
         else:
             episode["size"] = size
     episode["title"] = unescape(item.get("title") or "")
-
+    print(episode["title"])
     if item.get("image"):
         episode["logo"] = Logo.get_or_create(url=item.image.href)[0]
     else:
         episode["logo"] = podcast.logo
 
     episode["duration"] = set_duration(item.get("itunes_duration"))
+    print(episode["duration"])
     episode["link"] = item.get("link")
     episode["summary"] = unescape(item.get("summary") or "")
     # TODO: error
@@ -325,23 +324,28 @@ def parse_episode(item, podcast):
 
 
 def set_duration(duration: str) -> int:
+    duration = duration.replace("：", ":")
+    print(f"duration: {duration}")
     duration_timedelta = None
-    if duration:
-        if ":" in duration:
-            time = duration.split(":")
-            if len(time) == 3:
-                duration_timedelta = timedelta(
-                    hours=int(time[0]), minutes=int(time[1]), seconds=int(time[2])
-                ).total_seconds()
-            elif len(time) == 2:
-                duration_timedelta = timedelta(
-                    hours=0, minutes=int(time[0]), seconds=int(time[1])
-                ).total_seconds()
-        else:
-            duration_timedelta = re.sub(r"\.[0-9]+", "", duration)
+    if not duration:
+        return 0
+    if ":" in duration:
+        time = duration.split(":")
+        if len(time) == 3:
+            duration_timedelta = timedelta(
+                hours=int(time[0] or 0),
+                minutes=int(time[1] or 0),
+                seconds=int(time[2] or 0),
+            ).total_seconds()
+        elif len(time) == 2:
+            duration_timedelta = timedelta(
+                hours=0, minutes=int(time[0]), seconds=int(time[1])
+            ).total_seconds()
+        return duration_timedelta
+    elif not re.match(r"^[0-9]+$", duration):
+        return 0
     else:
-        duration_timedelta = 0
-    return int(duration_timedelta)
+        return int(duration_timedelta)
 
 
 def format_html(text):

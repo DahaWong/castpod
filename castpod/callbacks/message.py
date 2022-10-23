@@ -59,16 +59,16 @@ async def subscribe_feed(update: Update, context: CallbackContext):
     feed = re.sub(r"^https?:\/\/", "", feed).lower()  # normalize
     podcast, is_new_podcast = Podcast.get_or_create(feed=feed)
     user = User.get(User.id == update.effective_user.id)
-    if is_new_podcast:
-        podcast.initialize()
-        # print(podcast.logo)
-        podcast.logo.thumbnail_url = thumbnail_small
-        podcast.logo.save()
-        podcast.save()
-    UserSubscribePodcast.get_or_create(user=user, podcast=podcast)
-    in_group = (chat_type == "group") or (chat_type == "supergroup")
-    kwargs = {"mode": "group"} if in_group else {}
     try:
+        if is_new_podcast:
+            podcast.initialize()
+            podcast.save()
+            logo = podcast.logo
+            logo.thumbnail_url = thumbnail_small
+            logo.save()
+        UserSubscribePodcast.get_or_create(user=user, podcast=podcast)
+        in_group = (chat_type == "group") or (chat_type == "supergroup")
+        kwargs = {"mode": "group"} if in_group else {}
         podcast_page = PodcastPage(podcast, **kwargs)
         logo = podcast.logo
         photo = logo.file_id or thumbnail_large or logo.url
