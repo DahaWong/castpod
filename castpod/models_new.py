@@ -1,13 +1,11 @@
-from distutils.text_file import TextFile
 import re
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from html import unescape
 from time import mktime
 from pprint import pprint
 from bs4 import BeautifulSoup
 from telegraph.aio import Telegraph
 from telegraph.utils import ALLOWED_TAGS
-import urllib.parse
 from pypinyin import Style, pinyin
 
 import feedparser
@@ -20,7 +18,6 @@ from peewee import (
     Model,
     SqliteDatabase,
     TextField,
-    TimeField,
 )
 from playhouse.sqlite_ext import FTSModel, SearchField
 

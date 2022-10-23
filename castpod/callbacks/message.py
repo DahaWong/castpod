@@ -1,4 +1,5 @@
 from datetime import timedelta
+from pickletools import optimize
 from bs4 import BeautifulSoup
 import httpx
 from telegram import (
@@ -165,7 +166,6 @@ async def download_episode(update: Update, context: CallbackContext):
         [
             [
                 InlineKeyboardButton("时间轴", callback_data="show_timeline_XXX"),
-                InlineKeyboardButton("收藏", callback_data=f"fav_ep_{episode.id}"),
                 InlineKeyboardButton(
                     "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
                 ),
@@ -220,10 +220,10 @@ async def download_episode(update: Update, context: CallbackContext):
         # 1. jpeg format
         im = im.convert("RGB")
         # 2. < 320*320
-        size = (160, 160)
+        size = (320, 320)
         im.thumbnail(size)
         # 3. less than 200 kB !!
-        im.save(logo_path, "JPEG")
+        im.save(logo_path, "JPEG", optimize=True, quality=85)
     try:
         if episode.chapters:
             timeline = "\n\n".join(
@@ -241,7 +241,7 @@ async def download_episode(update: Update, context: CallbackContext):
             performer=podcast.name,
             duration=episode.duration,
             thumb=logo.file_id or open(logo_path, "rb") or episode.logo.url,
-            write_timeout=60,
+            write_timeout=90,
         )
         if not episode.file_id:
             audio = audio_msg.audio
@@ -293,7 +293,7 @@ async def show_podcast(update: Update, context: CallbackContext):
     elif count == 1:
         podcast = podcasts[0]
         msg = await message.reply_text(
-            f"找到播客 <b>{podcast.name}</b>！", reply_markup=ReplyKeyboardRemove()
+            f"找到播客 <b>{podcast.name}</b>", reply_markup=ReplyKeyboardRemove()
         )
         await msg.delete()
         page = PodcastPage(podcast)
@@ -304,11 +304,12 @@ async def show_podcast(update: Update, context: CallbackContext):
         )
     elif count > 1:
         msg = await message.reply_text(
-            f"在订阅列表中找到 {count} 档相关的播客",
-            reply_markup=ReplyKeyboardMarkup.from_row(
+            f"在订阅列表中找到 {count} 档相关的播客：",
+            reply_markup=ReplyKeyboardMarkup.from_column(
                 [p.name for p in podcasts[: MessageLimit.MESSAGE_ENTITIES]],
                 one_time_keyboard=True,
-                input_field_placeholder=f"「{message.text}」的检索结果",
+                input_field_placeholder=f"{message.text} 的检索结果",
+                resize_keyboard=True,
             ),
         )
         context.chat_data["reply_markup_message"] = msg.id
@@ -320,17 +321,8 @@ async def show_podcast(update: Update, context: CallbackContext):
                 for podcast in podcasts[:5]
             ]
         )
+
     await message.delete()
-
-
-# async def search_podcast(update:Update, context:CallbackContext):
-#     await update.message.reply_text(
-#         text=RIGHT_SEARCH_MARK,
-#         reply_markup=InlineKeyboardMarkup.from_button(
-#             InlineKeyboardButton(
-#                 '搜索播客', switch_inline_query_current_chat='')
-#         )
-#     )
 
 
 async def subscribe_from_url(update: Update, context: CallbackContext):

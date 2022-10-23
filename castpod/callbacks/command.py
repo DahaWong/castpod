@@ -66,9 +66,6 @@ async def start(update: Update, context):
             UserSubscribePodcast.create(user=user, podcast=podcast)
             await subscribing_note.delete()
         page = PodcastPage(podcast)
-        manage_page = ManagePage(
-            Podcast.subscribe_by(user), f"<b>{podcast.name}</b> 订阅成功！"
-        )
         photo = podcast.logo.file_id or podcast.logo.url
         msg = await message.reply_photo(
             photo=photo,

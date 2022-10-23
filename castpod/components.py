@@ -3,12 +3,8 @@ from .constants import CLOSE_MARK, TICK_MARK, SPEAKER_MARK, STAR_MARK
 
 
 class PodcastPage(object):
-    def __init__(
-        self, podcast, fav_text="收藏", fav_action="fav_podcast", mode="private"
-    ):
+    def __init__(self, podcast, mode="private"):
         self.podcast = podcast
-        self.fav_text = fav_text
-        self.fav_action = fav_action
         self.mode = mode
 
     def text(self):
@@ -25,10 +21,6 @@ class PodcastPage(object):
                 [
                     InlineKeyboardButton(
                         "退订", callback_data=f"unsubscribe_podcast_{self.podcast.id}"
-                    ),
-                    InlineKeyboardButton(
-                        self.fav_text,
-                        callback_data=f"{self.fav_action}_{self.podcast.id}",
                     ),
                     InlineKeyboardButton(
                         "分享", switch_inline_query=f"{self.podcast.name}"

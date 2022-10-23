@@ -26,9 +26,7 @@ def register_handlers(application):
     handlers.extend(
         [
             CommandHandler("start", command.start, filters=filters.ChatType.PRIVATE),
-            # CommandHandler('star', command.star),
             CommandHandler("search", command.search, block=False),
-            # CommandHandler('favorite', command.favorite, block=False),
             CommandHandler("help", command.show_help_info, block=False),
             CommandHandler("about", command.about, block=False),
             MessageHandler(
