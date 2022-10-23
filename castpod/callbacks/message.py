@@ -1,5 +1,5 @@
 from datetime import timedelta
-from pickletools import optimize
+from zhconv import convert
 from bs4 import BeautifulSoup
 import httpx
 from telegram import (
@@ -254,6 +254,7 @@ async def show_podcast(
         and message.reply_to_message.from_user.username != manifest.bot_id
     ):
         return
+    keywords_tw = convert(keywords, "zh-tw")
     podcasts = (
         Podcast.select()
         .where(
@@ -261,12 +262,14 @@ async def show_podcast(
             | Podcast.pinyin_abbr.startswith(keywords)
             | Podcast.pinyin_full.startswith(keywords)
             | Podcast.host.contains(keywords)
+            | Podcast.name.contains(keywords_tw)
+            | Podcast.host.contains(keywords_tw)
         )
         .join(UserSubscribePodcast)
         .join(User)
         .where(User.id == user.id)
     )
-    count = len(podcasts)
+    count = podcasts.count()
     if count == 0:
         await user.send_message(
             "你还没有订阅相关的播客~",

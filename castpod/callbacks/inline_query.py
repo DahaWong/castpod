@@ -1,20 +1,19 @@
 from ..utils import search_itunes, send_error_message
 from telegram import (
     InlineQueryResultArticle,
-    InlineQueryResultPhoto,
     InputTextMessageContent,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    InlineQueryResultCachedPhoto,
     Update,
 )
-from telegram.error import BadRequest, TimedOut
+from telegram.error import TimedOut
 import re
-from ..models_new import Episode, Shownotes, User, Podcast, UserSubscribePodcast
+from ..models_new import Episode, User, Podcast, UserSubscribePodcast
 import datetime
 from ..constants import SHORT_DOMAIN
 from peewee import DoesNotExist
 from uuid import uuid4
+from zhconv import convert
 
 
 async def via_sender(update: Update, context):
@@ -244,7 +243,7 @@ def show_episodes(podcast, index):
         else:
             episodes = (
                 Episode.select().where(
-                    (Episode.from_podcast == podcast.id) & Episode.title.contains(index)
+                    (Episode.from_podcast == podcast.id) & (Episode.title.contains(index) | Episode.title.contains(convert(index,'zh-tw')))
                 )
                 # .join(Shownotes)
                 # .where(Shownotes.content.contains(index))
@@ -275,7 +274,7 @@ def get_invitation():
     yield InlineQueryResultArticle(
         id=uuid4(),
         title="点击发送 Castpod 邀请函",
-        description="或者继续输入关键词分享播客",
+        description="或者继续输入关键词以分享播客",
         input_message_content=InputTextMessageContent("来 Castpod 一起听播客！"),
         reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton("🏖️ 开启播客之旅", url=f"https://t.me/{manifest.bot_id}")

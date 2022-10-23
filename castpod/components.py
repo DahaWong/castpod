@@ -8,7 +8,7 @@ class PodcastPage(object):
         self.mode = mode
 
     def text(self):
-        email = f"\n✉️  {self.podcast.email}" if self.podcast.email else ""
+        email = f"\n\n邮箱： {self.podcast.email}" if self.podcast.email else ""
         return f"<b>{self.podcast.name}</b>" f"\n{self.podcast.host}" f"{email}"
 
     def keyboard(self):
@@ -19,12 +19,13 @@ class PodcastPage(object):
                         "退订", callback_data=f"unsubscribe_podcast_{self.podcast.id}"
                     ),
                     InlineKeyboardButton(
-                        "分享", switch_inline_query=f"{self.podcast.name}"
-                    ),
-                    InlineKeyboardButton(
                         "查看单集", switch_inline_query_current_chat=f"{self.podcast.name}#"
                     ),
+                    InlineKeyboardButton(
+                        "分享", switch_inline_query=f"{self.podcast.name}"
+                    ),
                 ],
+                [InlineKeyboardButton("我的订阅", switch_inline_query_current_chat="")],
             ]
         elif self.mode == "group":
             return [

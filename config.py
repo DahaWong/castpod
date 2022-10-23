@@ -20,13 +20,13 @@ dev_email = config["DEV"]["EMAIL"]
 
 # commands
 private_commands = [
-    ("search", "我的订阅 · 添加播客"),
+    ("search", "我的订阅 · 搜寻新播客"),
     ("help", "Castpod 说明书"),
     ("about", "其他信息"),
 ]
 
 dev_commands = [
-    ("search", "我的订阅 · 添加播客"),
+    ("search", "我的订阅 · 搜寻新播客"),
     ("help", "Castpod 说明书"),
     ("about", "关于"),
     ("stat", "数据汇总"),
