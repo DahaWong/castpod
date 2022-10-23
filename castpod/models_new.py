@@ -165,22 +165,16 @@ class Shownotes(BaseModel):
             short_name={manifest.bot_id},
         )
         content = format_html(self.content)
-        # content = re.sub(
-        #     r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=\u4E00-\u9FFF\u3400-\u4DBF\u20000-\u2A6DF\u2A700-\u2B73F\u2B740-\u2B81F\u2B820-\u2CEAF\u2CEB0-\u2EBEF\u30000-\u3134F\uF900-\uFAFF\u2E80-\u2EFF\u31C0-\u31EF\u3000-\u303F\u2FF0-\u2FFF\u3300-\u33FF\uFE30-\uFE4F\uF900-\uFAFF\u2F800-\u2FA1F\u3200-\u32FF\u1F200-\u1F2FF\u2F00-\u2FDF]*?[<\\]?)",
-        #     lambda m: f"<a href='{m[0]}'>{m[0]}</a>",
-        #     content,
-        # )
-        # pprint(content)
         episode = self.episode
         podcast = episode.from_podcast
         logo_url = episode.logo.url or podcast.logo.url
         img_content = (
-            f"<img src='{logo_url}'/>" if logo_url and ("img" not in content) else ""
+            f"<h3>封面图片</h3><figure><img src='{logo_url}'/><figcaption>{podcast.name}：{episode.title}</figcaption></figure>"
+            if logo_url and ("img" not in content)
+            else ""
         )
-        content = img_content + content
-        content = content.replace(
-            "’", "'"
-        )  # TODO: format like 1'03" should be recognized as chapter start time
+        content += img_content
+        # content = content.replace("’", "'")
         try:
             res = await telegraph.create_page(
                 title=f"{episode.title}",

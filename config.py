@@ -18,15 +18,6 @@ dev = config["DEV"]["USER_ID"]
 dev_name = config["DEV"]["USER_NAME"]
 dev_email = config["DEV"]["EMAIL"]
 
-webhook_info = {
-    "listen": "127.0.0.1",
-    "port": 8443,
-    "url_path": bot_token,
-    "webhook_url": f"http://127.0.0.1:8443/{bot_token}",
-    "max_connections": 200,
-    "drop_pending_updates": True,
-}
-
 # commands
 private_commands = [
     ("search", "搜索播客"),
