@@ -8,7 +8,7 @@ from telegram import (
 )
 from telegram.error import TimedOut
 import re
-from ..models_new import Episode, User, Podcast, UserSubscribePodcast
+from ..models import Episode, User, Podcast, UserSubscribePodcast
 import datetime
 from ..constants import SHORT_DOMAIN
 from peewee import DoesNotExist

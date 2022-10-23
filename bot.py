@@ -7,7 +7,7 @@ from telegram.ext import Application, ApplicationBuilder
 
 import config
 from castpod.handlers import register_handlers
-from castpod.models_new import db_init
+from castpod.models import db_init
 
 
 async def post_init(application: Application) -> None:

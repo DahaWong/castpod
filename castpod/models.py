@@ -1,375 +1,372 @@
-# import datetime
+import re
+from datetime import datetime, timedelta
+from html import unescape
+from time import mktime
+from pprint import pprint
+from bs4 import BeautifulSoup
+from telegraph.aio import Telegraph
+from telegraph.utils import ALLOWED_TAGS
+from pypinyin import Style, pinyin
 
-# import io
-# import re
+import feedparser
+from peewee import (
+    BooleanField,
+    CharField,
+    DateTimeField,
+    ForeignKeyField,
+    IntegerField,
+    Model,
+    SqliteDatabase,
+    TextField,
+)
+from playhouse.sqlite_ext import FTSModel, SearchField
 
-# import feedparser
-# import httpx
-# from PIL import Image
-# from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-# from telegram.error import TimedOut
-# from telegraph import Telegraph
+from config import manifest
 
-# from castpod.utils import download
-# from config import dev, manifest, podcast_vault
-
-
-# telegraph = Telegraph()
-# telegraph.create_account(
-#     short_name=manifest.name,
-#     author_name=manifest.name,
-#     author_url=f'https://t.me/{manifest.bot_id}'
-# )
-
-# class Logo(EmbeddedDocument):
-#     _path = StringField(required=True)
-#     is_local = BooleanField(default=False)
-#     url = URLField()
-#     file_id = StringField()
-
-#     @property
-#     def path(self):
-#         if not self.is_local:
-#             data = io.BytesIO(httpx.get(self.url).content)
-#             with Image.open(data) as im:
-#                 # then process image to fit restriction:
-#                 # 1. jpeg format
-#                 im = im.convert('RGB')
-#                 # 2. < 320*320
-#                 size = (80, 80)
-#                 im = im.resize(size, Image.ANTIALIAS)
-#                 # 3. less than 200 kB !!
-#                 im.save(self._path, "JPEG")
-#                 # print(os.stat(path).st_size)
-#             # with open(path, 'rb') as fr:
-#                 # self._logo.put(fr, content_type='image/jpeg')
-#                 # self.save()
-#         # return self._logo
-#         self.is_local = True
-#         return self._path
-
-#     @path.setter
-#     def path(self, value):
-#         self._path = value
-#         self.save()
+db = SqliteDatabase(
+    database="castpod.db",
+    pragmas={
+        "journal_mode": "wal",
+        "cache_size": -1 * 64000,  # 64MB
+        "foreign_keys": 1,
+        "ignore_check_constraints": 0,
+        "synchronous": 0,
+    },
+)
 
 
-# class User(Document):
-#     # meta = {'queryset_class': UserQuerySet}
-#     user_id = IntField(primary_key=True)
-#     username = StringField()
-#     name = StringField()
+class BaseModel(Model):
+    """A base model that will use Sqlite database."""
 
-#     @classmethod
-#     def validate_user(cls, from_user, subsets=None):
-#         if subsets:
-#             user = cls.objects(user_id=from_user.id).only(subsets).first()
-#         else:
-#             user = cls.objects(user_id=from_user.id).first()
-#         return user or cls(user_id=from_user.id, username=from_user.username, name=from_user.first_name).save()
-
-#     def subscribe(self, podcast):
-#         if self in podcast.subscribers:
-#             return
-#         if not podcast.name:  # if podcast has never been initialized, ..
-#             result = podcast.parse_feed()
-#             if not result:
-#                 return
-#             podcast.update_feed(result, init=True)
-#         podcast.update(push__subscribers=self)
-
-#     def unsubscribe(self, podcast):
-#         podcast.update(pull__subscribers=self)
-#         podcast.update(pull__starrers=self)
-
-#     def toggle_fav(self, podcast):
-#         if self in podcast.starrers:
-#             podcast.update(pull__starrers=self)
-#         else:
-#             podcast.update(push__starrers=self)
-
-#     def fav_ep(self, episode):
-#         episode.update(push__starrers=self)
-
-#     def unfav_ep(self, episode):
-#         episode.update(pull__starrers=self)
+    class Meta:
+        database = db
 
 
-# class Episode(Document):
-#     from_podcast = ReferenceField('Podcast')  # reverse delete rule = ??? !!!
-#     title = StringField(unique=True)
-#     link = StringField()
-#     subtitle = StringField()
-#     summary = StringField()
-#     host = StringField()
-#     published_time = DateTimeField()
-#     updated_time = DateTimeField()
-#     message_id = IntField()  # message_id in podcast_vault
-#     file_id = StringField()
-#     shownotes = StringField()
-#     _shownotes_url = URLField()
-#     _timeline = StringField()
-#     is_downloaded = BooleanField(required=True, default=True)
-#     url = StringField()
-#     performer = StringField()
-#     _logo = EmbeddedDocumentField(Logo)
-#     size = IntField()
-#     duration = IntField()
-#     starrers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
-
-#     @property
-#     def logo(self):
-#         if not self._logo:
-#             self._logo = Logo(_path=f'public/logo/sub/{self.title}.jpeg')
-#         return self._logo
-
-#     @logo.setter
-#     def logo(self, value):
-#         self._logo = value
-
-#     @property
-#     def shownotes_url(self):
-#         if not self._shownotes_url:
-#             res = telegraph.create_page(
-#                 title=f"{self.title}",
-#                 html_content=self.shownotes,
-#                 author_name=self.from_podcast.name
-#             )
-#             self._shownotes_url = f"https://telegra.ph/{res['path']}"
-#         return self._shownotes_url
-
-#     def set_content(self, logo_url):
-#         img_content = f"<img src='{logo_url}'>" if logo_url and (
-#             'img' not in self.shownotes) else ''
-#         self.shownotes = img_content + \
-#             self.replace_invalid_tags(self.shownotes)
-#         return self.shownotes
-
-#     @property
-#     def timeline(self):
-#         if not self._timeline:
-#             shownotes = re.sub(r'</?(?:br|p|li).*?>', '\n', self.shownotes)
-#             pattern = r'.+(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9].+'
-#             matches = re.finditer(pattern, shownotes)
-#             self._timeline = '\n\n'.join([re.sub(
-#                 r'</?(?:cite|del|span|div|s).*?>', '', match[0].lstrip()) for match in matches])
-#         return self._timeline
-
-#     def replace_invalid_tags(self, html_content):
-#         #!!!
-#         html_content = html_content.replace('h1', 'h3').replace('h2', 'h4')
-#         html_content = html_content.replace('cite>', "i>")
-#         html_content = re.sub(r'</?(?:div|span|audio).*?>', '', html_content)
-#         html_content = html_content.replace('’', "'")
-#         return html_content
+class User(BaseModel):
+    id = IntegerField(primary_key=True)
+    name = TextField(null=True)
 
 
-# class Podcast(Document):
-#     # meta = {'queryset_class': PodcastQuerySet}
-#     feed = StringField(required=True, unique=True)
-#     name = StringField(max_length=64)  # 合理吗？
-#     _logo = EmbeddedDocumentField(Logo)
-#     host = StringField()
-#     website = StringField()
-#     email = StringField()  # !!!
-#     channel = IntField()  # 播客绑定的单独分发频道，由认证主播控制
-#     group = IntField()  # 播客绑定的群组
-#     # 认证的主播，telegram 管理员
-#     admin = ReferenceField(User, reverse_delete_rule=NULLIFY)
-#     episodes = ListField(ReferenceField(Episode, reverse_delete_rule=PULL))
-#     subscribers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
-#     starrers = ListField(ReferenceField(User, reverse_delete_rule=PULL))
-#     _updated_time = DateTimeField(default=datetime.datetime(1970, 1, 1))
+class Channel(BaseModel):
+    """a telegram channel."""
 
-#     meta = {'indexes': [
-#         {'fields': ['$name', "$host"],
-#          'default_language': 'english',
-#          'weights': {'name': 10, 'host': 2}
-#          }
-#     ]}
-
-#     @property
-#     def updated_time(self):
-#         return self._updated_time
-
-#     @updated_time.setter
-#     def updated_time(self, value):
-#         self._updated_time = datetime.datetime.fromtimestamp(mktime(value))
-
-#     @property
-#     def logo(self):
-#         if not self._logo:
-#             self._logo = Logo(_path=f'public/logo/{self.name}.jpeg')
-#         return self._logo
-
-#     @classmethod
-#     def validate_feed(cls, feed, subsets=None):
-#         if subsets:
-#             podcast = cls.objects(feed=feed).only(subsets).first()
-#         else:
-#             podcast = cls.objects(feed=feed).first()
-#         return podcast or cls(feed=feed).save()
-
-#     @queryset_manager
-#     def subscribe_by(doc_cls, queryset, user, subsets=None):
-#         if subsets:
-#             return queryset(subscribers=user).only(subsets)
-#         else:
-#             return queryset(subscribers=user)
-
-#     @queryset_manager
-#     def star_by(doc_cls, queryset, user, subsets=None):
-#         if subsets:
-#             return queryset(starrers=user).only(subsets)
-#         else:
-#             return queryset(starrers=user)
-
-#     def parse_feed(self):
-#         result = feedparser.parse(self.feed)
-#         if not result.entries:
-#             self.delete()
-#             raise Exception(f'Feed has no entries.')
-#         self.updated_time = result.feed.get(
-#             'updated_parsed') or result.entries[0].get('updated_parsed')
-#         self.save()
-#         return result
-
-#     async def check_update(self, context):
-#         last_updated_time = self.updated_time
-#         result = self.parse_feed()
-#         if not result:
-#             return
-#         # await context.bot.send_message(
-#         #     dev, f"{self.name}\n上次更新 {str(last_updated_time)}\n最近更新 {str(self.updated_time)}")
-#         if last_updated_time < self.updated_time:
-#             await context.bot.send_message(dev, f'{self.name} 检测到更新,更新中…')
-#             self.update_feed(result, init=False)
-#         # else:
-#             # await context.bot.send_message(dev, f'{self.name} 未检测到更新')
-#         for episode in self.episodes:
-#             if episode.is_downloaded:
-#                 continue
-#             await context.bot.send_message(
-#                 dev, f'开始下载：{self.name} - {episode.title}')
-#             try:
-#                 audio = download(episode, context)
-#                 message = await context.bot.send_audio(
-#                     chat_id=f'@{podcast_vault}',
-#                     audio=audio,
-#                     caption=(
-#                         f"{SPEAKER_MARK} *{self.name}*\n\n"
-#                         f"#{self.id}"
-#                     ),
-#                     reply_markup=InlineKeyboardMarkup.from_row(
-#                         [InlineKeyboardButton('订阅', url=f'https://t.me/{manifest.bot_id}?start=p{self.id}'),
-#                          InlineKeyboardButton('相关链接', url=episode.shownotes_url)]
-#                     ),
-#                     title=episode.title,
-#                     performer=self.name,
-#                     duration=episode.duration,
-#                     thumb=episode.logo.path
-#                 )
-#                 episode.is_downloaded = True
-#                 episode.message_id = message.message_id
-#                 episode.file_id = message.audio.file_id
-#                 episode.save()
-#                 return message
-#             except TimedOut as e:
-#                 await context.bot.send_message(dev, '下载超时！')
-#                 pass
-#             except Exception as e:
-#                 await context.bot.send_message(dev, f'{e}')
-#                 continue
-
-#     def update_feed(self, result, init):
-#         feed = result.feed
-#         if not feed.get('title'):
-#             self.delete()
-#             raise Exception("Cannot parse feed name.")
-#         self.name = unescape(feed.title)[:63]
-#         if len(self.name) == 63:
-#             self.name += '…'
-#         self.logo.url = feed['image']['href']
-#         self.save()
-
-#         if feed.get('author_detail'):
-#             self.host = unescape(feed.author_detail.get('name') or '')
-#         else:
-#             self.host = ''
-#         self.website = feed.get('link')
-#         if feed.get('author_detail'):
-#             self.email = feed.author_detail.get('email') or ''
-#         else:
-#             self.email = ''
-#         for item in result['items']:
-#             episode = self.parse_episode(init, item)
-#             if episode:
-#                 self.update(push__episodes=episode)
-#                 self.save()
-#             elif not init:  # 一旦发现没有更新，就停止检测
-#                 break
-#         sorted_episodes = sorted(
-#             self.episodes, key=lambda x: x.published_time, reverse=True)
-#         self.update(set__episodes=sorted_episodes)
-#         self.save()
-
-#     def parse_episode(self, init, item):
-#         published_time = datetime.datetime.fromtimestamp(
-#             mktime(item.published_parsed))
-
-#         if not item.get('enclosures'):
-#             return
-
-#         if not init:
-#             if (published_time <= self.episodes[0].published_time):
-#                 return
-#             episode = Episode(is_downloaded=False)
-#         else:
-#             episode = Episode()
-
-#         audio = item.enclosures[0]
-
-#         episode.from_podcast = self
-#         episode.url = audio.get('href')
-#         size = audio.get('length') or 0
-#         episode.size = size if isinstance(size, int) else 0
-#         episode.performer = self.name
-#         episode.title = unescape(item.get('title') or '')
-#         episode.logo.url = item.image.href if item.get(
-#             'image') else self.logo.url
-#         episode.duration = self.set_duration(item.get('itunes_duration'))
-#         episode.link = item.get('link')
-#         episode.subtitle = unescape(item.get('subtitle') or '')
-#         if episode.title == episode.subtitle:
-#             episode.subtitle = ''
-#         episode.summary = unescape(item.get('summary') or '')
-#         episode.shownotes = item.get('content')[0]['value'] if item.get(
-#             'content') else episode.summary
-#         episode.set_content(episode.logo.url)
-#         episode.published_time = datetime.datetime.fromtimestamp(
-#             mktime(item.published_parsed))
-#         episode.updated_time = datetime.datetime.fromtimestamp(
-#             mktime(item.updated_parsed))
-#         episode.save()
-#         self.save()
-#         return episode
+    id = IntegerField(primary_key=True)
+    name = TextField(null=True)
 
 
-# def set_duration(self, duration: str) -> int:
-#     duration_timedelta = None
-#     if duration:
-#         if ":" in duration:
-#             time = duration.split(":")
-#             if len(time) == 3:
-#                 duration_timedelta = datetime.timedelta(
-#                     hours=int(time[0]), minutes=int(time[1]), seconds=int(time[2])
-#                 ).total_seconds()
-#             elif len(time) == 2:
-#                 duration_timedelta = datetime.timedelta(
-#                     hours=0, minutes=int(time[0]), seconds=int(time[1])
-#                 ).total_seconds()
-#         else:
-#             duration_timedelta = re.sub(r"\.[0-9]+", "", duration)
-#     else:
-#         duration_timedelta = 0
-#     return int(duration_timedelta)
+class Group(BaseModel):
+    """a telegram group."""
+
+    id = IntegerField(primary_key=True)
+    name = TextField(null=True)
+
+
+class Logo(BaseModel):
+    url = TextField()
+    file_id = TextField(null=True)
+    thumbnail_url = TextField(null=True)
+
+
+class Podcast(BaseModel):
+    # id = UUIDField(primary_key=True)
+    feed = TextField(unique=True)
+    name = CharField(null=True, max_length=64)
+    logo = ForeignKeyField(Logo, null=True)
+    host = TextField(null=True)
+    website = TextField(null=True)
+    email = TextField(null=True)
+    pinyin_abbr = TextField(null=True)
+    pinyin_full = TextField(null=True)
+
+    def initialize(self):
+        parsed = parse_feed("https://" + self.feed)
+        if not parsed:
+            parse_feed("http://" + self.feed)
+        self.name = parsed["name"]
+        match = re.search(
+            r"[\u4E00-\u9FFF\u3400-\u4DBF\u20000-\u2A6DF\u2A700-\u2B73F\u2B740-\u2B81F\u2B820-\u2CEAF\u2CEB0-\u2EBEF\u30000-\u3134F\uF900-\uFAFF\u2E80-\u2EFF\u31C0-\u31EF\u3000-\u303F\u2FF0-\u2FFF\u3300-\u33FF\uFE30-\uFE4F\uF900-\uFAFF\u2F800-\u2FA1F\u3200-\u32FF\u1F200-\u1F2FF\u2F00-\u2FDF]+",
+            parsed["name"],
+        )
+        if match:
+            self.pinyin_abbr = "".join(
+                x[0] for x in pinyin(match[0], style=Style.FIRST_LETTER, strict=False)
+            )
+            self.pinyin_full = "".join(
+                x[0] for x in pinyin(match[0], style=Style.NORMAL, strict=False)
+            )
+        self.logo = parsed["logo"]
+        self.host = parsed["host"]
+        self.website = parsed["website"]
+        self.email = parsed["email"]
+        with db.atomic():
+            for item in parsed["items"]:
+                kwargs, shownotes = parse_episode(item, self)
+                episode = Episode.create(**kwargs)
+                shownotes.episode = episode
+                shownotes.save()
+
+
+class Episode(BaseModel):
+    # guid = TextField(unique=True)
+    from_podcast = ForeignKeyField(Podcast, backref="episodes", on_delete="CASCADE")
+    title = TextField(null=True)
+    link = TextField(null=True)
+    subtitle = TextField(null=True)
+    summary = TextField(null=True)
+    logo = ForeignKeyField(Logo, null=True)
+    published_time = DateTimeField(null=True)
+    updated_time = DateTimeField(null=True)
+    message_id = IntegerField(null=True)
+    file_id = TextField(null=True)
+    url = TextField(null=True)  # audio file url
+    performer = TextField(null=True)
+    size = IntegerField(null=True)
+    duration = IntegerField(null=True)
+    is_downloaded = BooleanField(default=False)
+
+
+class Shownotes(BaseModel):
+    content = TextField()
+    url = TextField(null=True)
+    episode = ForeignKeyField(
+        Episode, null=True, backref="shownotes", on_delete="CASCADE"
+    )
+
+    def extract_chapters(self):
+        INLINE = r"<\/?(?:s|strong|b|em|i|del|u|cite|span|a).*?>"
+        # print(self.content)
+        content = re.sub(INLINE, "", self.content)
+        TIME_DELTA = r"(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9]"
+        soup = BeautifulSoup(content, "html.parser")
+        results = soup.find_all(string=re.compile(TIME_DELTA))
+        # print(results)
+        if not results:
+            return
+        for result in results:
+            # print(result.parent)
+            result = str(result)
+            # print(result)
+            start_time = re.search(TIME_DELTA, result)[0]
+            # print(start_time)
+            title = re.sub(TIME_DELTA, "", result).strip()
+            title = re.sub(r"^(?:\(\)|\{\}|\<\>|【】|（|\[]|\||·|)", "", title)
+            Chapter.create(
+                from_episode=self.episode, start_time=start_time, title=title
+            )
+
+    async def generate_telegraph(self):
+        telegraph = Telegraph()
+        await telegraph.create_account(
+            short_name={manifest.bot_id},
+        )
+        content = format_html(self.content)
+        episode = self.episode
+        podcast = episode.from_podcast
+        logo_url = episode.logo.url or podcast.logo.url
+        img_content = (
+            f"<h3>封面图片</h3><figure><img src='{logo_url}'/><figcaption>{podcast.name}·{episode.title}</figcaption></figure>"
+            if logo_url and ("img" not in content)
+            else ""
+        )
+        content += img_content
+        # content = content.replace("’", "'")
+        try:
+            res = await telegraph.create_page(
+                title=f"{podcast.name}-{episode.title}",
+                author_name=podcast.name,
+                author_url=episode.link or podcast.website,
+                html_content=content,
+            )
+            self.url = res["url"]
+            return self
+        except:
+            return None
+
+
+class ShownotesIndex(FTSModel):
+    # Full-text search index.
+    content = SearchField()
+
+    class Meta:
+        database = db
+        options = {"content": Shownotes.content}
+
+
+class Chapter(BaseModel):
+    """Represent a single chapter item which contains title, start time, and end time."""
+
+    from_episode = ForeignKeyField(Episode, backref="chapters", on_delete="CASCADE")
+    start_time = TextField()
+    title = TextField()
+
+
+# Middle models
+class UserSubscribePodcast(BaseModel):
+    """Model for user's subscription."""
+
+    user = ForeignKeyField(User, on_delete="CASCADE")
+    podcast = ForeignKeyField(Podcast, on_delete="CASCADE")
+
+
+class FavPodcast(BaseModel):
+    user = ForeignKeyField(User, on_delete="CASCADE")
+    podcast = ForeignKeyField(Podcast, on_delete="CASCADE")
+
+
+class SaveEpisode(BaseModel):
+    user = ForeignKeyField(User, on_delete="CASCADE")
+    episode = ForeignKeyField(Episode, on_delete="CASCADE")
+
+
+class ChannelPodcast(BaseModel):
+    """Model for channel's subscription."""
+
+    channel = ForeignKeyField(Channel, on_delete="CASCADE")
+    podcast = ForeignKeyField(Podcast, on_delete="CASCADE")
+
+
+class GroupPodcast(BaseModel):
+    """Model for group's subscribtion."""
+
+    group = ForeignKeyField(Group, on_delete="CASCADE")
+    podcast = ForeignKeyField(Podcast, on_delete="CASCADE")
+
+
+def db_init():
+    db.connect()
+    db.create_tables(
+        [
+            User,
+            Channel,
+            Group,
+            Logo,
+            Podcast,
+            Shownotes,
+            ShownotesIndex,
+            Chapter,
+            Episode,
+            UserSubscribePodcast,
+            FavPodcast,
+            SaveEpisode,
+            ChannelPodcast,
+            GroupPodcast,
+        ]
+    )
+    # Now, we can manage content in the ShownotesIndex. To populate the
+    # search index:
+    ShownotesIndex.rebuild()
+
+    # Optimize the index.
+    ShownotesIndex.optimize()
+
+
+def parse_feed(feed):
+    result = feedparser.parse(feed)
+    feed = result.feed
+    podcast = {}
+    if not result.entries:
+        return
+        # self.delete_instance()
+        # raise Exception(f"Feed has no entries.")
+    podcast["feed"] = feed
+    podcast["name"] = (
+        unescape(feed.title)
+        if len(feed.title) <= 63
+        else unescape(feed.title)[:63] + "…"
+    )
+    author = feed.get("author_detail")
+    if author:
+        podcast["host"] = unescape(author.get("name") or "")
+        podcast["email"] = unescape(author.get("email") or "")
+    podcast["logo"] = Logo.create(url=feed["image"]["href"])
+    podcast["website"] = feed.get("link")
+    podcast["items"] = result["items"]
+    return podcast
+
+
+def parse_episode(item, podcast):
+    episode = {}
+    episode["from_podcast"] = podcast.id
+    episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
+    print(item.title)
+    enclosures = item.enclosures
+    if enclosures:
+        audio = enclosures[0]
+        episode["url"] = audio.get("href")
+        size = audio.get("length")
+        if not size:
+            episode["size"] = 0
+        else:
+            episode["size"] = size
+    episode["title"] = unescape(item.get("title") or "")
+    # print(episode["title"])
+    if item.get("image"):
+        episode["logo"] = Logo.get_or_create(url=item.image.href)[0]
+    else:
+        episode["logo"] = podcast.logo
+
+    episode["duration"] = set_duration(item.get("itunes_duration"))
+    episode["link"] = item.get("link")
+    episode["summary"] = unescape(item.get("summary") or "")
+    # TODO: error
+    shownotes_content = (
+        item.get("content")[0]["value"] if item.get("content") else episode["summary"]
+    )
+    shownotes = Shownotes.create(content=shownotes_content)
+    excerpt = re.sub(r"\<.*?\>", "", episode["summary"]).strip()
+    if len(excerpt) >= 47:
+        excerpt = excerpt[:47] + "…"
+    episode["subtitle"] = unescape(item.get("subtitle") or excerpt or "")
+    episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
+    episode["updated_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
+    return episode, shownotes
+
+
+def set_duration(duration: str) -> int:
+    duration = duration.replace("：", ":")
+    duration_timedelta = None
+    if not duration:
+        return 0
+    if ":" in duration:
+        time = duration.split(":")
+        if len(time) == 3:
+            duration_timedelta = timedelta(
+                hours=int(time[0] or 0),
+                minutes=int(time[1] or 0),
+                seconds=int(time[2] or 0),
+            ).total_seconds()
+        elif len(time) == 2:
+            duration_timedelta = timedelta(
+                hours=0, minutes=int(time[0]), seconds=int(time[1])
+            ).total_seconds()
+        return duration_timedelta
+    elif not re.match(r"^[0-9]+$", duration):
+        return 0
+    else:
+        return int(duration_timedelta)
+
+
+def format_html(text):
+    """Format html texts to Telegraph allowed forms."""
+    soup = BeautifulSoup(text, "html.parser")
+
+    # Find all possible heading types, and convert them to proper h3,h4,strong tags.
+    headings = soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"])
+    heading_types = sorted(set([x.name for x in headings]))
+    if headings:
+        for heading in headings:
+            if heading.name == heading_types[0]:
+                heading.name = "h3"
+            elif len(headings) >= 2 and heading.name == heading_types[1]:
+                heading.name = "h4"
+            else:
+                heading.name = "strong"
+
+    # a) Unwrap all unallowed tags and b) Remove all empty tags.
+    ALLOWED_VOID_TAGS = {"br", "img", "figure", "aside", "iframe", "ol", "ul", "hr"}
+    for tag in soup.find_all():
+        if tag.name not in ALLOWED_TAGS or (
+            tag.name not in ALLOWED_VOID_TAGS and len(tag.get_text()) == 0
+        ):
+            tag.unwrap()
+    return str(soup)

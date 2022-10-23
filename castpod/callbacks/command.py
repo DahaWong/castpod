@@ -11,7 +11,7 @@ from telegram import (
 from telegram.ext import CallbackContext
 
 from castpod.components import PodcastPage
-from castpod.models_new import Episode, Podcast, User, UserSubscribePodcast
+from castpod.models import Episode, Podcast, User, UserSubscribePodcast
 from config import manifest
 from manifest import manifest
 

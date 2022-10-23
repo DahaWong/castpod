@@ -25,7 +25,7 @@ from castpod.utils import (
     streaming_download,
     validate_path,
 )
-from ..models_new import (
+from ..models import (
     Chapter,
     User,
     Podcast,

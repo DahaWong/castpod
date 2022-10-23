@@ -6,7 +6,7 @@ from telegram import (
 )
 from telegram.ext import CallbackContext
 from castpod.components import PodcastPage
-from castpod.models_new import User, Podcast, Episode, UserSubscribePodcast
+from castpod.models import User, Podcast, Episode, UserSubscribePodcast
 # from castpod.utils import generate_opml
 from .command import show_help_info as command_help
 from config import manifest
