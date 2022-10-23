@@ -169,7 +169,7 @@ class Shownotes(BaseModel):
         podcast = episode.from_podcast
         logo_url = episode.logo.url or podcast.logo.url
         img_content = (
-            f"<h3>封面图片</h3><figure><img src='{logo_url}'/><figcaption>{podcast.name}：{episode.title}</figcaption></figure>"
+            f"<h3>封面图片</h3><figure><img src='{logo_url}'/><figcaption>{podcast.name} · {episode.title}</figcaption></figure>"
             if logo_url and ("img" not in content)
             else ""
         )
@@ -177,7 +177,7 @@ class Shownotes(BaseModel):
         # content = content.replace("’", "'")
         try:
             res = await telegraph.create_page(
-                title=f"{episode.title}",
+                title=f"{podcast.name}-{episode.title}",
                 author_name=podcast.name,
                 author_url=episode.link or podcast.website,
                 html_content=content,

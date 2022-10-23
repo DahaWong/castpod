@@ -10,16 +10,20 @@ from telegram import (
     Bot,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    InputFile,
+    InputMediaAudio,
     Message,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
     MessageEntity,
 )
+import pathlib
 from telegram.constants import ChatAction, ParseMode
 from telegram.ext import CallbackContext
 from telegram.error import TimedOut
 from mutagen import File
+from PIL import Image
 
 from castpod.utils import (
     modify_logo,
@@ -29,6 +33,7 @@ from castpod.utils import (
     validate_path,
 )
 from ..models_new import (
+    Chapter,
     User,
     Podcast,
     UserSubscribePodcast,
@@ -157,6 +162,7 @@ async def download_episode(update: Update, context: CallbackContext):
         .get()
     )
     episode = podcast.episodes[-int(match[2])]
+    logo = episode.logo
     shownotes = episode.shownotes[0]
     shownotes.extract_chapters()
     timeline = ""
@@ -183,14 +189,15 @@ async def download_episode(update: Update, context: CallbackContext):
     )
     if not episode.url:
         await message.reply_text(
-            text=f"<b>{episode.title}</b>\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
+            text=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
             reply_markup=markup,
         )
         await reply_msg.delete()
         return
     # todo:not only mp3
     audio_local_path = f"public/audio/{podcast.id}/{episode.title}.mp3"
-    logo_path = validate_path(f"public/logo/{podcast.id}/{episode.logo.id}.jpeg")
+    # audio_local_path = validate_path(f"public/{podcast.id}.mp3")
+    logo_path = validate_path(f"public/logo/{podcast.id}/{logo.id}.jpeg")
     if not episode.file_id:
         await reply_msg.edit_text("下载中…")
         await message.reply_chat_action(ChatAction.RECORD_VOICE)
@@ -201,6 +208,30 @@ async def download_episode(update: Update, context: CallbackContext):
         )
         await reply_msg.edit_text("正在发送，请稍候…")
         await message.reply_chat_action(ChatAction.UPLOAD_VOICE)
+        if logo.url:
+            res = httpx.get(logo.url)
+            with open(logo_path, "wb") as f:
+                f.write(res.content)
+        audio_metadata = File(audio_local_path)
+        audio_tags = audio_metadata.tags
+        if audio_tags:
+            if hasattr(audio_tags, "getall"):
+                chaps = audio_tags.getall("CHAP") 
+                for chap in chaps:
+                    start_time = str(timedelta(milliseconds=float(chap.start_time)))
+                    title = chap.sub_frames.getall("TIT2")[0].text[0]
+                    Chapter.create(
+                        from_episode=episode, start_time=start_time, title=title
+                    )
+    with Image.open(logo_path) as im:
+        # then process image to fit restriction:
+        # 1. jpeg format
+        im = im.convert("RGB")
+        # 2. < 320*320
+        size = (160, 160)
+        im.thumbnail(size)
+        # 3. less than 200 kB !!
+        im.save(logo_path, "JPEG")
     try:
         if episode.chapters:
             timeline = "\n\n".join(
@@ -210,21 +241,28 @@ async def download_episode(update: Update, context: CallbackContext):
                 ]
             )
         audio_msg = await message.reply_audio(
+            # audio=open(audio_local_path, "rb"), #TODO:why doesn't work??
             audio=episode.file_id or audio_local_path,
-            caption=f"<b>{episode.title}</b>\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
+            caption=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
             reply_markup=markup,
             title=episode.title,
             performer=podcast.name,
             duration=episode.duration,
-            thumb=logo_path or episode.logo.url or podcast.logo.url,
+            thumb=logo.file_id
+            or open(logo_path, "rb")
+            or episode.logo.url
+            write_timeout=60,
         )
         if not episode.file_id:
-            episode.file_id = audio_msg.audio.file_id
+            audio = audio_msg.audio
+            episode.file_id = audio.file_id
             episode.save()
+            logo.file_id = audio.thumb.file_id
+            logo.save()
     except TimedOut:
         await message.reply_text("🕛 这期节目的体积略大，请稍等")
     except Exception as e:
-        await send_error_message(user, "😞 下载失败，稍后再试试吧")
+        await send_error_message(user, "😞 下载失败，稍后再试试")
         raise e
     finally:
         await reply_msg.delete()

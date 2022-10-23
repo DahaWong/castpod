@@ -33,7 +33,10 @@ application = (
     .token(config.bot_token)
     .defaults(config.defaults)
     .base_url(config.bot_api)
+    # .base_file_url
     .post_init(post_init)
+    .write_timeout(None)
+    .read_timeout(None)
     .build()
 )
 
@@ -46,7 +49,7 @@ application.run_webhook(
     port=8443,
     url_path=config.bot_token,
     webhook_url=f"http://127.0.0.1:8443/{config.bot_token}",
-    max_connections=250,
+    max_connections=80,
     drop_pending_updates=True,
 )
 
