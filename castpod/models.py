@@ -114,13 +114,13 @@ class Podcast(BaseModel):
         with db.atomic():
             for item in parsed["items"]:
                 kwargs, shownotes = parse_episode(item, self)
-                episode = Episode.create(**kwargs)
+                episode = Episode.create(id=uuid4(), **kwargs)
                 shownotes.episode = episode
                 shownotes.save()
 
 
 class Episode(BaseModel):
-    # guid = TextField(unique=True)
+    id = UUIDField(primary_key=True)
     from_podcast = ForeignKeyField(Podcast, backref="episodes", on_delete="CASCADE")
     title = TextField(null=True)
     link = TextField(null=True)
@@ -192,8 +192,8 @@ class Shownotes(BaseModel):
             )
             self.url = res["url"]
             return self
-        except:
-            return None
+        except Exception as e:
+            raise e
 
 
 class ShownotesIndex(FTSModel):

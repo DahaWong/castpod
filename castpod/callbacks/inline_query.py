@@ -1,6 +1,7 @@
 from ..utils import search_itunes, send_error_message
 from telegram import (
     InlineQueryResultArticle,
+    InlineQueryResultCachedAudio,
     InputTextMessageContent,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -110,6 +111,32 @@ async def via_private(update, context):
         results = share_podcast(keywords)
     await inline_query.answer(list(results), auto_pagination=True, cache_time=10)
     # await inline_query.answer(list(results), auto_pagination=True, cache_time=3600)
+
+
+async def share_episode(update: Update, context):
+    inline_query = update.inline_query
+    keywords = inline_query.query.lstrip("#")
+    try:
+        episode: Episode = Episode.get(Episode.id == keywords)
+        podcast = episode.from_podcast
+        await inline_query.answer(
+            [
+                InlineQueryResultCachedAudio(
+                    id=episode.id,
+                    audio_file_id=episode.file_id,
+                    caption=f"<b>{episode.title}</b>\n{podcast.name} · <i>{episode.published_time.strftime('%Y/%m/%d')}</i>\n\n{episode.subtitle}",
+                    reply_markup=InlineKeyboardMarkup.from_button(
+                        InlineKeyboardButton(
+                            f"在 {manifest.name} 中打开",
+                            url=f"https://t.me/{manifest.bot_id}?start=episode_{episode.id}",
+                        )
+                    ),
+                )
+            ],
+            cache_time=150,
+        )
+    except DoesNotExist:
+        await send_error_message(update.effective_user, "🫧 该节目不存在！")
 
 
 async def via_group(update, context):

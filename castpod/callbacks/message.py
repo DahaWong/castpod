@@ -164,9 +164,7 @@ async def download_episode(update: Update, context: CallbackContext):
                 "更多单集",
                 switch_inline_query_current_chat=f"{podcast.name}#",
             ),
-            InlineKeyboardButton(
-                "分享", switch_inline_query=f"{podcast.name}#{episode.id}"
-            ),
+            InlineKeyboardButton("分享", switch_inline_query=f"#{episode.id}"),
         ],
     )
     if not episode.url:

@@ -71,7 +71,12 @@ def register_handlers(application):
             ),
             MessageHandler(filters.StatusUpdate.PINNED_MESSAGE, message.delete_message),
             InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
-            InlineQueryHandler(inline_query.via_private, chat_types=[Chat.PRIVATE]),
+            InlineQueryHandler(
+                inline_query.share_episode, chat_types=[Chat.PRIVATE], pattern="^#.+"
+            ),
+            InlineQueryHandler(
+                inline_query.via_private, chat_types=[Chat.PRIVATE], pattern="^[^#].+"
+            ),
             InlineQueryHandler(
                 inline_query.via_group, chat_types=[Chat.GROUP, Chat.SUPERGROUP]
             ),
