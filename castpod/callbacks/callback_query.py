@@ -1,3 +1,4 @@
+from datetime import date
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -6,7 +7,14 @@ from telegram import (
 )
 from telegram.ext import CallbackContext
 from castpod.components import PodcastPage
-from castpod.models import User, Podcast, Episode, UserSubscribePodcast
+from castpod.models import (
+    User,
+    Podcast,
+    Episode,
+    UserSubscribePodcast,
+    show_subscription,
+)
+from castpod.utils import generate_opml
 
 # from castpod.utils import generate_opml
 from .command import show_help_info as command_help
@@ -166,74 +174,47 @@ async def confirm_unsubscribe(update: Update, context: CallbackContext):
             # InlineKeyboardButton(
             #     "重新订阅", callback_data=f"subscribe_podcast_{podcast_id}"  # TODO
             # ),#TODO
-            InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
+            InlineKeyboardButton("查看我的订阅", switch_inline_query_current_chat=""),
         ),
     )
 
 
-#     manage_page = ManagePage(
-#         podcasts=Podcast.subscribe_by(user, 'name'),
-#         text=f'`{podcast.name}` 退订成功'
-#     )
-#     await query.message.delete()
-#     await context.bot.send_message(
-#         chat_id=user.id,
-#         text=manage_page.text,
-#         reply_markup=ReplyKeyboardMarkup(
-#             manage_page.keyboard(), resize_keyboard=True, one_time_keyboard=True
-#         )
-#     )
+async def export_before_logout(update: Update, context: CallbackContext):
+    user = User.validate_user(update.effective_user)
+    message = update.callback_query.message
+    podcasts = Podcast.objects(subscribers__in=[user])
+    if not podcasts:
+        await message.reply_text("还没有订阅播客，请先订阅后导出~")
+        return
+    subscribed_podcasts = Podcast.subscribe_by(user)
+    await message.reply_document(
+        filename=f"castpod-{date.today()}.xml",
+        document=generate_opml(user, subscribed_podcasts),
+        reply_markup=InlineKeyboardMarkup.from_column(
+            [
+                InlineKeyboardButton("继续删除账号", callback_data="confirm_delete_account"),
+                InlineKeyboardButton("返回帮助界面", callback_data="back_to_help"),
+            ]
+        ),
+    )
 
 
-# async def back_to_actions(update: Update, context: CallbackContext):
-#     query = update.callback_query
-#     user = User.objects.get(user_id=query.from_user.id)
-#     podcast_id = re.match(r'back_to_actions_(.+)', query.data)[1]
-#     podcast = Podcast.objects.get(id=podcast_id)
-#     if user in podcast.starrers:
-#         page = PodcastPage(podcast, fav_text=STAR_MARK,
-#                            fav_action="unfav_podcast")
-#     else:
-#         page = PodcastPage(podcast)
-#     await query.edit_message_text(
-#         text=page.text(),
-#         reply_markup=InlineKeyboardMarkup(
-#             page.keyboard()),
-#         parse_mode="HTML"
-#     )
+async def export(update: Update, context: CallbackContext):
+    user_id = update.effective_user.id
+    message = update.effective_message
+    callback_query = update.callback_query
+    podcasts = show_subscription(user_id)
+    if not podcasts:
+        await message.reply_text("还没有订阅播客呢，订阅以后才可以导出")
+        return
+    await message.reply_document(
+        document=open(generate_opml(podcasts), "rb"),
+        filename=f"castpod-{date.today()}.xml",
+        caption="成功导出订阅文件 🎉",
+    )
+    await message.delete()
+    await callback_query.answer("导出成功！")
 
-
-# async def export_before_logout(update: Update, context: CallbackContext):
-#     user = User.validate_user(update.effective_user)
-#     message = update.callback_query.message
-#     podcasts = Podcast.objects(subscribers__in=[user])
-#     if not podcasts:
-#         await message.reply_text('还没有订阅播客，请先订阅后导出~')
-#         return
-#     subscribed_podcasts = Podcast.subscribe_by(user)
-#     await message.reply_document(
-#         filename=f"castpod-{date.today()}.xml",
-#         document=generate_opml(user, subscribed_podcasts),
-#         reply_markup=InlineKeyboardMarkup.from_column(
-#             [InlineKeyboardButton("继续删除账号", callback_data="confirm_delete_account"),
-#              InlineKeyboardButton(
-#                  "返回帮助界面", callback_data="back_to_help")
-#              ])
-#     )
-
-
-# async def export(update: Update, context: CallbackContext):
-#     user = User.validate_user(update.effective_user)
-#     message = update.callback_query.message
-#     podcasts = Podcast.objects(subscribers__in=[user])
-#     if not podcasts:
-#         await message.reply_text('还没有订阅播客，请先订阅后导出~')
-#         return
-#     subscribed_podcasts = Podcast.subscribe_by(user)
-#     await message.reply_document(
-#         filename=f"castpod-{date.today()}.xml",
-#         document=generate_opml(user, subscribed_podcasts)
-#     )
 
 # Help
 async def confirm_delete_account(update: Update, context: CallbackContext):
@@ -247,8 +228,6 @@ async def confirm_delete_account(update: Update, context: CallbackContext):
     await update.callback_query.edit_message_text(
         "确认删除账号吗？该操作将会<b>清空</b>您的全部数据\n", reply_markup=InlineKeyboardMarkup(keyboard)
     )
-
-    # Tips('logout', "⦿ 这将清除所有存储在后台的个人数据。").send(update: Update, context: CallbackContext)
 
 
 async def back_to_help(update: Update, context: CallbackContext):

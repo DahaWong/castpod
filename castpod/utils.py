@@ -74,7 +74,7 @@ def parse_opml(f):
     return feeds
 
 
-def generate_opml(user, podcasts):
+def generate_opml(podcasts):
     body = ""
     for podcast in podcasts:
         outline = f'\t\t\t\t<outline type="rss" text="{podcast.name}" xmlUrl="{podcast.feed}"/>\n'
@@ -90,7 +90,7 @@ def generate_opml(user, podcasts):
     )
     tail = "\t\t\t</outline>\n" "\t\t</body>\n" "\t</opml>\n"
     opml = head + body + tail
-    path = f"./public/subscriptions/Castpod_{date.today().strftime('%Y%m%d')}.xml"
+    path = f"./public/subscriptions/castpod-{date.today()}.xml"
     with open(path, "w+") as f:
         f.write(opml)
     return path

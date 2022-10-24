@@ -37,9 +37,7 @@ def subscription_generator(podcasts):
             ),
         )
     else:
-        print([p for p in podcasts])
         for podcast in podcasts:
-            print(podcast)
             yield InlineQueryResultArticle(
                 id=podcast.id,
                 title=podcast.name,
@@ -143,85 +141,68 @@ async def search_episode(update: Update, context):
     )
 
 
-async def via_sender(update: Update, context):
-    user = update.effective_user
-    inline_query = update.inline_query
-    keywords = inline_query.query
-    subscribed_podcasts = (
-        Podcast.select().join(UserSubscribePodcast).join(User).where(User.id == user.id)
-    )
-    if not keywords:
-        if not subscribed_podcasts:
-            results = [
-                InlineQueryResultArticle(
-                    id=uuid4(),
-                    title="🔎 继续输入关键词，搜索并订阅新播客",
-                    description="订阅后，这里将显示你的订阅列表。",
-                    input_message_content=InputTextMessageContent("🔍"),
-                    reply_markup=InlineKeyboardMarkup.from_button(
-                        InlineKeyboardButton(
-                            "返回搜索栏", switch_inline_query_current_chat=""
-                        )
-                    ),
-                )
-            ]
-            await inline_query.answer(results, auto_pagination=True, cache_time=5)
-            return
-        results = []
-        for podcast in subscribed_podcasts:
-            new_result = InlineQueryResultArticle(
-                id=uuid4(),
-                title=podcast.name,
-                input_message_content=InputTextMessageContent(
-                    podcast.name, parse_mode=None
-                ),
-                description=f"{podcast.host}",
-                thumb_url=podcast.logo.url,
-                thumb_height=60,
-                thumb_width=60,
-            )
-            # new_result = InlineQueryResultPhoto(
-            #     id=uuid4(),
-            #     photo_url=podcast.logo.url,
-            #     thumb_url=podcast.logo.thumb_url or podcast.logo.url,
-            #     photo_width=80,
-            #     photo_height=80,
-            #     title=podcast.name,
-            #     description=podcast.website or podcast.email or None,
-            #     input_message_content=InputTextMessageContent(
-            #         podcast.name, parse_mode=None
-            #     ),
-            # )
-            results.append(new_result)
-        await inline_query.answer(
-            results,
-            auto_pagination=True,
-            cache_time=1200,
-        )
-    else:
-        match = re.search(r"(.*?)#(.*)$", keywords)
-        try:
-            if match:
-                name, index = match[1], match[2]
-                podcast = Podcast.get(Podcast.name == name)
-                results = show_episodes(podcast, index)
-                await inline_query.answer(
-                    list(results),
-                    auto_pagination=True,
-                    cache_time=3600,
-                )
+def show_episodes(podcast, index):
+    buttons = [
+        InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
+        InlineKeyboardButton(
+            "更多单集", switch_inline_query_current_chat=f"{podcast.name}#"
+        ),
+    ]
+    episodes = podcast.episodes
+    if index:
+        if re.match(r"^-?[0-9]{1,4}$", index):
+            index = int(index)
+            if abs(index) <= len(episodes):
+                if index >= 0:
+                    index = -index
+                    episodes = episodes[
+                        max(index - 3, -len(episodes)) : min(index + 2, -1)
+                    ]
+                else:
+                    index = abs(index + 1)
+                    episodes = episodes[
+                        max(index - 3, 0) : min(index + 2, len(episodes))
+                    ]
             else:
-                results = await search_podcast(keywords)
-                await inline_query.answer(
-                    results,
-                    auto_pagination=True,
-                    cache_time=500,
+                yield InlineQueryResultArticle(
+                    id=uuid4(),
+                    title="超出检索范围",
+                    input_message_content=InputTextMessageContent(":("),
+                    description="当前播客只有一期节目"
+                    if podcast.episodes.count() == 1
+                    else f"请输入 1 ～ {len(episodes)} 之间的数字",
                 )
-        except DoesNotExist:
-            await send_error_message(user, "🫧 该播客不在订阅列表中")
-        except TimedOut:
-            # TODO
-            await send_error_message(user, "该播客节目较多，暂时无法收听")
+                return
+        else:
+            episodes = (
+                Episode.select().where(
+                    (Episode.from_podcast == podcast.id)
+                    & (
+                        Episode.title.contains(index)
+                        | Episode.title.contains(convert(index, "zh-hant"))
+                    )
+                )
+            )
+            if not episodes:
+                yield InlineQueryResultArticle(
+                    id=uuid4(),
+                    title="没有找到相关的节目",
+                    input_message_content=InputTextMessageContent(podcast.name),
+                    description=f"换个关键词试试",
+                )
+    for episode in episodes:
+        yield InlineQueryResultArticle(
+            id=uuid4(),
+            title=episode.title,
+            input_message_content=InputTextMessageContent(
+                f"<b>{podcast.name}</b>\n{episode.title}\n\n<code>#{episode.id}</code>"
+            ),
+            reply_markup=InlineKeyboardMarkup.from_row(buttons),
+            description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",
+            thumb_url=episode.logo.url,
+            thumb_width=60,
+            thumb_height=60,
+        )
 
 
 async def via_private(update, context):
@@ -353,72 +334,6 @@ async def search_podcast(keywords):
                 )
             )
         return results
-
-
-def show_episodes(podcast, index):
-    buttons = [
-        InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
-        InlineKeyboardButton(
-            "更多单集", switch_inline_query_current_chat=f"{podcast.name}#"
-        ),
-    ]
-    episodes = podcast.episodes
-    if index:
-        if re.match(r"^-?[0-9]{1,4}$", index):
-            index = int(index)
-            if abs(index) <= len(episodes):
-                if index >= 0:
-                    index = -index
-                    episodes = episodes[
-                        max(index - 3, -len(episodes)) : min(index + 2, -1)
-                    ]
-                else:
-                    index = abs(index + 1)
-                    episodes = episodes[
-                        max(index - 3, 0) : min(index + 2, len(episodes))
-                    ]
-            else:
-                yield InlineQueryResultArticle(
-                    id=uuid4(),
-                    title="超出检索范围",
-                    input_message_content=InputTextMessageContent(":("),
-                    description="当前播客只有一期节目"
-                    if podcast.episodes.count() == 1
-                    else f"请输入 1 ～ {len(episodes)} 之间的数字",
-                )
-                return
-        else:
-            episodes = (
-                Episode.select().where(
-                    (Episode.from_podcast == podcast.id)
-                    & (
-                        Episode.title.contains(index)
-                        | Episode.title.contains(convert(index, "zh-hant"))
-                    )
-                )
-                # .join(Shownotes)
-                # .where(Shownotes.content.contains(index))
-            )
-            if not episodes:
-                yield InlineQueryResultArticle(
-                    id=uuid4(),
-                    title="🫧 没有找到相关的节目",
-                    input_message_content=InputTextMessageContent(podcast.name),
-                    description=f"换个关键词试试",
-                )
-    for i, episode in enumerate(episodes):
-        yield InlineQueryResultArticle(
-            id=uuid4(),
-            title=episode.title,
-            input_message_content=InputTextMessageContent(
-                f"<b>{podcast.name}</b> <i>#{len(episodes)-i}</i>\n{episode.title}"
-            ),
-            reply_markup=InlineKeyboardMarkup.from_row(buttons),
-            description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",
-            thumb_url=episode.logo.url,
-            thumb_width=60,
-            thumb_height=60,
-        )
 
 
 def get_invitation():

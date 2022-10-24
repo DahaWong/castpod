@@ -46,7 +46,11 @@ def register_handlers(application):
                 message.subscribe_feed,
             ),
             MessageHandler(
-                filters.Regex(f"(.+) #([0-9]+)"), message.download_episode, block=False
+                filters.Regex(
+                    r"#[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}"
+                ),
+                message.download_episode,
+                block=False,
             ),
             MessageHandler(
                 filters.ChatType.PRIVATE

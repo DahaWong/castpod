@@ -28,6 +28,7 @@ from castpod.utils import (
 )
 from ..models import (
     Chapter,
+    Episode,
     User,
     Podcast,
     UserSubscribePodcast,
@@ -141,16 +142,9 @@ async def download_episode(update: Update, context: CallbackContext):
     message = update.message
     user = update.effective_user
     reply_msg = await message.reply_text("正在获取节目…")
-    match = re.match(r"(.+) #([0-9]+)", message.text)
-    podcast = (
-        Podcast.select()
-        .where(Podcast.name == match[1])
-        .join(UserSubscribePodcast)
-        .join(User)
-        .where(User.id == update.effective_user.id)
-        .get()
-    )
-    episode = podcast.episodes[-int(match[2])]
+    match = re.search(r"#(.{36})", message.text)
+    episode = Episode.get(Episode.id == match[1])
+    podcast = episode.from_podcast
     logo = episode.logo
     shownotes = episode.shownotes[0]
     shownotes.extract_chapters()
@@ -230,11 +224,11 @@ async def download_episode(update: Update, context: CallbackContext):
             audio=episode.file_id or audio_local_path,
             caption=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
             reply_markup=markup,
-            # title=episode.title,
-            # performer=podcast.name,
-            # duration=episode.duration,
-            # thumb=logo.file_id or open(logo_path, "rb") or episode.logo.url,
-            write_timeout=150,
+            title=episode.title,
+            performer=podcast.name,
+            duration=episode.duration,
+            thumb=logo.file_id or open(logo_path, "rb") or episode.logo.url,
+            write_timeout=180,
         )
         if not episode.file_id:
             audio = audio_msg.audio
@@ -244,13 +238,13 @@ async def download_episode(update: Update, context: CallbackContext):
                 logo.file_id = audio.thumb.file_id
                 logo.save()
     except TimedOut:
-        await message.reply_text("这期节目的体积略大，请稍等…")
+        await message.reply_text("这期节目的文件体积较大，请稍等…")
     except Exception as e:
         await send_error_message(user, "下载失败，稍后再试试 😞")
         raise e
     finally:
         await reply_msg.delete()
-
+        await message.delete()
 
 async def find_podcast(
     update: Update, context: CallbackContext, keywords: str | None = None
