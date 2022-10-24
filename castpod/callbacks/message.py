@@ -1,4 +1,5 @@
 from datetime import timedelta
+from email.mime import application
 from zhconv import convert
 from bs4 import BeautifulSoup
 import httpx
@@ -60,7 +61,7 @@ async def subscribe_feed(update: Update, context: CallbackContext):
     user = User.get(User.id == update.effective_user.id)
     try:
         if is_new_podcast:
-            podcast.initialize()
+            podcast = await podcast.initialize()
             podcast.save()
             logo = podcast.logo
             logo.thumb_url = thumbnail_small
@@ -91,6 +92,7 @@ async def save_subscription(update: Update, context: CallbackContext):
     # TODO: use asyncio, and use multiple subscribe feed in sql.
     message = update.message
     user = update.effective_user
+    # TODO: add progress
     reply_msg = await message.reply_text("正在解析订阅文件…")
     podcasts_count = 0
     try:
@@ -105,7 +107,7 @@ async def save_subscription(update: Update, context: CallbackContext):
                 is_new_subscription = UserSubscribePodcast.get_or_create(
                     user=user.id, podcast=podcast
                 )[1]
-                podcast.initialize()
+                podcast = await podcast.initialize()
                 podcast.save()
                 if is_new_subscription:
                     podcasts_count += 1
@@ -224,8 +226,8 @@ async def download_episode(update: Update, context: CallbackContext):
         # print(audio_local_path)
         audio_msg = await message.reply_audio(
             # audio=audio_local_path,
-            audio=open(audio_local_path, "rb"),  # TODO:why doesn't work??
-            # audio=episode.file_id or audio_local_path,
+            # audio=open(audio_local_path, "rb"),  # TODO:why doesn't work??
+            audio=episode.file_id or audio_local_path,
             caption=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
             reply_markup=markup,
             # title=episode.title,
@@ -400,7 +402,7 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
             podcast_logo = results[0].get("artworkUrl600")
         elif domain == "castro.fm":
             feed_url = soup.find_all("a")[-1]["href"]
-            podcast = parse_feed(feed_url)
+            podcast = await parse_feed(feed_url)
             podcast_name = podcast["name"]
             podcast_logo = podcast["logo"].url
         else:

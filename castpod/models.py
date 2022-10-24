@@ -93,10 +93,10 @@ class Podcast(BaseModel):
             is_created = True
         return podcast, is_created
 
-    def initialize(self):
-        parsed = parse_feed("https://" + self.feed)
+    async def initialize(self):
+        parsed = await parse_feed("https://" + self.feed)
         if not parsed:
-            parse_feed("http://" + self.feed)
+            await parse_feed("http://" + self.feed)
         self.name = parsed["name"]
         match = re.search(
             r"[\u4E00-\u9FFF\u3400-\u4DBF\u20000-\u2A6DF\u2A700-\u2B73F\u2B740-\u2B81F\u2B820-\u2CEAF\u2CEB0-\u2EBEF\u30000-\u3134F\uF900-\uFAFF\u2E80-\u2EFF\u31C0-\u31EF\u3000-\u303F\u2FF0-\u2FFF\u3300-\u33FF\uFE30-\uFE4F\uF900-\uFAFF\u2F800-\u2FA1F\u3200-\u32FF\u1F200-\u1F2FF\u2F00-\u2FDF]+",
@@ -119,6 +119,7 @@ class Podcast(BaseModel):
                 episode = Episode.create(id=uuid4(), **kwargs)
                 shownotes.episode = episode
                 shownotes.save()
+        return self
 
 
 class Episode(BaseModel):
@@ -277,7 +278,7 @@ def db_init():
 
 async def parse_feed(feed):
     async with httpx.AsyncClient() as client:
-        res = await client.get(feed, follow_redirects=True, timeout=7.5)
+        res = await client.get(feed, follow_redirects=True, timeout=15)
     result = feedparser.parse(res.content)
     feed = result.feed
     podcast = {}

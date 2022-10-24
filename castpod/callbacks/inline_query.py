@@ -30,7 +30,7 @@ def subscription_generator(podcasts):
         yield InlineQueryResultArticle(
             id=uuid4(),
             title="你还没有订阅过播客",
-            description="输入「+」进入搜索模式，接着便可以寻找并添加想听的播客",
+            description="输入「+」进入搜索模式，然后便可以寻找想听的播客",
             input_message_content=InputTextMessageContent("🔍"),
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton("返回订阅列表", switch_inline_query_current_chat="")
@@ -75,7 +75,7 @@ async def search_new_podcast(update: Update, context):
             InlineQueryResultArticle(
                 id=uuid4(),
                 title="🔎 继续输入关键词，寻找并添加新播客",
-                description="你也可以发送从其他平台导出的 OPML 订阅文件，批量地添加播客",
+                description="也可以发送从其他平台导出的 OPML 订阅文件，批量地添加播客",
                 input_message_content=InputTextMessageContent("🔍"),
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton("返回搜索栏", switch_inline_query_current_chat="+")
