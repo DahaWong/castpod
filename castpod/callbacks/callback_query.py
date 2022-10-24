@@ -7,6 +7,7 @@ from telegram import (
 from telegram.ext import CallbackContext
 from castpod.components import PodcastPage
 from castpod.models import User, Podcast, Episode, UserSubscribePodcast
+
 # from castpod.utils import generate_opml
 from .command import show_help_info as command_help
 from config import manifest
@@ -161,13 +162,11 @@ async def confirm_unsubscribe(update: Update, context: CallbackContext):
     ).execute()
     await update.effective_message.edit_caption(
         f"已退订 <b>{Podcast.get(Podcast.id==podcast_id).name}</b>！",
-        reply_markup=InlineKeyboardMarkup.from_row(
-            [
-                InlineKeyboardButton(
-                    "重新订阅", callback_data=f"subscribe_podcast_{podcast_id}"  # TODO
-                ),
-                InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
-            ]
+        reply_markup=InlineKeyboardMarkup.from_button(
+            # InlineKeyboardButton(
+            #     "重新订阅", callback_data=f"subscribe_podcast_{podcast_id}"  # TODO
+            # ),#TODO
+            InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
         ),
     )
 

@@ -29,7 +29,7 @@ async def start(update: Update, context):
                 f"欢迎使用 {manifest.name}！\n\n疑问或建议请询<a href='https://t.me/castpodchat'>内测聊天室</a>。"
             ),
             reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="")
+                InlineKeyboardButton("添加新播客", switch_inline_query_current_chat="+")
             ),
         )
         await msg.pin()
@@ -47,7 +47,7 @@ async def start(update: Update, context):
                 f"抱歉，该播客不存在。请尝试在对话框输入 <code>@{manifest.bot_id} {podcast.name}</code> 检索。",
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
-                        "开始搜索", switch_inline_query_current_chat=podcast.name
+                        "开始搜索", switch_inline_query_current_chat=f"+{podcast.name}"
                     )
                 ),
             )
@@ -78,7 +78,7 @@ async def search(update: Update, context: CallbackContext):
     await update.message.reply_text(
         text="🔍",
         reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="")
+            InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="+")
         ),
     )
 

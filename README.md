@@ -2,7 +2,7 @@
 
 > v0.1.1
 
-一个 [Telegram 机器人](https://core.telegram.org/bots/api)。点击[链接](https://t.me/castpodbot)开始使用吧！
+一个 [Telegram 机器人](https://core.telegram.org/bots/api)。点击[链接](https://t.me/cspdbot)开始使用吧！
 （项目仍处于初期阶段，亟待完善。）
 
 ## 基本
@@ -29,9 +29,9 @@
 
 ### 订阅、收听与管理
 
-1. 启动机器人之后，点击 `搜索播客` 按钮，或者输入 `@` 找到 `@castpodbot`，输入关键字即可搜索播客并订阅。
+1. 启动机器人之后，点击 `搜索播客` 按钮，或者输入 `@` 找到 `@cspdbot`，输入关键字即可搜索播客并订阅。
 2. 订阅之后，点击 `更多单集` 选择节目下载收听。
-3. 同第一步，输入 `@castpodbot`，在不输入关键字的情况下，这里陈列着全部已订阅的播客。
+3. 同第一步，输入 `@cspdbot`，在不输入关键字的情况下，这里陈列着全部已订阅的播客。
 
 ## 部署
 
@@ -88,7 +88,7 @@ USER_ID = 开发者（您）的 Telegram ID，整数。
 
 ### 经济支持
 
-1. [爱发电](https://afdian.net/@castpodbot)
+1. [爱发电](https://afdian.net/@cspdbot)
 2. [Buy me a coffee](https://www.buymeacoffee.com/daha)
 
 <a href="https://www.buymeacoffee.com/daha"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a Cherry  : )&emoji=🍒&slug=daha&button_colour=FF5F5F&font_colour=ffffff&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00"></a>

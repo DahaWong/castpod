@@ -63,19 +63,31 @@ def register_handlers(application):
                 message.save_subscription,
                 block=False,
             ),
+            MessageHandler(filters.TEXT & filters.VIA_BOT, message.show_podcast),
             MessageHandler(
-                (filters.REPLY | filters.ChatType.PRIVATE)
-                & filters.TEXT
-                & filters.Regex("[^🔍]"),
-                message.show_podcast,
+                filters.ChatType.PRIVATE & filters.TEXT & filters.Regex("[^🔍]"),
+                message.find_podcast,
             ),
             MessageHandler(filters.StatusUpdate.PINNED_MESSAGE, message.delete_message),
-            InlineQueryHandler(inline_query.via_sender, chat_types=[Chat.SENDER]),
             InlineQueryHandler(
-                inline_query.share_episode, chat_types=[Chat.PRIVATE], pattern="^#.+"
+                inline_query.search_new_podcast, chat_types=[Chat.SENDER], pattern="^\+"
             ),
             InlineQueryHandler(
-                inline_query.via_private, chat_types=[Chat.PRIVATE], pattern="^[^#].+"
+                inline_query.search_episode, chat_types=[Chat.SENDER], pattern="^.+?#.*"
+            ),
+            InlineQueryHandler(
+                inline_query.search_subscription,
+                chat_types=[Chat.SENDER],
+            ),
+            InlineQueryHandler(
+                inline_query.share_episode,
+                chat_types=[Chat.PRIVATE],
+                pattern="^(.+?)\>(.+?)\&$",
+            ),
+            InlineQueryHandler(
+                inline_query.via_private,
+                chat_types=[Chat.PRIVATE],
+                pattern="^(.+?)[^\&]$",
             ),
             InlineQueryHandler(
                 inline_query.via_group, chat_types=[Chat.GROUP, Chat.SUPERGROUP]

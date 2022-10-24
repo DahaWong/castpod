@@ -5,9 +5,11 @@ from time import mktime
 from pprint import pprint
 from uuid import uuid4
 from bs4 import BeautifulSoup
+import httpx
 from telegraph.aio import Telegraph
 from telegraph.utils import ALLOWED_TAGS
 from pypinyin import Style, pinyin
+from zhconv import convert
 
 import feedparser
 from peewee import (
@@ -273,8 +275,10 @@ def db_init():
     ShownotesIndex.optimize()
 
 
-def parse_feed(feed):
-    result = feedparser.parse(feed)
+async def parse_feed(feed):
+    async with httpx.AsyncClient() as client:
+        res = await client.get(feed, follow_redirects=True, timeout=7.5)
+    result = feedparser.parse(res.content)
     feed = result.feed
     podcast = {}
     if not result.entries:
@@ -383,3 +387,29 @@ def format_html(text):
         ):
             tag.unwrap()
     return str(soup)
+
+
+def filter_subscription(user_id, keywords):
+    keywords_hant = convert(keywords, "zh-hant")
+    podcasts = (
+        Podcast.select()
+        .where(
+            Podcast.name.contains(keywords)
+            | Podcast.name.contains(keywords_hant)
+            | Podcast.pinyin_abbr.startswith(keywords)
+            | Podcast.pinyin_full.startswith(keywords)
+            | Podcast.host.contains(keywords)
+            | Podcast.host.contains(keywords_hant)
+        )  # TODO: shownotes full text search, and extract the matched line to description.
+        .join(UserSubscribePodcast)
+        .join(User)
+        .where(User.id == user_id)
+    )
+    return podcasts
+
+
+def show_subscription(user_id):
+    podcasts = (
+        Podcast.select().join(UserSubscribePodcast).join(User).where(User.id == user_id)
+    )
+    return podcasts

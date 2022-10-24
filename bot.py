@@ -9,8 +9,6 @@ import config
 from castpod.handlers import register_handlers
 from castpod.models import db_init
 
-# from helpers import MyRequest
-
 
 async def post_init(application: Application) -> None:
     bot = application.bot
@@ -41,6 +39,7 @@ application = (
     .post_init(post_init)
     .write_timeout(150)
     .read_timeout(10)
+    .concurrent_updates(True)
     .build()
 )
 
@@ -48,14 +47,14 @@ register_handlers(application)
 db_init()
 
 # Webhook:
-application.run_webhook(
-    listen="127.0.0.1",
-    port=8443,
-    url_path=config.bot_token,
-    webhook_url=f"http://127.0.0.1:8443/{config.bot_token}",
-    max_connections=80,
-    drop_pending_updates=True,
-)
+# application.run_webhook(
+#     listen="127.0.0.1",
+#     port=8443,
+#     url_path=config.bot_token,
+#     webhook_url=f"http://127.0.0.1:8443/{config.bot_token}",
+#     max_connections=80,
+#     drop_pending_updates=True,
+# )
 
 # Polling:
-# application.run_polling()
+application.run_polling()

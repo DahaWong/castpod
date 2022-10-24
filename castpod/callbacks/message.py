@@ -33,7 +33,6 @@ from ..models import (
     parse_feed,
 )
 from ..components import PodcastPage
-
 from ..utils import parse_doc
 from config import manifest
 from ..constants import OTHER_URL, SHORT_DOMAIN
@@ -164,7 +163,9 @@ async def download_episode(update: Update, context: CallbackContext):
                 "更多单集",
                 switch_inline_query_current_chat=f"{podcast.name}#",
             ),
-            InlineKeyboardButton("分享", switch_inline_query=f"#{episode.id}"),
+            InlineKeyboardButton(
+                "分享", switch_inline_query=f"{podcast.name}>{episode.title}&"
+            ),
         ],
     )
     if not episode.url:
@@ -214,23 +215,23 @@ async def download_episode(update: Update, context: CallbackContext):
         im.save(logo_path, "JPEG", optimize=True, quality=85)
     try:
         if episode.chapters:
-            timeline = "\n\n".join(
+            timeline = "\n".join(
                 [
-                    f"{chapter.start_time}  {chapter.title}"
+                    f"<code>{chapter.start_time} </code>{chapter.title}"
                     for chapter in episode.chapters
                 ]
             )
-        print(audio_local_path)
+        # print(audio_local_path)
         audio_msg = await message.reply_audio(
             # audio=audio_local_path,
-            # audio=open(audio_local_path, "rb"),  # TODO:why doesn't work??
-            audio=episode.file_id or audio_local_path,
+            audio=open(audio_local_path, "rb"),  # TODO:why doesn't work??
+            # audio=episode.file_id or audio_local_path,
             caption=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
             reply_markup=markup,
-            title=episode.title,
-            performer=podcast.name,
-            duration=episode.duration,
-            thumb=logo.file_id or open(logo_path, "rb") or episode.logo.url,
+            # title=episode.title,
+            # performer=podcast.name,
+            # duration=episode.duration,
+            # thumb=logo.file_id or open(logo_path, "rb") or episode.logo.url,
             write_timeout=150,
         )
         if not episode.file_id:
@@ -249,7 +250,7 @@ async def download_episode(update: Update, context: CallbackContext):
         await reply_msg.delete()
 
 
-async def show_podcast(
+async def find_podcast(
     update: Update, context: CallbackContext, keywords: str | None = None
 ):
     user = update.effective_user
@@ -261,16 +262,16 @@ async def show_podcast(
         and message.reply_to_message.from_user.username != manifest.bot_id
     ):
         return
-    keywords_tw = convert(keywords, "zh-tw")
+    keywords_tw = convert(keywords, "zh-hant")
     podcasts = (
         Podcast.select()
         .where(
             Podcast.name.contains(keywords)
             | Podcast.pinyin_abbr.startswith(keywords)
             | Podcast.pinyin_full.startswith(keywords)
-            | Podcast.host.contains(keywords)
             | Podcast.name.contains(keywords_tw)
-            | Podcast.host.contains(keywords_tw)
+            | Podcast.host.startswith(keywords)
+            | Podcast.host.startswith(keywords_tw)
         )
         .join(UserSubscribePodcast)
         .join(User)
@@ -283,7 +284,7 @@ async def show_podcast(
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
                     f"去搜索「{keywords}」",
-                    switch_inline_query_current_chat=keywords,
+                    switch_inline_query_current_chat=f"+{keywords}",
                 )
             ),
         )
@@ -344,6 +345,21 @@ async def show_podcast(
                 # 90*90
                 logo.thumb_file_id = msg[i].photo[0].file_id
                 logo.save()
+
+
+async def show_podcast(update: Update, context: CallbackContext):
+    message = update.message
+    podcast = Podcast.get(Podcast.name == message.text)
+    page = PodcastPage(podcast)
+    logo = podcast.logo
+    msg = await message.reply_photo(
+        photo=logo.file_id or logo.url,
+        caption=page.text(),
+        reply_markup=InlineKeyboardMarkup(page.keyboard()),
+    )
+    if not logo.file_id:
+        logo.file_id = msg.photo[0].file_id
+        logo.save()
 
 
 async def subscribe_from_url(update: Update, context: CallbackContext):
