@@ -9,6 +9,8 @@ import config
 from castpod.handlers import register_handlers
 from castpod.models import db_init
 
+# from helpers import MyRequest
+
 
 async def post_init(application: Application) -> None:
     bot = application.bot
@@ -28,13 +30,17 @@ async def post_init(application: Application) -> None:
     )
 
 
+# my_request = MyRequest()
+
 application = (
     ApplicationBuilder()
     .token(config.bot_token)
     .defaults(config.defaults)
+    # .request(my_request)
     .base_url(config.bot_api)
     .post_init(post_init)
-    .write_timeout(120)
+    .write_timeout(150)
+    .read_timeout(10)
     .build()
 )
 

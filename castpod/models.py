@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from html import unescape
 from time import mktime
 from pprint import pprint
+from uuid import uuid4
 from bs4 import BeautifulSoup
 from telegraph.aio import Telegraph
 from telegraph.utils import ALLOWED_TAGS
@@ -18,6 +19,7 @@ from peewee import (
     Model,
     SqliteDatabase,
     TextField,
+    UUIDField,
 )
 from playhouse.sqlite_ext import FTSModel, SearchField
 
@@ -64,11 +66,12 @@ class Group(BaseModel):
 class Logo(BaseModel):
     url = TextField()
     file_id = TextField(null=True)
-    thumbnail_url = TextField(null=True)
+    thumb_url = TextField(null=True)
+    thumb_file_id = TextField(null=True)
 
 
 class Podcast(BaseModel):
-    # id = UUIDField(primary_key=True)
+    id = UUIDField(primary_key=True)
     feed = TextField(unique=True)
     name = CharField(null=True, max_length=64)
     logo = ForeignKeyField(Logo, null=True)
@@ -77,6 +80,16 @@ class Podcast(BaseModel):
     email = TextField(null=True)
     pinyin_abbr = TextField(null=True)
     pinyin_full = TextField(null=True)
+
+    @classmethod
+    def get_or_create(cls, **kwargs):
+        is_created = False
+        try:
+            podcast = cls.get(**kwargs)
+        except cls.DoesNotExist:
+            podcast = cls.create(id=uuid4(), **kwargs)
+            is_created = True
+        return podcast, is_created
 
     def initialize(self):
         parsed = parse_feed("https://" + self.feed)
@@ -323,10 +336,10 @@ def parse_episode(item, podcast):
 
 
 def set_duration(duration: str) -> int:
-    duration = duration.replace("：", ":")
-    duration_timedelta = None
     if not duration:
         return 0
+    duration = duration.replace("：", ":")
+    duration_timedelta = None
     if ":" in duration:
         time = duration.split(":")
         if len(time) == 3:
@@ -343,7 +356,7 @@ def set_duration(duration: str) -> int:
     elif not re.match(r"^[0-9]+$", duration):
         return 0
     else:
-        return int(duration_timedelta)
+        return int(duration)
 
 
 def format_html(text):

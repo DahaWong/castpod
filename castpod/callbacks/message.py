@@ -36,7 +36,7 @@ from ..components import PodcastPage
 
 from ..utils import parse_doc
 from config import manifest
-from ..constants import SHORT_DOMAIN
+from ..constants import OTHER_URL, SHORT_DOMAIN
 import re
 
 
@@ -64,7 +64,7 @@ async def subscribe_feed(update: Update, context: CallbackContext):
             podcast.initialize()
             podcast.save()
             logo = podcast.logo
-            logo.thumbnail_url = thumbnail_small
+            logo.thumb_url = thumbnail_small
             logo.save()
         UserSubscribePodcast.get_or_create(user=user, podcast=podcast)
         in_group = (chat_type == "group") or (chat_type == "supergroup")
@@ -222,8 +222,10 @@ async def download_episode(update: Update, context: CallbackContext):
                     for chapter in episode.chapters
                 ]
             )
+        print(audio_local_path)
         audio_msg = await message.reply_audio(
-            # audio=open(audio_local_path, "rb"), #TODO:why doesn't work??
+            # audio=audio_local_path,
+            # audio=open(audio_local_path, "rb"),  # TODO:why doesn't work??
             audio=episode.file_id or audio_local_path,
             caption=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
             reply_markup=markup,
@@ -237,8 +239,9 @@ async def download_episode(update: Update, context: CallbackContext):
             audio = audio_msg.audio
             episode.file_id = audio.file_id
             episode.save()
-            logo.file_id = audio.thumb.file_id
-            logo.save()
+            if audio.thumb:
+                logo.file_id = audio.thumb.file_id
+                logo.save()
     except TimedOut:
         await message.reply_text("这期节目的体积略大，请稍等…")
     except Exception as e:
@@ -291,7 +294,7 @@ async def show_podcast(
         is_using_reply_keyboard = context.chat_data.get("is_using_reply_keyboard")
         if is_using_reply_keyboard:
             await message.reply_text(
-                f"找到播客 <b>{podcast.name}</b>", reply_markup=ReplyKeyboardRemove()
+                f"成功找到播客<b>{podcast.name}</b>", reply_markup=ReplyKeyboardRemove()
             )
             context.chat_data["is_using_reply_keyboard"] = False
         page = PodcastPage(podcast)
@@ -323,62 +326,84 @@ async def show_podcast(
             ),
         )
         context.chat_data["is_using_reply_keyboard"] = True
-        await message.reply_media_group(
+        msg = await message.reply_media_group(
             media=[
                 InputMediaPhoto(
-                    podcast.logo.file_id, caption=podcast.name, filename=podcast.name
+                    podcast.logo.thumb_file_id
+                    or podcast.logo.file_id
+                    or podcast.logo.url,
+                    caption=podcast.name,
+                    filename=podcast.name,
                 )
-                for podcast in podcasts[:5]
+                for podcast in podcasts[:10]
             ]
         )
+        for i, podcast in enumerate(podcasts[:10]):
+            logo = podcast.logo
+            if not logo.file_id or logo.thumb_file_id:
+                # 320*320:
+                logo.file_id = msg[i].photo[1].file_id
+                # 90*90
+                logo.thumb_file_id = msg[i].photo[0].file_id
+                logo.save()
 
 
 async def subscribe_from_url(update: Update, context: CallbackContext):
     user = update.effective_user
     message = update.message
-    url = message.text
-    domain = re.match(SHORT_DOMAIN, url)[1]
-    if not url.startswith("http"):
-        url = "https://" + url
-    reply = await message.reply_text("正在解析链接…")
-    async with httpx.AsyncClient() as client:
-        r = await client.get(url, follow_redirects=True)
-    soup = BeautifulSoup(r.text, "html.parser")
-    podcast_name = ""
-    podcast_logo = soup.img["src"]
-    title_text = soup.title.text
-    await reply.delete()
-    if domain == "xiaoyuzhoufm.com" or domain == "spotify.com":
-        match = re.search(r"([^\-]+?) \| ", title_text)
-        podcast_name = match[1].lstrip()
-    elif domain == "google.com" or domain == "pca.st":
-        podcast_name = title_text
-    elif domain == "apple.com" or domain == "overcast.fm":  # use itunes id
-        podcast_itunes_id = re.search(r"(?:id|itunes)([0-9]+)", url)[1]
-        results = await search_itunes(itunes_id=podcast_itunes_id)
-        podcast_name = results[0].get("collectionName")
-        podcast_logo = results[0].get("artworkUrl600")
-    elif domain == "castro.fm":
-        feed_url = soup.find_all("a")[-1]["href"]
-        podcast = parse_feed(feed_url)
-        podcast_name = podcast["name"]
-        podcast_logo = podcast["logo"].url
-    else:
-        await send_error_message(user, "请检查链接拼写是否有误 🖐🏻")
-        return
-
-    if podcast_logo:
-        await message.reply_photo(
-            photo=podcast_logo,
-            caption=f"<b>{podcast_name}</b>",
-            reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton(
-                    "订阅此播客", switch_inline_query_current_chat=podcast_name
-                )
-            ),
-        )
-    else:
-        await send_error_message(user, "解析失败，链接可能已经损坏 😵‍💫")
+    urls = message.parse_entities("url").values()
+    for url in urls:
+        reply = await message.reply_text("正在解析链接…")
+        await message.reply_chat_action(ChatAction.TYPING)
+        if not re.search(OTHER_URL, url):
+            continue
+        match = re.match(SHORT_DOMAIN, url)
+        if match:
+            domain = match[1]
+        if not url.startswith("http"):
+            url = "https://" + url
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url, follow_redirects=True)
+        soup = BeautifulSoup(r.text, "html.parser")
+        podcast_name = ""
+        podcast_logo = soup.img["src"]
+        title_text = soup.title.text
+        await reply.delete()
+        if domain == "xiaoyuzhoufm.com":
+            match = re.search(r"([^\-]+?) \| 小宇宙", title_text)
+            if match:
+                podcast_name = match[1].lstrip()
+        elif domain == "spotify.com":
+            match = re.search(r"([^\-]+?) \|(?: Podcast on){0,1} Spotify", title_text)
+            if match:
+                podcast_name = match[1].lstrip()
+        elif domain == "google.com" or domain == "pca.st":
+            podcast_name = title_text
+        elif domain == "apple.com" or domain == "overcast.fm":  # use itunes id
+            podcast_itunes_id = re.search(r"(?:id|itunes)([0-9]+)", url)[1]
+            results = await search_itunes(itunes_id=podcast_itunes_id)
+            podcast_name = results[0].get("collectionName")
+            podcast_logo = results[0].get("artworkUrl600")
+        elif domain == "castro.fm":
+            feed_url = soup.find_all("a")[-1]["href"]
+            podcast = parse_feed(feed_url)
+            podcast_name = podcast["name"]
+            podcast_logo = podcast["logo"].url
+        else:
+            await send_error_message(user, "请检查链接拼写是否有误 🖐🏻")
+            return
+        if podcast_logo:
+            await message.reply_photo(
+                photo=podcast_logo,
+                caption=f"<b>{podcast_name}</b>",
+                reply_markup=InlineKeyboardMarkup.from_button(
+                    InlineKeyboardButton(
+                        "订阅此播客", switch_inline_query_current_chat=podcast_name
+                    )
+                ),
+            )
+        else:
+            await send_error_message(user, "解析失败，链接可能已经损坏 😵‍💫")
 
 
 async def close_reply_keyboard(update: Update, context: CallbackContext):

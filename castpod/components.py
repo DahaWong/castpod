@@ -18,14 +18,16 @@ class PodcastPage(object):
                     InlineKeyboardButton(
                         "退订", callback_data=f"unsubscribe_podcast_{self.podcast.id}"
                     ),
-                    InlineKeyboardButton(
-                        "查看单集", switch_inline_query_current_chat=f"{self.podcast.name}#"
-                    ),
+                    InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
                     InlineKeyboardButton(
                         "分享", switch_inline_query=f"{self.podcast.name}"
                     ),
                 ],
-                [InlineKeyboardButton("我的订阅", switch_inline_query_current_chat="")],
+                [
+                    InlineKeyboardButton(
+                        "查看单集", switch_inline_query_current_chat=f"{self.podcast.name}#"
+                    )
+                ],
             ]
         elif self.mode == "group":
             return [

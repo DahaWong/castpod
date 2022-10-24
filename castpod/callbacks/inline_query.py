@@ -57,7 +57,7 @@ async def via_sender(update: Update, context):
             # new_result = InlineQueryResultPhoto(
             #     id=uuid4(),
             #     photo_url=podcast.logo.url,
-            #     thumb_url=podcast.logo.thumbnail_url or podcast.logo.url,
+            #     thumb_url=podcast.logo.thumb_url or podcast.logo.url,
             #     photo_width=80,
             #     photo_height=80,
             #     title=podcast.name,
@@ -297,7 +297,7 @@ def share_podcast(keywords):
         logo = podcast.logo
         yield InlineQueryResultArticle(
             id=uuid4(),
-            thumb_url=logo.thumbnail_url or logo.url,
+            thumb_url=logo.thumb_url or logo.url,
             thumb_height=60,
             thumb_width=60,
             title=podcast.name,
