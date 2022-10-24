@@ -246,6 +246,7 @@ async def download_episode(update: Update, context: CallbackContext):
         await reply_msg.delete()
         await message.delete()
 
+
 async def find_podcast(
     update: Update, context: CallbackContext, keywords: str | None = None
 ):
@@ -294,14 +295,21 @@ async def find_podcast(
             context.chat_data["is_using_reply_keyboard"] = False
         page = PodcastPage(podcast)
         logo = podcast.logo
-        msg = await message.reply_photo(
-            photo=logo.file_id or logo.url,
-            caption=page.text(),
-            reply_markup=InlineKeyboardMarkup(page.keyboard()),
-        )
-        if not logo.file_id:
-            logo.file_id = msg.photo[0].file_id
-            logo.save()
+        print(logo.file_id or logo.url)
+        try:
+            msg = await message.reply_photo(
+                photo=logo.file_id or logo.url,
+                caption=page.text(),
+                reply_markup=InlineKeyboardMarkup(page.keyboard()),
+            )
+            if not logo.file_id:
+                logo.file_id = msg.photo[0].file_id
+                logo.save()
+        except:
+            msg = await message.reply_text(
+                text=page.text(),
+                reply_markup=InlineKeyboardMarkup(page.keyboard()),
+            )
     elif count > 1:
         podcasts = podcasts[: MessageLimit.MESSAGE_ENTITIES - 1]
         keyboard = []

@@ -40,6 +40,7 @@ def register_handlers(application):
                 & filters.Entity("url")
                 & filters.Regex(OTHER_URL),
                 message.subscribe_from_url,
+                block=False,
             ),
             MessageHandler(
                 filters.ChatType.PRIVATE & filters.Entity("url"),
@@ -67,7 +68,10 @@ def register_handlers(application):
                 message.save_subscription,
                 block=False,
             ),
-            MessageHandler(filters.TEXT & filters.VIA_BOT, message.show_podcast),
+            MessageHandler(
+                filters.TEXT & filters.VIA_BOT & filters.Regex("[^🔍]"),
+                message.show_podcast,
+            ),
             MessageHandler(
                 filters.ChatType.PRIVATE & filters.TEXT & filters.Regex("[^🔍]"),
                 message.find_podcast,
@@ -86,12 +90,11 @@ def register_handlers(application):
             InlineQueryHandler(
                 inline_query.share_episode,
                 chat_types=[Chat.PRIVATE],
-                pattern="^(.+?)\>(.+?)\&$",
+                pattern="^(.+?)\>(.+?)\&(.*)$",
             ),
             InlineQueryHandler(
                 inline_query.via_private,
                 chat_types=[Chat.PRIVATE],
-                pattern="^(.+?)[^\&]$",
             ),
             InlineQueryHandler(
                 inline_query.via_group, chat_types=[Chat.GROUP, Chat.SUPERGROUP]

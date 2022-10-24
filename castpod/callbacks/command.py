@@ -18,15 +18,14 @@ from manifest import manifest
 
 async def start(update: Update, context):
     message = update.message
-    effective_user = update.effective_user
-    user, is_new_user = User.get_or_create(id=effective_user.id)
+    user, is_new_user = User.get_or_create(id=update.effective_user.id)
 
     if is_new_user:
-        user.name = effective_user.full_name
+        user.name = update.effective_user.full_name
         user.save()
         msg = await message.reply_text(
             text=(
-                f"欢迎使用 {manifest.name}！\n\n疑问或建议请询<a href='https://t.me/castpodchat'>内测聊天室</a>。"
+                f"欢迎使用 {manifest.name}！\n\n疑问或建议请至<a href='https://t.me/castpodchat'>内测聊天室</a>。"
             ),
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton("添加新播客", switch_inline_query_current_chat="+")
@@ -39,39 +38,78 @@ async def start(update: Update, context):
 
     # if subscribing podcast via deep link:
     if context.args and context.args[0] != "login":
-        match = re.match(r"^([0-9]*)$", context.args[0])
-        podcast_id = int(match[1])
-        podcast = Podcast.get(Podcast.id == podcast_id)
-        if not podcast:
-            await update.reply_message(
-                f"抱歉，该播客不存在。请尝试在对话框输入 <code>@{manifest.bot_id} {podcast.name}</code> 检索。",
-                reply_markup=InlineKeyboardMarkup.from_button(
-                    InlineKeyboardButton(
-                        "开始搜索", switch_inline_query_current_chat=f"+{podcast.name}"
-                    )
-                ),
-            )
+        match = re.match(r"^(podcast|episode)_(.{36})$", context.args[0])
+        podcast = None
+        if not match:
             return
-        if (
-            not UserSubscribePodcast.select()
-            .where(
-                UserSubscribePodcast.user == user,
-                UserSubscribePodcast.podcast == Podcast,
+        if match[1] == "podcast":
+            print(match[2])
+            podcast_id = match[2]
+            podcast = Podcast.get(Podcast.id == podcast_id)
+            if not podcast:
+                await update.reply_message(
+                    f"抱歉，该播客不存在。请尝试在对话框输入 <code>@{manifest.bot_id} {podcast.name}</code> 检索。",
+                    reply_markup=InlineKeyboardMarkup.from_button(
+                        InlineKeyboardButton(
+                            "开始搜索", switch_inline_query_current_chat=f"+{podcast.name}"
+                        )
+                    ),
+                )
+                return
+            UserSubscribePodcast.get_or_create(user=user, podcast=podcast)
+            await message.reply_text(f"成功订阅 <b>{podcast.name}</b>")
+            page = PodcastPage(podcast)
+            logo = podcast.logo
+            photo = logo.file_id or logo.url
+            try:
+                msg = await message.reply_photo(
+                    photo=photo,
+                    caption=page.text(),
+                    reply_markup=InlineKeyboardMarkup(page.keyboard()),
+                )
+                if not podcast.logo.file_id:
+                    logo.file_id = msg.photo[0].file_id
+                    logo.save()
+            except:
+                msg = await message.reply_text(
+                    text=page.text(),
+                    reply_markup=InlineKeyboardMarkup(page.keyboard()),
+                )
+        elif match[1] == "episode":
+            episode_id = match[2]
+            episode = Episode.get(Episode.id == episode_id)
+            podcast = episode.from_podcast
+            UserSubscribePodcast.get_or_create(user=user, podcast=podcast)
+            markup = InlineKeyboardMarkup.from_row(
+                [
+                    InlineKeyboardButton("我的订阅", switch_inline_query_current_chat=""),
+                    InlineKeyboardButton(
+                        "更多单集",
+                        switch_inline_query_current_chat=f"{podcast.name}#",
+                    ),
+                    InlineKeyboardButton(
+                        "分享", switch_inline_query=f"{podcast.name}>{episode.title}&"
+                    ),
+                ],
             )
-            .execute()
-        ):
-            subscribing_note = await message.reply_text("正在订阅…")
-            UserSubscribePodcast.create(user=user, podcast=podcast)
-            await subscribing_note.delete()
-        page = PodcastPage(podcast)
-        photo = podcast.logo.file_id or podcast.logo.url
-        msg = await message.reply_photo(
-            photo=photo,
-            caption=page.text(),
-            reply_markup=InlineKeyboardMarkup(page.keyboard()),
-        )
-        podcast.logo.file_id = msg.photo[0].file_id
-        podcast.save()
+            if episode.chapters:
+                timeline = "\n".join(
+                    [
+                        f"<code>{chapter.start_time} </code>{chapter.title}"
+                        for chapter in episode.chapters
+                    ]
+                )
+            if not episode.url:
+                await message.reply_text(
+                    text=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{episode.shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
+                    reply_markup=markup,
+                )
+            else:
+                await message.reply_audio(
+                    episode.file_id,
+                    caption=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{episode.shownotes[0].url}'>📖 本期附录</a>\n\n{timeline}",
+                    reply_markup=markup,
+                )
 
 
 async def search(update: Update, context: CallbackContext):

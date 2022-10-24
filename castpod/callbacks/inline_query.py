@@ -174,13 +174,11 @@ def show_episodes(podcast, index):
                 )
                 return
         else:
-            episodes = (
-                Episode.select().where(
-                    (Episode.from_podcast == podcast.id)
-                    & (
-                        Episode.title.contains(index)
-                        | Episode.title.contains(convert(index, "zh-hant"))
-                    )
+            episodes = Episode.select().where(
+                (Episode.from_podcast == podcast.id)
+                & (
+                    Episode.title.contains(index)
+                    | Episode.title.contains(convert(index, "zh-hant"))
                 )
             )
             if not episodes:
@@ -218,9 +216,9 @@ async def via_private(update, context):
 
 async def share_episode(update: Update, context):
     inline_query = update.inline_query
-    match = re.match(r"(.+?)\>(.+?)&(.+)*", inline_query.query)
+    match = re.match(r"(.+?)\>(.+?)&(.*)", inline_query.query)
     if match:
-        podcast_name, keywords, text_to_send = match[1:4]
+        podcast_name, keywords, text_to_send = match[1], match[2], match[3]
     try:
         episode: Episode = (
             Episode.select()
@@ -235,10 +233,10 @@ async def share_episode(update: Update, context):
         caption = ""
         if text_to_send:  # user has typed some word
             caption = text_to_send
-            hint = f"点选单集发送音频，并留言「{text_to_send}」"
+            hint = f"点选下方单集发送音频，并留言「{text_to_send}」"
         else:
             caption = f"<b>{episode.title}</b>\n{podcast_name} · <i>{episode.published_time.strftime('%Y/%m/%d')}</i>\n\n"
-            hint = "点选下方单集发送音频，若继续输入文字可附上留言"
+            hint = "点选下方单集发送音频；继续输入文字可附上留言"
         await inline_query.answer(
             [
                 InlineQueryResultCachedAudio(
@@ -248,14 +246,14 @@ async def share_episode(update: Update, context):
                     reply_markup=InlineKeyboardMarkup.from_button(
                         InlineKeyboardButton(
                             f"在 {manifest.name} 中打开",
-                            url=f"https://t.me/{manifest.bot_id}?start=episode-{episode.id}",
+                            url=f"https://t.me/{manifest.bot_id}?start=episode_{episode.id}",
                         )
                     ),
                 )
             ],
             cache_time=0,
             switch_pm_text=hint,
-            switch_pm_parameter="sharing_{episode.id}",
+            switch_pm_parameter="back",
         )
     except DoesNotExist:
         await inline_query.answer(
