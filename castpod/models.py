@@ -83,6 +83,8 @@ class Podcast(BaseModel):
     email = TextField(null=True)
     pinyin_abbr = TextField(null=True)
     pinyin_full = TextField(null=True)
+    etag = TextField(null=True)
+    last_modified = DateTimeField(null=True)
 
     @classmethod
     def get_or_create(cls, **kwargs):
@@ -141,7 +143,7 @@ class Episode(BaseModel):
     performer = TextField(null=True)
     size = IntegerField(null=True)
     duration = IntegerField(null=True)
-    is_downloaded = BooleanField(default=False)
+    is_downloaded = BooleanField(default=False)  # remove this
 
 
 class Shownotes(BaseModel):
@@ -153,22 +155,18 @@ class Shownotes(BaseModel):
 
     def extract_chapters(self):
         INLINE = r"<\/?(?:s|strong|b|em|i|del|u|cite|span|a).*?>"
-        pprint(self.content)
         content = re.sub(INLINE, "", self.content)
-        print(content)
-        content = re.sub(r"\<br *\/\>", "\n", self.content)
-        print(content)
-        TIME_DELTA = r"(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9]"
+        # content = re.sub(r"<br *\/>", "\n", self.content)
+        TIME_DELTA = r"(?:[0-9]{1,2}[:：])?[0-9]{1,3}[:：][0-5][0-9]"
         soup = BeautifulSoup(content, "html.parser")
         results = soup.find_all(string=re.compile(TIME_DELTA))
-        print(results)
         if not results:
-            return
+            return False
         if len(results) > 1:
             for result in results:
                 result = str(result)
                 start_time = re.search(TIME_DELTA, result)[0]
-                start_time = start_time.replace("：", ":").replace("'", "")
+                start_time = start_time.replace("：", ":")
                 title = re.sub(TIME_DELTA, "", result).strip()
                 title = re.sub(r"^(?:\(\)|\{\}|\<\>|【】|（|\[]|\||·|)", "", title)
                 Chapter.create(
@@ -180,10 +178,10 @@ class Shownotes(BaseModel):
             for match in matches:
                 start_time = match[1].replace("：", ":").replace("'", "")
                 title = match[2].lstrip("]】>|｜ ").rstrip("[【<|｜ ")
-                print(f"{start_time}   {title}")
                 Chapter.create(
                     from_episode=self.episode, start_time=start_time, title=title
                 )
+        return True
 
     async def generate_telegraph(self):
         telegraph = Telegraph()
@@ -292,12 +290,17 @@ def db_init():
     ShownotesIndex.optimize()
 
 
-async def parse_feed(feed):
-    ua = generate_user_agent(os="linux", device_type="desktop")
+async def parse_feed(feed, etag=None, if_modified_since=None):
+    user_agent = generate_user_agent(os="linux", device_type="desktop")
+    headers = {
+        "User-Agent": user_agent,
+        "ETag": etag,
+        "If-Modified-Since": if_modified_since,
+    }
     async with httpx.AsyncClient() as client:
-        res = await client.get(
-            feed, follow_redirects=True, timeout=12, headers={"User-Agent": ua}
-        )
+        res = await client.get(feed, follow_redirects=True, timeout=12, headers=headers)
+    if res.status_code != httpx.codes.OK:
+        return
     result = feedparser.parse(res.content)
     feed = result.feed
     podcast = {}
@@ -317,7 +320,12 @@ async def parse_feed(feed):
         podcast["email"] = unescape(author.get("email") or "")
     podcast["logo"] = Logo.create(url=feed["image"]["href"])
     podcast["website"] = feed.get("link")
-    podcast["items"] = result["items"]
+    podcast["items"] = result.get("items")
+    podcast["etag"] = result.get("etag")
+    last_modified: str = result.get("last-modified")
+    podcast["last_modified"] = datetime.strptime(
+        last_modified, "%a, %d %b %Y %H:%M:%S GMT"
+    )
     return podcast
 
 

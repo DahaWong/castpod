@@ -151,7 +151,22 @@ async def download_episode(update: Update, context: CallbackContext):
     logo = episode.logo
     shownotes = episode.shownotes[0]
     if not episode.chapters:
-        shownotes.extract_chapters()
+        r = shownotes.extract_chapters()
+        if not r:
+            try:
+                audio_tags = audio_metadata.tags
+                if audio_tags & hasattr(audio_tags, "getall"):
+                    chaps = audio_tags.getall("CHAP")
+                    for chap in chaps:
+                        start_time = str(
+                            timedelta(milliseconds=int(chap.start_time))
+                        ).split(".")[0]
+                        title = chap.sub_frames.getall("TIT2")[0].text[0]
+                        Chapter.create(
+                            from_episode=episode, start_time=start_time, title=title
+                        )
+            except:
+                pass
     timeline = ""
     if not shownotes.url:
         shownotes = await shownotes.generate_telegraph()
@@ -199,22 +214,6 @@ async def download_episode(update: Update, context: CallbackContext):
             with open(logo_path, "wb") as f:
                 f.write(res.content)
         audio_metadata = File(audio_local_path)
-
-        if not episode.chapters:
-            try:
-                audio_tags = audio_metadata.tags
-                if audio_tags & hasattr(audio_tags, "getall"):
-                    chaps = audio_tags.getall("CHAP")
-                    for chap in chaps:
-                        start_time = str(
-                            timedelta(milliseconds=int(chap.start_time))
-                        ).split(".")[0]
-                        title = chap.sub_frames.getall("TIT2")[0].text[0]
-                        Chapter.create(
-                            from_episode=episode, start_time=start_time, title=title
-                        )
-            except:
-                pass
     with Image.open(logo_path) as im:
         # then process image to fit restriction:
         # 1. jpeg format
@@ -317,7 +316,7 @@ async def find_podcast(
             context.chat_data["is_using_reply_keyboard"] = False
         page = PodcastPage(podcast)
         logo = podcast.logo
-        print(logo.file_id or logo.url)
+        # print(logo.file_id or logo.url)
         try:
             msg = await message.reply_photo(
                 photo=logo.file_id or logo.url,

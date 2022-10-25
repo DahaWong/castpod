@@ -38,7 +38,7 @@ application = (
     .base_url(config.bot_api)
     .post_init(post_init)
     .write_timeout(180)
-    .read_timeout(10)
+    .read_timeout(15)
     .concurrent_updates(True)
     .build()
 )
