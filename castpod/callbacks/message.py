@@ -150,7 +150,8 @@ async def download_episode(update: Update, context: CallbackContext):
     podcast = episode.from_podcast
     logo = episode.logo
     shownotes = episode.shownotes[0]
-    shownotes.extract_chapters()
+    if not episode.chapters:
+        shownotes.extract_chapters()
     timeline = ""
     if not shownotes.url:
         shownotes = await shownotes.generate_telegraph()
@@ -233,11 +234,16 @@ async def download_episode(update: Update, context: CallbackContext):
             )
         # print(audio_local_path)
         caption = f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}"
+        caption = (
+            caption[: MessageLimit.CAPTION_LENGTH - 1] + "…"
+            if len(caption) >= MessageLimit.CAPTION_LENGTH
+            else caption
+        )
         audio_msg = await message.reply_audio(
             # audio=audio_local_path,
             # audio=open(audio_local_path, "rb"),  # TODO:why doesn't work??
             audio=episode.file_id or audio_local_path,
-            caption=caption[: MessageLimit.CAPTION_LENGTH - 1] + "…",
+            caption=caption,
             reply_markup=markup,
             title=episode.title,
             performer=podcast.name,

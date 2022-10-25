@@ -153,26 +153,37 @@ class Shownotes(BaseModel):
 
     def extract_chapters(self):
         INLINE = r"<\/?(?:s|strong|b|em|i|del|u|cite|span|a).*?>"
-        # print(self.content)
+        pprint(self.content)
         content = re.sub(INLINE, "", self.content)
+        print(content)
+        content = re.sub(r"\<br *\/\>", "\n", self.content)
+        print(content)
         TIME_DELTA = r"(?:[0-9]{1,2}[:：\'])?[0-9]{1,3}[:：\'][0-5][0-9]"
         soup = BeautifulSoup(content, "html.parser")
         results = soup.find_all(string=re.compile(TIME_DELTA))
-        # print(results)
+        print(results)
         if not results:
             return
-        for result in results:
-            # print(result.parent)
-            result = str(result)
-            # print(result)
-            start_time = re.search(TIME_DELTA, result)[0]
-            start_time.replace('：', ':')
-            # print(start_time)
-            title = re.sub(TIME_DELTA, "", result).strip()
-            title = re.sub(r"^(?:\(\)|\{\}|\<\>|【】|（|\[]|\||·|)", "", title)
-            Chapter.create(
-                from_episode=self.episode, start_time=start_time, title=title
-            )
+        if len(results) > 1:
+            for result in results:
+                result = str(result)
+                start_time = re.search(TIME_DELTA, result)[0]
+                start_time = start_time.replace("：", ":").replace("'", "")
+                title = re.sub(TIME_DELTA, "", result).strip()
+                title = re.sub(r"^(?:\(\)|\{\}|\<\>|【】|（|\[]|\||·|)", "", title)
+                Chapter.create(
+                    from_episode=self.episode, start_time=start_time, title=title
+                )
+        else:
+            CHAPTER_ITEM = r"((?:[0-9]{1,2}[:：'])?[0-9]{1,3}[:：'][0-5][0-9])(.+?)(?=(?:(?:[0-9]{1,2}[:：'])?[0-9]{1,3}[:：'][0-5][0-9])|\n)"
+            matches = re.finditer(CHAPTER_ITEM, results[0])
+            for match in matches:
+                start_time = match[1].replace("：", ":").replace("'", "")
+                title = match[2].lstrip("]】>|｜ ").rstrip("[【<|｜ ")
+                print(f"{start_time}   {title}")
+                Chapter.create(
+                    from_episode=self.episode, start_time=start_time, title=title
+                )
 
     async def generate_telegraph(self):
         telegraph = Telegraph()
@@ -180,6 +191,7 @@ class Shownotes(BaseModel):
             short_name={manifest.bot_id},
         )
         content = format_html(self.content)
+        self.content = content
         episode = self.episode
         podcast = episode.from_podcast
         logo_url = episode.logo.url or podcast.logo.url
@@ -313,7 +325,7 @@ def parse_episode(item, podcast):
     episode = {}
     episode["from_podcast"] = podcast.id
     episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
-    print(item.title)
+    # print(item.title)
     enclosures = item.enclosures
     if enclosures:
         audio = enclosures[0]
@@ -394,7 +406,7 @@ def format_html(text):
             tag.name not in ALLOWED_VOID_TAGS and len(tag.get_text()) == 0
         ):
             tag.unwrap()
-    print(soup.prettify())
+    # print(soup.prettify())
     return str(soup)
 
 

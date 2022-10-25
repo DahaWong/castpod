@@ -25,12 +25,13 @@ from zhconv import convert
 from config import manifest
 
 
-def subscription_generator(podcasts):
+def subscription_generator(podcasts, subscription_empty=False):
     if podcasts.count() == 0:
+        title = "你还没有订阅过播客" if subscription_empty else "你还没有订阅相关的播客"
         yield InlineQueryResultArticle(
             id=uuid4(),
-            title="你还没有订阅过播客",
-            description="输入「+」进入搜索模式，然后便可以寻找想听的播客",
+            title=title,
+            description="输入「+」进入搜索模式，然后便可开始寻找新播客",
             input_message_content=InputTextMessageContent("🔍"),
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton("返回订阅列表", switch_inline_query_current_chat="")
@@ -56,11 +57,13 @@ async def search_subscription(update: Update, context):
     keywords = inline_query.query
     podcasts = None
     user_id = update.effective_user.id
+    subscription_empty = False
     if not keywords:
         podcasts = show_subscription(user_id)
+        subscription_empty = True
     else:
         podcasts = filter_subscription(user_id, keywords)
-    results = subscription_generator(podcasts)
+    results = subscription_generator(podcasts, subscription_empty=True)
     await inline_query.answer(list(results), auto_pagination=True, cache_time=10)
 
 

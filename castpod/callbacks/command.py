@@ -105,9 +105,14 @@ async def start(update: Update, context):
                 )
             else:
                 caption = f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{episode.shownotes[0].url}'>📖 本期附录</a>\n\n{timeline}"
+                caption = (
+                    caption[: MessageLimit.CAPTION_LENGTH - 1] + "…"
+                    if len(caption) >= MessageLimit.CAPTION_LENGTH
+                    else caption
+                )
                 await message.reply_audio(
                     episode.file_id,
-                    caption=caption[: MessageLimit.CAPTION_LENGTH - 1] + "…",
+                    caption=caption,
                     reply_markup=markup,
                 )
 
