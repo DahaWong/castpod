@@ -2,6 +2,7 @@ from datetime import timedelta
 from email.mime import application
 from zhconv import convert
 from bs4 import BeautifulSoup
+from user_agent import generate_user_agent
 import httpx
 from telegram import (
     InlineKeyboardButton,
@@ -63,6 +64,8 @@ async def subscribe_feed(update: Update, context: CallbackContext):
     try:
         if is_new_podcast:
             podcast = await podcast.initialize()
+            if not podcast:
+                raise e
             podcast.save()
             logo = podcast.logo
             logo.thumb_url = thumbnail_small
@@ -186,7 +189,12 @@ async def download_episode(update: Update, context: CallbackContext):
         await reply_msg.edit_text("正在发送，请稍候…")
         await message.reply_chat_action(ChatAction.UPLOAD_VOICE)
         if logo.url:
-            res = httpx.get(logo.url)
+            ua = generate_user_agent(os="linux", device_type="desktop")
+            res = httpx.get(
+                logo.url,
+                follow_redirects=True,
+                headers={"User-Agent": ua},
+            )
             with open(logo_path, "wb") as f:
                 f.write(res.content)
         audio_metadata = File(audio_local_path)
@@ -259,16 +267,17 @@ async def find_podcast(
         and message.reply_to_message.from_user.username != manifest.bot_id
     ):
         return
-    keywords_tw = convert(keywords, "zh-hant")
+    keywords_hans = convert(keywords, "zh-hans")
+    keywords_hant = convert(keywords, "zh-hant")
     podcasts = (
         Podcast.select()
         .where(
-            Podcast.name.contains(keywords)
+            Podcast.name.contains(keywords_hans)
             | Podcast.pinyin_abbr.startswith(keywords)
             | Podcast.pinyin_full.startswith(keywords)
-            | Podcast.name.contains(keywords_tw)
-            | Podcast.host.startswith(keywords)
-            | Podcast.host.startswith(keywords_tw)
+            | Podcast.name.contains(keywords_hant)
+            | Podcast.host.startswith(keywords_hans)
+            | Podcast.host.startswith(keywords_hant)
         )
         .join(UserSubscribePodcast)
         .join(User)
@@ -381,7 +390,8 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
         if not url.startswith("http"):
             url = "https://" + url
         async with httpx.AsyncClient() as client:
-            r = await client.get(url, follow_redirects=True)
+            ua = generate_user_agent(os="linux", device_type="desktop")
+            r = await client.get(url, follow_redirects=True, headers={"User-Agent": ua})
         soup = BeautifulSoup(r.text, "html.parser")
         podcast_name = ""
         podcast_logo = soup.img["src"]

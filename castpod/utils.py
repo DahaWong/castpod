@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import httpx
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, User
 from telegram.error import BadRequest
+from user_agent import generate_user_agent
 
 
 # iTunes Search API
@@ -17,7 +18,8 @@ async def search_itunes(keyword: str = None, itunes_id: str = None):
         else f"https://itunes.apple.com/lookup?id={itunes_id}"
     )
     async with httpx.AsyncClient() as client:
-        res = await client.get(url, follow_redirects=True)
+        ua = generate_user_agent(os="linux", device_type="desktop")
+        res = await client.get(url, follow_redirects=True, headers={"User-Agent": ua})
     if res.status_code != httpx.codes.OK:
         return None
     results = res.json()["results"]
