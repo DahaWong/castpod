@@ -166,6 +166,7 @@ class Shownotes(BaseModel):
             result = str(result)
             # print(result)
             start_time = re.search(TIME_DELTA, result)[0]
+            start_time.replace('：', ':')
             # print(start_time)
             title = re.sub(TIME_DELTA, "", result).strip()
             title = re.sub(r"^(?:\(\)|\{\}|\<\>|【】|（|\[]|\||·|)", "", title)
@@ -183,7 +184,7 @@ class Shownotes(BaseModel):
         podcast = episode.from_podcast
         logo_url = episode.logo.url or podcast.logo.url
         img_content = (
-            f"\n<h3>封面图片</h3><figure><img src='{logo_url}'/><figcaption>{podcast.name}·《{episode.title}》</figcaption></figure>"
+            f"\n<h3>Cover Image</h3><figure><img src='{logo_url}'/><figcaption>{podcast.name}·《{episode.title}》</figcaption></figure>"
             if logo_url and ("img" not in content)
             else ""
         )
@@ -393,6 +394,7 @@ def format_html(text):
             tag.name not in ALLOWED_VOID_TAGS and len(tag.get_text()) == 0
         ):
             tag.unwrap()
+    print(soup.prettify())
     return str(soup)
 
 

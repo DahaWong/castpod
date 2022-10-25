@@ -3,10 +3,9 @@ import re
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    InputMediaAudio,
-    ReplyKeyboardMarkup,
     Update,
 )
+from telegram.constants import MessageLimit
 
 from telegram.ext import CallbackContext
 
@@ -28,7 +27,7 @@ async def start(update: Update, context):
                 f"欢迎使用 {manifest.name}！\n\n疑问或建议请至<a href='https://t.me/castpodchat'>内测聊天室</a>。"
             ),
             reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton("添加新播客", switch_inline_query_current_chat="+")
+                InlineKeyboardButton("+ 添加新播客", switch_inline_query_current_chat="+")
             ),
         )
         await msg.pin()
@@ -105,9 +104,10 @@ async def start(update: Update, context):
                     reply_markup=markup,
                 )
             else:
+                caption = f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{episode.shownotes[0].url}'>📖 本期附录</a>\n\n{timeline}"
                 await message.reply_audio(
                     episode.file_id,
-                    caption=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{episode.shownotes[0].url}'>📖 本期附录</a>\n\n{timeline}",
+                    caption=caption[: MessageLimit.CAPTION_LENGTH - 1] + "…",
                     reply_markup=markup,
                 )
 

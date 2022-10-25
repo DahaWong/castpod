@@ -1,5 +1,4 @@
 from datetime import timedelta
-from email.mime import application
 from zhconv import convert
 from bs4 import BeautifulSoup
 from user_agent import generate_user_agent
@@ -19,6 +18,7 @@ from telegram.ext import CallbackContext
 from telegram.error import TimedOut
 from mutagen import File
 from PIL import Image
+from telegram.constants import MessageLimit
 
 from castpod.utils import (
     modify_logo,
@@ -198,16 +198,22 @@ async def download_episode(update: Update, context: CallbackContext):
             with open(logo_path, "wb") as f:
                 f.write(res.content)
         audio_metadata = File(audio_local_path)
-        audio_tags = audio_metadata.tags
-        if audio_tags:
-            if hasattr(audio_tags, "getall"):
-                chaps = audio_tags.getall("CHAP")
-                for chap in chaps:
-                    start_time = str(timedelta(milliseconds=float(chap.start_time)))
-                    title = chap.sub_frames.getall("TIT2")[0].text[0]
-                    Chapter.create(
-                        from_episode=episode, start_time=start_time, title=title
-                    )
+
+        if not episode.chapters:
+            try:
+                audio_tags = audio_metadata.tags
+                if audio_tags & hasattr(audio_tags, "getall"):
+                    chaps = audio_tags.getall("CHAP")
+                    for chap in chaps:
+                        start_time = str(
+                            timedelta(milliseconds=int(chap.start_time))
+                        ).split(".")[0]
+                        title = chap.sub_frames.getall("TIT2")[0].text[0]
+                        Chapter.create(
+                            from_episode=episode, start_time=start_time, title=title
+                        )
+            except:
+                pass
     with Image.open(logo_path) as im:
         # then process image to fit restriction:
         # 1. jpeg format
@@ -226,11 +232,12 @@ async def download_episode(update: Update, context: CallbackContext):
                 ]
             )
         # print(audio_local_path)
+        caption = f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}"
         audio_msg = await message.reply_audio(
             # audio=audio_local_path,
             # audio=open(audio_local_path, "rb"),  # TODO:why doesn't work??
             audio=episode.file_id or audio_local_path,
-            caption=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
+            caption=caption[: MessageLimit.CAPTION_LENGTH - 1] + "…",
             reply_markup=markup,
             title=episode.title,
             performer=podcast.name,
@@ -328,7 +335,7 @@ async def find_podcast(
                 keyboard.append([name])
             else:
                 keyboard[index // 2].append(name)
-        msg = await message.reply_text(
+        await message.reply_text(
             f"在订阅列表中找到 {count} 档相关的播客：",
             reply_markup=ReplyKeyboardMarkup(
                 [["[ 关闭 ]"]] + keyboard,
@@ -338,19 +345,28 @@ async def find_podcast(
             ),
         )
         context.chat_data["is_using_reply_keyboard"] = True
-        msg = await message.reply_media_group(
-            media=[
-                InputMediaPhoto(
-                    podcast.logo.thumb_file_id
-                    or podcast.logo.file_id
-                    or podcast.logo.url,
-                    caption=podcast.name,
-                    filename=podcast.name,
-                )
-                for podcast in podcasts[:10]
-            ]
-        )
-        for i, podcast in enumerate(podcasts[:10]):
+        input_photos = []
+        for podcast in podcasts[:9]:
+            logo = podcast.logo
+            # input_file = None
+            # if not (podcast.logo.thumb_file_id and podcast.logo.file_id):
+            #     path = "public/logo/{logo.id}.jpeg"
+            #     with open(path, "wb") as f:
+            #         res = httpx.get(logo.url, follow_redirects=True)
+            #         if not res.status_code == httpx.codes.OK:
+            #             continue
+            #         f.write(res.content)
+            #     input_file = path
+            # else:
+            input_file = logo.thumb_file_id or logo.file_id or logo.url
+            new_photo = InputMediaPhoto(
+                input_file,
+                caption=podcast.name,
+                filename=podcast.name,
+            )
+            input_photos.append(new_photo)
+        msg = await message.reply_media_group(media=input_photos)
+        for i, podcast in enumerate(podcasts[:9]):
             logo = podcast.logo
             if not logo.file_id or logo.thumb_file_id:
                 # 320*320:
@@ -426,7 +442,7 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
                 caption=f"<b>{podcast_name}</b>",
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
-                        "订阅此播客", switch_inline_query_current_chat=podcast_name
+                        "+ 订阅此播客", switch_inline_query_current_chat=f"+{podcast_name}"
                     )
                 ),
             )

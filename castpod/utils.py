@@ -13,7 +13,7 @@ from user_agent import generate_user_agent
 # iTunes Search API
 async def search_itunes(keyword: str = None, itunes_id: str = None):
     url = (
-        f"https://itunes.apple.com/search?media=podcast&limit=25&term={keyword}"
+        f"https://itunes.apple.com/search?media=podcast&limit=50&term={keyword}"
         if keyword and not itunes_id
         else f"https://itunes.apple.com/lookup?id={itunes_id}"
     )
