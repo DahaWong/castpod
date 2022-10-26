@@ -6,3 +6,6 @@ peewee
 Pillow
 mutagen
 lxml
+pypinyin
+zhconv
+user-agent

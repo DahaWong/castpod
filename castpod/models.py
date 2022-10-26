@@ -24,19 +24,17 @@ from peewee import (
     TextField,
     UUIDField,
 )
-from playhouse.sqlite_ext import FTSModel, SearchField
+from playhouse.sqlite_ext import SqliteExtDatabase, FTSModel, SearchField, RowIDField
 
-from config import manifest
+from config import manifest, EXT_PATH
 
-db = SqliteDatabase(
+db = SqliteExtDatabase(
     database="castpod.db",
-    pragmas={
-        "journal_mode": "wal",
-        "cache_size": -1 * 64000,  # 64MB
-        "foreign_keys": 1,
-        "ignore_check_constraints": 0,
-        "synchronous": 0,
-    },
+    pragmas=(
+        ("cache_size", -1024 * 64),  # 64MB page-cache.
+        ("journal_mode", "wal"),  # Use WAL-mode (you should always use this!).
+        ("foreign_keys", 1),
+    ),  # Enforce foreign-key constraints.
 )
 
 
@@ -215,11 +213,13 @@ class Shownotes(BaseModel):
 
 class ShownotesIndex(FTSModel):
     # Full-text search index.
+    rowid = RowIDField()
+    title = SearchField()
     content = SearchField()
 
     class Meta:
         database = db
-        options = {"content": Shownotes.content}
+        # options = {"tokenize": "simple"}
 
 
 class Chapter(BaseModel):
@@ -264,6 +264,7 @@ class GroupPodcast(BaseModel):
 
 def db_init():
     db.connect()
+    # db.load_extension(EXT_PATH + "libsimple")
     db.create_tables(
         [
             User,
@@ -282,10 +283,11 @@ def db_init():
             GroupPodcast,
         ]
     )
-    # Now, we can manage content in the ShownotesIndex. To populate the
-    # search index:
-    ShownotesIndex.rebuild()
-
+    # all_shownotes = Shownotes.select()
+    # for shownotes in all_shownotes:
+    #     print(shownotes)
+    #     store_shownotes(shownotes)
+    # print("done!")
     # Optimize the index.
     ShownotesIndex.optimize()
 
@@ -358,6 +360,7 @@ def parse_episode(item, podcast):
         item.get("content")[0]["value"] if item.get("content") else episode["summary"]
     )
     shownotes = Shownotes.create(content=shownotes_content)
+    store_shownotes(shownotes)
     excerpt = re.sub(r"\<.*?\>", "", episode["summary"]).strip()
     if len(excerpt) >= 47:
         excerpt = excerpt[:47] + "…"
@@ -443,3 +446,13 @@ def show_subscription(user_id):
         Podcast.select().join(UserSubscribePodcast).join(User).where(User.id == user_id)
     )
     return podcasts
+
+
+def store_shownotes(shownotes: Shownotes):
+    ShownotesIndex.insert(
+        {
+            ShownotesIndex.rowid: shownotes.id,
+            ShownotesIndex.title: shownotes.episode.title,
+            ShownotesIndex.content: shownotes.content,
+        }
+    ).execute()

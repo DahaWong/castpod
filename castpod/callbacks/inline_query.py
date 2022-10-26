@@ -7,10 +7,11 @@ from telegram import (
     InlineKeyboardMarkup,
     Update,
 )
-from telegram.error import TimedOut
 import re
 from ..models import (
     Episode,
+    Shownotes,
+    ShownotesIndex,
     User,
     Podcast,
     UserSubscribePodcast,
@@ -63,7 +64,7 @@ async def search_subscription(update: Update, context):
         subscription_empty = True
     else:
         podcasts = filter_subscription(user_id, keywords)
-    results = subscription_generator(podcasts, subscription_empty=True)
+    results = subscription_generator(podcasts, subscription_empty=subscription_empty)
     await inline_query.answer(list(results), auto_pagination=True, cache_time=10)
 
 
@@ -128,6 +129,74 @@ async def search_new_podcast(update: Update, context):
                 )
                 results.append(new_result)
     await inline_query.answer(results, auto_pagination=True, cache_time=10)
+
+
+async def search_all_episode(update: Update, context):
+    inline_query = update.inline_query
+    keywords = inline_query.query[1:]
+    if not keywords:
+        await inline_query.answer(
+            [
+                InlineQueryResultArticle(
+                    id=uuid4(),
+                    title="请输入关键词来搜索单集…",
+                    description=f"比如你手边的那本书，或是昨天刚看的电影？",
+                    input_message_content=InputTextMessageContent("/search"),
+                )
+            ],
+            auto_pagination=True,
+        )
+        return
+    episodes = (
+        Episode.select()
+        .join(Shownotes)
+        .join(ShownotesIndex, on=(Shownotes.id == ShownotesIndex.rowid))
+        .where(ShownotesIndex.match(keywords))
+        .order_by(ShownotesIndex.bm25())
+    )
+    if episodes.count():
+        await inline_query.answer(
+            [
+                InlineQueryResultArticle(
+                    id=episode.id,
+                    title=episode.title,
+                    input_message_content=InputTextMessageContent(
+                        f"<b>{episode.from_podcast.name}</b>\n{episode.title}\n\n<code>#{episode.id}</code>"
+                    ),
+                    reply_markup=InlineKeyboardMarkup.from_row(
+                        [
+                            InlineKeyboardButton(
+                                "订阅列表", switch_inline_query_current_chat=""
+                            ),
+                            InlineKeyboardButton(
+                                "更多单集",
+                                switch_inline_query_current_chat=f"{episode.from_podcast.name}#",
+                            ),
+                        ]
+                    ),
+                    description=f"{datetime.timedelta(seconds=episode.duration) or episode.from_podcast.name}\n{episode.subtitle}",
+                    thumb_url=episode.logo.thumb_url or episode.logo.url,
+                    thumb_width=60,
+                    thumb_height=60,
+                )
+                for episode in episodes
+            ],
+            auto_pagination=True,
+            cache_time=10
+            # cache_time=60
+        )
+    else:
+        await inline_query.answer(
+            [
+                InlineQueryResultArticle(
+                    id=uuid4(),
+                    title="没有找到相关的节目",
+                    input_message_content=InputTextMessageContent("/search"),
+                    description=f"换个关键词试试！",
+                )
+            ],
+            auto_pagination=True,
+        )
 
 
 async def search_episode(update: Update, context):

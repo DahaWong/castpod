@@ -341,7 +341,7 @@ async def find_podcast(
             else:
                 keyboard[index // 2].append(name)
         await message.reply_text(
-            f"在订阅列表中找到 {count} 档相关的播客：",
+            f"在订阅列表中找到 {count} 档相关的播客…",
             reply_markup=ReplyKeyboardMarkup(
                 [["[ 关闭 ]"]] + keyboard,
                 one_time_keyboard=True,
@@ -350,35 +350,6 @@ async def find_podcast(
             ),
         )
         context.chat_data["is_using_reply_keyboard"] = True
-        input_photos = []
-        for podcast in podcasts[:9]:
-            logo = podcast.logo
-            # input_file = None
-            # if not (podcast.logo.thumb_file_id and podcast.logo.file_id):
-            #     path = "public/logo/{logo.id}.jpeg"
-            #     with open(path, "wb") as f:
-            #         res = httpx.get(logo.url, follow_redirects=True)
-            #         if not res.status_code == httpx.codes.OK:
-            #             continue
-            #         f.write(res.content)
-            #     input_file = path
-            # else:
-            input_file = logo.thumb_file_id or logo.file_id or logo.url
-            new_photo = InputMediaPhoto(
-                input_file,
-                caption=podcast.name,
-                filename=podcast.name,
-            )
-            input_photos.append(new_photo)
-        msg = await message.reply_media_group(media=input_photos)
-        for i, podcast in enumerate(podcasts[:9]):
-            logo = podcast.logo
-            if not logo.file_id or logo.thumb_file_id:
-                # 320*320:
-                logo.file_id = msg[i].photo[1].file_id
-                # 90*90
-                logo.thumb_file_id = msg[i].photo[0].file_id
-                logo.save()
 
 
 async def show_podcast(update: Update, context: CallbackContext):

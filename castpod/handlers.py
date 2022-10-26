@@ -81,6 +81,11 @@ def register_handlers(application):
                 inline_query.search_new_podcast, chat_types=[Chat.SENDER], pattern="^\+"
             ),
             InlineQueryHandler(
+                inline_query.search_all_episode,
+                chat_types=[Chat.SENDER],
+                pattern="^#",
+            ),
+            InlineQueryHandler(
                 inline_query.search_episode, chat_types=[Chat.SENDER], pattern="^.+?#.*"
             ),
             InlineQueryHandler(

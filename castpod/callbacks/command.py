@@ -120,8 +120,9 @@ async def start(update: Update, context):
 async def search(update: Update, context: CallbackContext):
     await update.message.reply_text(
         text="🔍",
-        reply_markup=InlineKeyboardMarkup.from_button(
-            InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="+")
+        reply_markup=InlineKeyboardMarkup.from_column(
+            InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="+"),
+            InlineKeyboardButton("查找单集", switch_inline_query_current_chat="#"),
         ),
     )
 

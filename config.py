@@ -18,6 +18,9 @@ dev = config["DEV"]["USER_ID"]
 dev_name = config["DEV"]["USER_NAME"]
 dev_email = config["DEV"]["EMAIL"]
 
+# Path
+EXT_PATH = config["SQL"]["EXT_PATH"]
+
 # commands
 private_commands = [
     ("search", "搜寻新播客"),
