@@ -1,5 +1,6 @@
 from datetime import timedelta
 import os
+from time import time
 from zhconv import convert
 from bs4 import BeautifulSoup
 from user_agent import generate_user_agent
@@ -20,6 +21,7 @@ from telegram.error import TimedOut
 from mutagen import File
 from PIL import Image
 from telegram.constants import MessageLimit
+from castpod.spotify import lookup_episode, lookup_podcast
 
 from castpod.utils import (
     modify_logo,
@@ -233,7 +235,6 @@ async def download_episode(update: Update, context: CallbackContext):
                     for chapter in episode.chapters
                 ]
             )
-        # print(audio_local_path)
         shownotes_text = (
             f"\n\n<a href='{shownotes.url}'>📖 本期附录</a>" if shownotes else ""
         )
@@ -262,9 +263,8 @@ async def download_episode(update: Update, context: CallbackContext):
             episode.file_id = audio.file_id
             episode.save()
             if os.path.exists(audio_local_path):
+                print("deleting")
                 os.remove(audio_local_path)  # delete local file
-            else:
-                print("The file does not exist")
             if audio.thumb:
                 logo.file_id = audio.thumb.file_id
                 logo.save()
@@ -392,12 +392,15 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
             domain = match[1]
         if not url.startswith("http"):
             url = "https://" + url
+        ua = generate_user_agent(os="linux", device_type="desktop")
         async with httpx.AsyncClient() as client:
-            ua = generate_user_agent(os="linux", device_type="desktop")
-            r = await client.get(url, follow_redirects=True, headers={"User-Agent": ua})
-        soup = BeautifulSoup(r.text, "html.parser")
+            res = await client.get(
+                url, follow_redirects=True, headers={"User-Agent": ua}, timeout=10
+            )
+        soup = BeautifulSoup(res.text, "html.parser")
         podcast_name = ""
-        podcast_logo = soup.img["src"]
+        img = soup.img
+        podcast_logo = img.get("src") if img else None
         title_text = soup.title.text
         await reply.delete()
         if domain == "xiaoyuzhoufm.com":
@@ -405,9 +408,19 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
             if match:
                 podcast_name = match[1].lstrip()
         elif domain == "spotify.com":
-            match = re.search(r"([^\-]+?) \|(?: Podcast on){0,1} Spotify", title_text)
+            match = re.search(r".*?\/(show|episode)\/([0-9a-zA-Z]+)\??", url)
             if match:
-                podcast_name = match[1].lstrip()
+                item_type = match[1]
+                item_id = match[2]
+                if item_type == "podcast":
+                    # TODO: 利用返回的数据，直接让用户订阅播客
+                    podcast_name, podcast_logo = await lookup_podcast(id=item_id)
+                elif item_type == "episode":
+                    podcast_name, podcast_logo = await lookup_episode(id=item_id)
+                else:
+                    podcast_logo = None
+            else:
+                podcast_logo = None
         elif domain == "google.com" or domain == "pca.st":
             podcast_name = title_text
         elif domain == "apple.com" or domain == "overcast.fm":  # use itunes id
@@ -427,6 +440,15 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
             await message.reply_photo(
                 photo=podcast_logo,
                 caption=f"<b>{podcast_name}</b>",
+                reply_markup=InlineKeyboardMarkup.from_button(
+                    InlineKeyboardButton(
+                        "+ 订阅此播客", switch_inline_query_current_chat=f"+{podcast_name}"
+                    )
+                ),
+            )
+        elif podcast_name:
+            await message.reply_text(
+                text=f"<b>{podcast_name}</b>",
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
                         "+ 订阅此播客", switch_inline_query_current_chat=f"+{podcast_name}"

@@ -1,9 +1,11 @@
+import asyncio
 from telegram import (
     BotCommandScopeAllChatAdministrators,
     BotCommandScopeAllPrivateChats,
     BotCommandScopeChat,
 )
 from telegram.ext import Application, ApplicationBuilder
+from castpod.spotify import lookup_episode, lookup_podcast, search_podcast
 
 import config
 from castpod.handlers import register_handlers
@@ -55,6 +57,9 @@ application.run_webhook(
     max_connections=80,
     drop_pending_updates=True,
 )
+
+# asyncio.run(search_podcast("一天世界"))
+# asyncio.run(lookup_episode("35jDuTZXlOlyScHabBhmUk"))
 
 # Polling:
 # application.run_polling()

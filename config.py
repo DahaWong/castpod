@@ -18,6 +18,10 @@ dev = config["DEV"]["USER_ID"]
 dev_name = config["DEV"]["USER_NAME"]
 dev_email = config["DEV"]["EMAIL"]
 
+# Spotify
+client_id = config["SPOTIFY"]["CLIENT_ID"]
+client_secret = config["SPOTIFY"]["CLIENT_SECRET"]
+
 # Path
 EXT_PATH = config["SQL"]["EXT_PATH"]
 

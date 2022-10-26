@@ -302,7 +302,10 @@ def db_init():
     # Optimize the index.
     # ShownotesIndex.optimize()
 
-    # podcast = Podcast.get(Podcast.name == "NHKラジオニュース")
+    # podcast = Podcast.get(
+    #     Podcast.name
+    #     == "HTML All The Things - Web Development, Web Design, Small Busine…"
+    # )
     # podcast.delete_instance()
 
 

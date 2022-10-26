@@ -30,9 +30,9 @@ def register_handlers(application):
             CommandHandler("search", command.search, block=False),
             CommandHandler("help", command.show_help_info, block=False),
             CommandHandler("about", command.about, block=False),
-            MessageHandler(
-                filters.AUDIO & filters.UpdateType.EDITED, message.pin_audio
-            ),
+            # MessageHandler(
+            #     filters.AUDIO & filters.UpdateType.EDITED, message.pin_audio
+            # ),
             MessageHandler(
                 filters.Entity("mention") & filters.Regex(f"@{manifest.bot_id}"),
                 message.handle_mention_bot,
