@@ -151,12 +151,13 @@ async def download_episode(update: Update, context: CallbackContext):
     episode = Episode.get(Episode.id == match[1])
     podcast = episode.from_podcast
     logo = episode.logo
-    shownotes = episode.shownotes[0]
+    get_shownotes = episode.shownotes
+    shownotes = episode.shownotes[0] if get_shownotes else None
     # todo:not only mp3??
     audio_local_path = validate_path(f"public/audio/{podcast.id}/{episode.id}.mp3")
     logo_path = validate_path(f"public/logo/{podcast.id}/{logo.id}.jpeg")
     timeline = ""
-    if not shownotes.url:
+    if shownotes and not shownotes.url:
         shownotes = await shownotes.generate_telegraph()
         shownotes.save()
     markup = InlineKeyboardMarkup.from_row(
@@ -172,8 +173,11 @@ async def download_episode(update: Update, context: CallbackContext):
         ],
     )
     if not episode.url:
+        shownotes_text = (
+            f"\n\n<a href='{shownotes.url}'>📖 本期附录</a>" if shownotes else ""
+        )
         await message.reply_text(
-            text=f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}",
+            text=f"<b>{podcast.name}</b>\n{episode.title}{shownotes_text}\n\n{timeline}",
             reply_markup=markup,
         )
         await reply_msg.delete()
@@ -206,7 +210,7 @@ async def download_episode(update: Update, context: CallbackContext):
         im.thumbnail(size)
         # 3. less than 200 kB !!
         im.save(logo_path, "JPEG", optimize=True, quality=85)
-    if not episode.chapters:
+    if shownotes and not episode.chapters:
         has_chapters = shownotes.extract_chapters()
         if not has_chapters:
             audio_metadata = File(audio_local_path)
@@ -230,7 +234,12 @@ async def download_episode(update: Update, context: CallbackContext):
                 ]
             )
         # print(audio_local_path)
-        caption = f"<b>{podcast.name}</b>\n{episode.title}\n\n<a href='{shownotes.url}'>📖 本期附录</a>\n\n{timeline}"
+        shownotes_text = (
+            f"\n\n<a href='{shownotes.url}'>📖 本期附录</a>" if shownotes else ""
+        )
+        caption = (
+            f"<b>{podcast.name}</b>\n{episode.title}{shownotes_text}\n\n{timeline}"
+        )
         caption = (
             caption[: MessageLimit.CAPTION_LENGTH - 1] + "…"
             if len(caption) >= MessageLimit.CAPTION_LENGTH
@@ -435,3 +444,7 @@ async def close_reply_keyboard(update: Update, context: CallbackContext):
 async def handle_mention_bot(update: Update, context: CallbackContext):
     keywords = re.sub(f"@{manifest.bot_id} +", "", update.message.text)
     await show_podcast(update, context, keywords=keywords)
+
+
+async def pin_audio(update: Update, context: CallbackContext):
+    await update.effective_message.pin()

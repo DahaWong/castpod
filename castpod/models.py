@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import httpx
 from telegraph.aio import Telegraph
 from telegraph.utils import ALLOWED_TAGS
+from telegraph.exceptions import TelegraphException
 from pypinyin import Style, pinyin
 from zhconv import convert
 from user_agent import generate_user_agent
@@ -25,6 +26,7 @@ from peewee import (
     UUIDField,
 )
 from playhouse.sqlite_ext import SqliteExtDatabase, FTSModel, SearchField, RowIDField
+from castpod.constants import SHORT_DOMAIN
 
 from config import manifest, EXT_PATH
 
@@ -120,9 +122,10 @@ class Podcast(BaseModel):
             for item in parsed["items"]:
                 kwargs, shownotes = parse_episode(item, self)
                 episode = Episode.create(id=uuid4(), **kwargs)
-                shownotes.episode = episode
-                shownotes.save()
-                store_shownotes(shownotes)
+                if shownotes:
+                    shownotes.episode = episode
+                    shownotes.save()
+                    store_shownotes(shownotes)
         return self
 
 
@@ -185,7 +188,9 @@ class Shownotes(BaseModel):
     async def generate_telegraph(self):
         telegraph = Telegraph()
         await telegraph.create_account(
-            short_name={manifest.bot_id},
+            short_name=manifest.name,
+            author_name=manifest.name,
+            author_url=f"https://t.me/{manifest.bot_id}",
         )
         content = format_html(self.content)
         self.content = content
@@ -198,18 +203,23 @@ class Shownotes(BaseModel):
             else ""
         )
         content += img_content
-        # content = content.replace("’", "'")
+        author_url = episode.link or ""
+        if not re.match(SHORT_DOMAIN, author_url):
+            author_url = podcast.website or ""
+        if not re.match(SHORT_DOMAIN, author_url):
+            author_url = "https://{manifest.bod_id}.t.me"
         try:
             res = await telegraph.create_page(
                 title=f"{podcast.name}-{episode.title}",
                 author_name=podcast.name,
-                author_url=episode.link or podcast.website,
+                author_url=author_url,
                 html_content=content,
             )
             self.url = res["url"]
             return self
-        except Exception as e:
-            raise e
+        except TelegraphException:
+            print(episode.link)
+            print(podcast.website)
 
 
 class ShownotesIndex(FTSModel):
@@ -292,7 +302,7 @@ def db_init():
     # Optimize the index.
     # ShownotesIndex.optimize()
 
-    # podcast = Podcast.get(Podcast.name == "字谈字畅")
+    # podcast = Podcast.get(Podcast.name == "NHKラジオニュース")
     # podcast.delete_instance()
 
 
@@ -364,7 +374,9 @@ def parse_episode(item, podcast):
     shownotes_content = (
         item.get("content")[0]["value"] if item.get("content") else episode["summary"]
     )
-    shownotes = Shownotes.create(content=shownotes_content)
+    shownotes = None
+    if shownotes_content:
+        shownotes = Shownotes.create(content=shownotes_content)
     excerpt = re.sub(r"\<.*?\>", "", episode["summary"]).strip()
     if len(excerpt) >= 47:
         excerpt = excerpt[:47] + "…"
