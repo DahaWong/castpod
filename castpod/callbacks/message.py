@@ -1,4 +1,5 @@
 from datetime import timedelta
+import os
 from zhconv import convert
 from bs4 import BeautifulSoup
 from user_agent import generate_user_agent
@@ -105,14 +106,15 @@ async def save_subscription(update: Update, context: CallbackContext):
         for feed in feeds:
             podcast = None
             try:
-                podcast = Podcast.get_or_create(
+                podcast, is_new_podcast = Podcast.get_or_create(
                     feed=re.sub(r"https?:\/\/", "", feed["url"]).lower()
                 )[0]
                 is_new_subscription = UserSubscribePodcast.get_or_create(
                     user=user.id, podcast=podcast
                 )[1]
-                podcast = await podcast.initialize()
-                podcast.save()
+                if is_new_podcast:
+                    podcast = await podcast.initialize()
+                    podcast.save()
                 if is_new_subscription:
                     podcasts_count += 1
             except:
@@ -150,23 +152,9 @@ async def download_episode(update: Update, context: CallbackContext):
     podcast = episode.from_podcast
     logo = episode.logo
     shownotes = episode.shownotes[0]
-    if not episode.chapters:
-        r = shownotes.extract_chapters()
-        if not r:
-            try:
-                audio_tags = audio_metadata.tags
-                if audio_tags & hasattr(audio_tags, "getall"):
-                    chaps = audio_tags.getall("CHAP")
-                    for chap in chaps:
-                        start_time = str(
-                            timedelta(milliseconds=int(chap.start_time))
-                        ).split(".")[0]
-                        title = chap.sub_frames.getall("TIT2")[0].text[0]
-                        Chapter.create(
-                            from_episode=episode, start_time=start_time, title=title
-                        )
-            except:
-                pass
+    # todo:not only mp3??
+    audio_local_path = validate_path(f"public/audio/{podcast.id}/{episode.id}.mp3")
+    logo_path = validate_path(f"public/logo/{podcast.id}/{logo.id}.jpeg")
     timeline = ""
     if not shownotes.url:
         shownotes = await shownotes.generate_telegraph()
@@ -190,10 +178,6 @@ async def download_episode(update: Update, context: CallbackContext):
         )
         await reply_msg.delete()
         return
-    # todo:not only mp3
-    audio_local_path = f"public/audio/{podcast.id}/{episode.title}.mp3"
-    # audio_local_path = validate_path(f"public/{podcast.id}.mp3")
-    logo_path = validate_path(f"public/logo/{podcast.id}/{logo.id}.jpeg")
     if not episode.file_id:
         await reply_msg.edit_text("下载中…")
         await message.reply_chat_action(ChatAction.RECORD_VOICE)
@@ -213,7 +197,6 @@ async def download_episode(update: Update, context: CallbackContext):
             )
             with open(logo_path, "wb") as f:
                 f.write(res.content)
-        audio_metadata = File(audio_local_path)
     with Image.open(logo_path) as im:
         # then process image to fit restriction:
         # 1. jpeg format
@@ -223,6 +206,21 @@ async def download_episode(update: Update, context: CallbackContext):
         im.thumbnail(size)
         # 3. less than 200 kB !!
         im.save(logo_path, "JPEG", optimize=True, quality=85)
+    if not episode.chapters:
+        has_chapters = shownotes.extract_chapters()
+        if not has_chapters:
+            audio_metadata = File(audio_local_path)
+            audio_tags = audio_metadata.tags
+            if audio_tags and hasattr(audio_tags, "getall"):
+                chaps = audio_tags.getall("CHAP")
+                for chap in chaps:
+                    start_time = str(
+                        timedelta(milliseconds=int(chap.start_time))
+                    ).split(".")[0]
+                    title = chap.sub_frames.getall("TIT2")[0].text[0]
+                    Chapter.create(
+                        from_episode=episode, start_time=start_time, title=title
+                    )
     try:
         if episode.chapters:
             timeline = "\n".join(
@@ -254,6 +252,10 @@ async def download_episode(update: Update, context: CallbackContext):
             audio = audio_msg.audio
             episode.file_id = audio.file_id
             episode.save()
+            if os.path.exists(audio_local_path):
+                os.remove(audio_local_path)  # delete local file
+            else:
+                print("The file does not exist")
             if audio.thumb:
                 logo.file_id = audio.thumb.file_id
                 logo.save()
@@ -301,7 +303,7 @@ async def find_podcast(
             "你还没有订阅相关的播客~",
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
-                    f"去搜索「{keywords}」",
+                    f"+ 搜索「{keywords}」",
                     switch_inline_query_current_chat=f"+{keywords}",
                 )
             ),

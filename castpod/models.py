@@ -122,6 +122,7 @@ class Podcast(BaseModel):
                 episode = Episode.create(id=uuid4(), **kwargs)
                 shownotes.episode = episode
                 shownotes.save()
+                store_shownotes(shownotes)
         return self
 
 
@@ -289,10 +290,13 @@ def db_init():
     #     store_shownotes(shownotes)
     # print("done!")
     # Optimize the index.
-    ShownotesIndex.optimize()
+    # ShownotesIndex.optimize()
+
+    # podcast = Podcast.get(Podcast.name == "字谈字畅")
+    # podcast.delete_instance()
 
 
-async def parse_feed(feed, etag=None, if_modified_since=None):
+async def parse_feed(feed, etag="", if_modified_since=""):
     user_agent = generate_user_agent(os="linux", device_type="desktop")
     headers = {
         "User-Agent": user_agent,
@@ -325,9 +329,10 @@ async def parse_feed(feed, etag=None, if_modified_since=None):
     podcast["items"] = result.get("items")
     podcast["etag"] = result.get("etag")
     last_modified: str = result.get("last-modified")
-    podcast["last_modified"] = datetime.strptime(
-        last_modified, "%a, %d %b %Y %H:%M:%S GMT"
-    )
+    if last_modified:
+        podcast["last_modified"] = datetime.strptime(
+            last_modified, "%a, %d %b %Y %H:%M:%S GMT"
+        )
     return podcast
 
 
@@ -360,7 +365,6 @@ def parse_episode(item, podcast):
         item.get("content")[0]["value"] if item.get("content") else episode["summary"]
     )
     shownotes = Shownotes.create(content=shownotes_content)
-    store_shownotes(shownotes)
     excerpt = re.sub(r"\<.*?\>", "", episode["summary"]).strip()
     if len(excerpt) >= 47:
         excerpt = excerpt[:47] + "…"
