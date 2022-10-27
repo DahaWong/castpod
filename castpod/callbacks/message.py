@@ -64,9 +64,9 @@ async def subscribe_feed(update: Update, context: CallbackContext):
     user = User.get(User.id == update.effective_user.id)
     try:
         if is_new_podcast:
-            podcast = await podcast.initialize()
-            if not podcast:
-                raise e
+            podcast, is_success = await podcast.initialize()
+            if not is_success:
+                raise Exception
             podcast.save()
             logo = podcast.logo
             logo.thumb_url = thumbnail_small
@@ -76,16 +76,22 @@ async def subscribe_feed(update: Update, context: CallbackContext):
         kwargs = {"mode": "group"} if in_group else {}
         podcast_page = PodcastPage(podcast, **kwargs)
         logo = podcast.logo
-        photo = logo.file_id or thumbnail_large or logo.url
-        msg = await message.reply_photo(
-            photo=photo,
-            caption=podcast_page.text(),
-            reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
-        )
-        if not logo.file_id:
-            podcast.logo.file_id = msg.photo[0].file_id
-            podcast.logo.save()
-            # TODO:then delete the local logo file.
+        if logo:
+            photo = logo.file_id or thumbnail_large or logo.url
+            msg = await message.reply_photo(
+                photo=photo,
+                caption=podcast_page.text(),
+                reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
+            )
+            if not logo.file_id:
+                podcast.logo.file_id = msg.photo[0].file_id
+                podcast.logo.save()
+                # TODO:then delete the local logo file.
+        else:
+            await message.reply_text(
+                text=podcast_page.text(),
+                reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
+            )
         await reply_msg.delete()
     except Exception as e:
         await reply_msg.edit_text("订阅失败 :(")
@@ -395,7 +401,7 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
             res = await client.get(
                 url, follow_redirects=True, headers={"User-Agent": ua}, timeout=10
             )
-        soup = BeautifulSoup(markup=res.text, feautures="html.parser")
+        soup = BeautifulSoup(markup=res.text, features="html.parser")
         podcast_name = ""
         img = soup.img
         podcast_logo = img.get("src") if img else None

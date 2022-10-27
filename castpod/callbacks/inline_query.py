@@ -451,7 +451,7 @@ def share_podcast(keywords):
         yield InlineQueryResultArticle(
             id=uuid4(),
             title="没有找到相关的播客，换个关键词试试 :)",
-            description=f"点击此处直接向朋友推荐 Castpod",
+            description=f"点击此处向朋友推荐 Castpod",
             input_message_content=InputTextMessageContent(
                 f"来 <a href='https://t.me/{manifest.bot_id}'>Castpod</a>，一起听播客！",
                 disable_web_page_preview=False,

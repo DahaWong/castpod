@@ -97,7 +97,7 @@ def generate_opml(podcasts):
         "\t\t\t<outline text='feeds'>\n"
     )
     tail = "\t\t\t</outline>\n" "\t\t</body>\n" "\t</opml>\n"
-    opml = "".join(head, body, tail)
+    opml = "".join([head, body, tail])
     path = f"public/subscriptions/castpod-{date.today()}.xml"
     with open(path, "w+") as f:
         f.write(opml)

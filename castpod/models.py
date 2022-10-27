@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timedelta
+from time import mktime
 from html import unescape
 from pprint import pprint
 from uuid import uuid4
@@ -97,10 +98,12 @@ class Podcast(BaseModel):
 
     async def initialize(self):
         parsed = await parse_feed("https://" + self.feed)
+        is_success = True
         if not parsed:
             parsed = await parse_feed("http://" + self.feed)
-        if not parsed:
-            return None
+        if not (parsed and parsed["name"]):
+            is_success = False
+            return self, is_success
         self.name = parsed["name"]
         match = re.search(
             r"[\u4E00-\u9FFF\u3400-\u4DBF\u20000-\u2A6DF\u2A700-\u2B73F\u2B740-\u2B81F\u2B820-\u2CEAF\u2CEB0-\u2EBEF\u30000-\u3134F\uF900-\uFAFF\u2E80-\u2EFF\u31C0-\u31EF\u3000-\u303F\u2FF0-\u2FFF\u3300-\u33FF\uFE30-\uFE4F\uF900-\uFAFF\u2F800-\u2FA1F\u3200-\u32FF\u1F200-\u1F2FF\u2F00-\u2FDF]+",
@@ -124,8 +127,9 @@ class Podcast(BaseModel):
                 if shownotes:
                     shownotes.episode = episode
                     shownotes.save()
+                    # print(episode.title)
                     store_shownotes(shownotes)
-        return self
+        return self, is_success
 
 
 class Episode(BaseModel):
@@ -196,12 +200,14 @@ class Shownotes(BaseModel):
         episode = self.episode
         podcast = episode.from_podcast
         logo_url = episode.logo.url or podcast.logo.url
+        date_content = f"<p><blockquote><a href='{episode.link or podcast.website}'>{podcast.name}</a> 发表于 {episode.updated_time.date()}</blockquote></p>"
         img_content = (
             f"\n<h3>Cover Image</h3><figure><img src='{logo_url}'/><figcaption>{podcast.name}·《{episode.title}》</figcaption></figure>"
             if logo_url and ("img" not in content)
             else ""
         )
-        content += img_content
+        content = "".join([date_content, content, img_content])
+        content = content.replace("\n", "<br />")
         author_url = episode.link or ""
         if not re.match(SHORT_DOMAIN, author_url):
             author_url = podcast.website or ""
@@ -210,8 +216,8 @@ class Shownotes(BaseModel):
         try:
             res = await telegraph.create_page(
                 title=f"{podcast.name}-{episode.title}",
-                author_name=podcast.name,
-                author_url=author_url,
+                author_name=manifest.name,
+                author_url=f"https://{manifest.bot_id}.t.me",
                 html_content=content,
             )
             self.url = res["url"]
@@ -293,12 +299,15 @@ def db_init():
             GroupPodcast,
         ]
     )
-    # ps = Podcast.select().where(Podcast.name == None)
-    # for p in ps:
-    #     print(type(p.name))
-    #     print(p.name)
-    #     p.delete_instance()
+    # p = Podcast.get(Podcast.name == "科技島讀")
+    # p.delete_instance()
     # print("done")
+    ## construct index
+    # shownotes = Shownotes.select()
+    # for s in shownotes:
+    #     print(s.episode.title)
+    #     store_shownotes(s)
+    # print('done!!!!!!!!')
 
 
 async def parse_feed(feed, etag="", if_modified_since=""):
@@ -375,8 +384,8 @@ def parse_episode(item, podcast):
     if len(excerpt) >= 47:
         excerpt = excerpt[:47] + "…"
     episode["subtitle"] = unescape(item.get("subtitle") or excerpt or "")
-    episode["published_time"] = item.published_parsed
-    episode["updated_time"] = item.updated_parsed
+    episode["published_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
+    episode["updated_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
     return episode, shownotes
 
 
@@ -421,13 +430,22 @@ def format_html(text):
                 heading.name = "strong"
 
     # a) Unwrap all unallowed tags and b) Remove all empty tags.
-    ALLOWED_VOID_TAGS = {"br", "img", "figure", "aside", "iframe", "ol", "ul", "hr"}
+    ALLOWED_VOID_TAGS = {
+        "br",
+        "img",
+        "figure",
+        "aside",
+        "iframe",
+        "ol",
+        "ul",
+        "hr",
+        "li",
+    }
     for tag in soup.find_all():
         if tag.name not in ALLOWED_TAGS or (
             tag.name not in ALLOWED_VOID_TAGS and len(tag.get_text()) == 0
         ):
             tag.unwrap()
-    # print(soup.prettify())
     return str(soup)
 
 

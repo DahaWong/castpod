@@ -28,7 +28,7 @@ def register_handlers(application):
         [
             CommandHandler("start", command.start, filters=filters.ChatType.PRIVATE),
             CommandHandler("search", command.search, block=False),
-            CommandHandler("episodes", commadn.search_episodes, block=False),
+            CommandHandler("episodes", command.search_episodes, block=False),
             CommandHandler("help", command.show_help_info, block=False),
             CommandHandler("about", command.about, block=False),
             # MessageHandler(
