@@ -1,6 +1,5 @@
 from datetime import timedelta
 import os
-from time import time
 from zhconv import convert
 from bs4 import BeautifulSoup
 from user_agent import generate_user_agent
@@ -8,7 +7,6 @@ import httpx
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    InputMediaPhoto,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
@@ -103,14 +101,16 @@ async def save_subscription(update: Update, context: CallbackContext):
     reply_msg = await message.reply_text("正在解析订阅文件…")
     podcasts_count = 0
     try:
-        feeds = await parse_doc(context, user, message.document)
-        failed_feeds = []
-        for feed in feeds:
+        results = await parse_doc(context, user, message.document)
+        failed_results = []
+        for result in results:
             podcast = None
+            url = result["url"]
+            print(result["name"])
             try:
                 podcast, is_new_podcast = Podcast.get_or_create(
-                    feed=re.sub(r"https?:\/\/", "", feed["url"]).lower()
-                )[0]
+                    feed=re.sub(r"https?:\/\/", "", url).lower()
+                )
                 is_new_subscription = UserSubscribePodcast.get_or_create(
                     user=user.id, podcast=podcast
                 )[1]
@@ -122,22 +122,22 @@ async def save_subscription(update: Update, context: CallbackContext):
             except:
                 if podcast:
                     podcast.delete_instance()
-                failed_feeds.append(feed["url"])
+                failed_results.append(result)
                 continue
         if podcasts_count:
             newline = "\n"
             await message.reply_text(
                 f"成功订阅 {podcasts_count} 部播客！"
-                if not len(failed_feeds)
+                if not len(failed_results)
                 else (
                     f"成功订阅 {podcasts_count} 部播客，部分订阅源解析失败。"
                     f"\n\n订阅失败的源："
-                    # use Reduce ?
-                    f"\n{newline.join([f'<code>{feed}</code>' for feed in failed_feeds])}"
+                    # TODO:use Reduce ?
+                    f"""\n{newline.join([f"- <code><a href='{result['url']}'>{result['name']}</a></code>" for result in failed_results])}"""
                 )
             )
         else:
-            await message.reply_text("订阅失败 :( \n\n请检查订阅文件，以及其中的订阅源是否受损")
+            await message.reply_text("没有检测到需要订阅的节目~")
         await reply_msg.delete()
     except Exception as e:
         await reply_msg.delete()
@@ -278,9 +278,7 @@ async def download_episode(update: Update, context: CallbackContext):
         await message.delete()
 
 
-async def find_podcast(
-    update: Update, context: CallbackContext, keywords: str | None = None
-):
+async def find_podcast(update: Update, context: CallbackContext, keywords: str = ""):
     user = update.effective_user
     message = update.message
     if not keywords:
@@ -363,7 +361,7 @@ async def find_podcast(
         context.chat_data["is_using_reply_keyboard"] = True
 
 
-async def show_podcast(update: Update, context: CallbackContext):
+async def get_podcast(update: Update, context: CallbackContext):
     message = update.message
     podcast = Podcast.get(Podcast.name == message.text)
     page = PodcastPage(podcast)
@@ -397,7 +395,7 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
             res = await client.get(
                 url, follow_redirects=True, headers={"User-Agent": ua}, timeout=10
             )
-        soup = BeautifulSoup(res.text, "html.parser")
+        soup = BeautifulSoup(markup=res.text, feautures="html.parser")
         podcast_name = ""
         img = soup.img
         podcast_logo = img.get("src") if img else None
@@ -464,9 +462,10 @@ async def close_reply_keyboard(update: Update, context: CallbackContext):
 
 
 async def handle_mention_bot(update: Update, context: CallbackContext):
-    keywords = re.sub(f"@{manifest.bot_id} +", "", update.message.text)
-    await show_podcast(update, context, keywords=keywords)
+    keywords = re.sub(f"@{manifest.bot_id} \+?", "", update.message.text)
+    await find_podcast(update, context, keywords=keywords)
 
 
+# not in used
 async def pin_audio(update: Update, context: CallbackContext):
     await update.effective_message.pin()

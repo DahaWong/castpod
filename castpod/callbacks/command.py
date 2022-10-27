@@ -27,7 +27,7 @@ async def start(update: Update, context):
                 f"欢迎使用 {manifest.name}！\n\n疑问或建议请至<a href='https://t.me/castpodchat'>内测聊天室</a>。"
             ),
             reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton("+ 添加新播客", switch_inline_query_current_chat="+")
+                InlineKeyboardButton("+ 寻找新播客", switch_inline_query_current_chat="+")
             ),
         )
         await msg.pin()
@@ -120,8 +120,16 @@ async def start(update: Update, context):
 async def search(update: Update, context: CallbackContext):
     await update.message.reply_text(
         text="🔍",
-        reply_markup=InlineKeyboardMarkup.from_column(
+        reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton("搜索播客", switch_inline_query_current_chat="+"),
+        ),
+    )
+
+
+async def search_episodes(update, context):
+    await update.message.reply_text(
+        text="🔍",
+        reply_markup=InlineKeyboardMarkup.from_button(
             InlineKeyboardButton("查找单集", switch_inline_query_current_chat="#"),
         ),
     )

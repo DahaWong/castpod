@@ -1,7 +1,6 @@
 import re
 from datetime import datetime, timedelta
 from html import unescape
-from time import mktime
 from pprint import pprint
 from uuid import uuid4
 from bs4 import BeautifulSoup
@@ -160,7 +159,7 @@ class Shownotes(BaseModel):
         content = re.sub(INLINE, "", self.content)
         # content = re.sub(r"<br *\/>", "\n", self.content)
         TIME_DELTA = r"(?:[0-9]{1,2}[:：])?[0-9]{1,3}[:：][0-5][0-9]"
-        soup = BeautifulSoup(content, "html.parser")
+        soup = BeautifulSoup(markup=content, features="html.parser")
         results = soup.find_all(string=re.compile(TIME_DELTA))
         if not results:
             return False
@@ -294,19 +293,12 @@ def db_init():
             GroupPodcast,
         ]
     )
-    # all_shownotes = Shownotes.select()
-    # for shownotes in all_shownotes:
-    #     print(shownotes)
-    #     store_shownotes(shownotes)
-    # print("done!")
-    # Optimize the index.
-    # ShownotesIndex.optimize()
-
-    # podcast = Podcast.get(
-    #     Podcast.name
-    #     == "HTML All The Things - Web Development, Web Design, Small Busine…"
-    # )
-    # podcast.delete_instance()
+    # ps = Podcast.select().where(Podcast.name == None)
+    # for p in ps:
+    #     print(type(p.name))
+    #     print(p.name)
+    #     p.delete_instance()
+    # print("done")
 
 
 async def parse_feed(feed, etag="", if_modified_since=""):
@@ -352,7 +344,6 @@ async def parse_feed(feed, etag="", if_modified_since=""):
 def parse_episode(item, podcast):
     episode = {}
     episode["from_podcast"] = podcast.id
-    episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
     # print(item.title)
     enclosures = item.enclosures
     if enclosures:
@@ -384,8 +375,8 @@ def parse_episode(item, podcast):
     if len(excerpt) >= 47:
         excerpt = excerpt[:47] + "…"
     episode["subtitle"] = unescape(item.get("subtitle") or excerpt or "")
-    episode["published_time"] = datetime.fromtimestamp(mktime(item.published_parsed))
-    episode["updated_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
+    episode["published_time"] = item.published_parsed
+    episode["updated_time"] = item.updated_parsed
     return episode, shownotes
 
 
@@ -415,7 +406,7 @@ def set_duration(duration: str) -> int:
 
 def format_html(text):
     """Format html texts to Telegraph allowed forms."""
-    soup = BeautifulSoup(text, "html.parser")
+    soup = BeautifulSoup(markup=text, features="html.parser")
 
     # Find all possible heading types, and convert them to proper h3,h4,strong tags.
     headings = soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"])

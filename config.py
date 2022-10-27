@@ -28,12 +28,14 @@ EXT_PATH = config["SQL"]["EXT_PATH"]
 # commands
 private_commands = [
     ("search", "搜寻新播客"),
+    ("episodes", "查找单集"),
     ("help", "Castpod 说明书"),
     ("about", "其他信息"),
 ]
 
 dev_commands = [
     ("search", "搜寻新播客"),
+    ("episodes", "查找单集"),
     ("help", "Castpod 说明书"),
     ("about", "关于"),
     ("stat", "数据汇总"),

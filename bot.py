@@ -5,7 +5,6 @@ from telegram import (
     BotCommandScopeChat,
 )
 from telegram.ext import Application, ApplicationBuilder
-from castpod.spotify import lookup_episode, lookup_podcast, search_podcast
 
 import config
 from castpod.handlers import register_handlers

@@ -40,6 +40,7 @@ def subscription_generator(podcasts, subscription_empty=False):
         )
     else:
         for podcast in podcasts:
+            thumb_url = podcast.logo.url if podcast.logo else None
             yield InlineQueryResultArticle(
                 id=podcast.id,
                 title=podcast.name,
@@ -47,7 +48,7 @@ def subscription_generator(podcasts, subscription_empty=False):
                     podcast.name, parse_mode=None
                 ),
                 description=f"{podcast.host}",
-                thumb_url=podcast.logo.url,
+                thumb_url=thumb_url,
                 thumb_height=60,
                 thumb_width=60,
             )
@@ -174,7 +175,7 @@ async def search_all_episode(update: Update, context):
                             ),
                         ]
                     ),
-                    description=f"{datetime.timedelta(seconds=episode.duration) or episode.from_podcast.name}\n{episode.subtitle}",
+                    description=f"{episode.published_time.date()} · {datetime.timedelta(seconds=episode.duration) or episode.from_podcast.name}\n{episode.subtitle}",
                     thumb_url=episode.logo.thumb_url or episode.logo.url,
                     thumb_width=60,
                     thumb_height=60,
@@ -268,7 +269,7 @@ def show_episodes(podcast, index):
                 f"<b>{podcast.name}</b>\n{episode.title}\n\n<code>#{episode.id}</code>"
             ),
             reply_markup=InlineKeyboardMarkup.from_row(buttons),
-            description=f"{datetime.timedelta(seconds=episode.duration) or podcast.name}\n{episode.subtitle}",
+            description=f"{episode.published_time.date()} · {datetime.timedelta(seconds=episode.duration) or episode.from_podcast.name}\n{episode.subtitle}",
             thumb_url=episode.logo.url,
             thumb_width=60,
             thumb_height=60,

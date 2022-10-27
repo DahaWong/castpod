@@ -9,6 +9,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, User
 from telegram.error import BadRequest
 from user_agent import generate_user_agent
 
+# TODO: split utils.py into utils/...
 
 # iTunes Search API
 async def search_itunes(keyword: str = None, itunes_id: str = None):
@@ -66,13 +67,18 @@ async def parse_doc(context, user, doc):
     return feeds
 
 
-def parse_opml(f):
+def parse_opml(file_handler):
     feeds = []
-    soup = BeautifulSoup(f, "lxml", from_encoding="utf-8")
+    soup = BeautifulSoup(markup=file_handler, features="lxml", from_encoding="utf-8")
     for podcast in soup.find_all(type="rss"):
+        attrs = podcast.attrs
         feeds.append(
-            {"name": podcast.attrs.get("text"), "url": podcast.attrs.get("xmlurl")}
+            {
+                "name": attrs.get("title") or attrs.get("text"),
+                "url": attrs.get("xmlurl"),
+            }
         )
+    # print(feeds)
     return feeds
 
 
@@ -91,8 +97,8 @@ def generate_opml(podcasts):
         "\t\t\t<outline text='feeds'>\n"
     )
     tail = "\t\t\t</outline>\n" "\t\t</body>\n" "\t</opml>\n"
-    opml = head + body + tail
-    path = f"./public/subscriptions/castpod-{date.today()}.xml"
+    opml = "".join(head, body, tail)
+    path = f"public/subscriptions/castpod-{date.today()}.xml"
     with open(path, "w+") as f:
         f.write(opml)
     return path
@@ -107,12 +113,13 @@ async def send_error_message(user: User, text: str) -> None:
         reply_markup=InlineKeyboardMarkup.from_row(
             [
                 InlineKeyboardButton("联系我们", url="https://dahawong.t.me"),
-                InlineKeyboardButton("查阅说明书", url="https://telegra.ph"),
+                InlineKeyboardButton("查阅说明书", url="https://telegra.ph"),  # TODO: 重写说明书
             ]
         ),
     )
 
 
+# TODO：unused function
 def modify_logo(path: str, size: int):
     with Image.open(path) as im:
         # 1. to jpeg format
