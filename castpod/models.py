@@ -189,17 +189,17 @@ class Shownotes(BaseModel):
         return True
 
     async def generate_telegraph(self):
-        telegraph = Telegraph()
-        await telegraph.create_account(
-            short_name=manifest.name,
-            author_name=manifest.name,
-            author_url=f"https://t.me/{manifest.bot_id}",
-        )
         content = format_html(self.content)
         self.content = content
         episode = self.episode
+        telegraph = Telegraph()
         podcast = episode.from_podcast
         logo_url = episode.logo.url or podcast.logo.url
+        await telegraph.create_account(
+            short_name=manifest.name,
+            author_name=manifest.name,
+            author_url=manifest.author_url,
+        )
         date_content = f"<p><blockquote><a href='{episode.link or podcast.website}'>{podcast.name}</a> 发表于 {episode.updated_time.date()}</blockquote></p>"
         img_content = (
             f"\n<h3>Cover Image</h3><figure><img src='{logo_url}'/><figcaption>{podcast.name}·《{episode.title}》</figcaption></figure>"
@@ -216,8 +216,8 @@ class Shownotes(BaseModel):
         try:
             res = await telegraph.create_page(
                 title=f"{podcast.name}-{episode.title}",
-                author_name=manifest.name,
-                author_url=f"https://{manifest.bot_id}.t.me",
+                author_name=f"{manifest.name} Bot",
+                author_url=f"https://t.me/{manifest.bot_id}?start=episode_{episode.id}",
                 html_content=content,
             )
             self.url = res["url"]

@@ -78,6 +78,7 @@ async def start(update: Update, context):
             episode_id = match[2]
             episode = Episode.get(Episode.id == episode_id)
             podcast = episode.from_podcast
+            timeline = ""
             UserSubscribePodcast.get_or_create(user=user, podcast=podcast)
             markup = InlineKeyboardMarkup.from_row(
                 [

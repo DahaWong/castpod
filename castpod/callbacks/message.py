@@ -155,8 +155,10 @@ async def download_episode(update: Update, context: CallbackContext):
     message = update.message
     user = update.effective_user
     reply_msg = await message.reply_text("正在获取节目…")
-    match = re.search(r"#(.{36})", message.text)
-    episode = Episode.get(Episode.id == match[1])
+    match = re.search(r"#([a-z0-9\-]{36})", message.text)
+    if match: episode_id = match[1]
+    print(match[1])
+    episode = Episode.get(Episode.id == episode_id)
     podcast = episode.from_podcast
     logo = episode.logo
     get_shownotes = episode.shownotes
@@ -209,30 +211,30 @@ async def download_episode(update: Update, context: CallbackContext):
             )
             with open(logo_path, "wb") as f:
                 f.write(res.content)
-    with Image.open(logo_path) as im:
-        # then process image to fit restriction:
-        # 1. jpeg format
-        im = im.convert("RGB")
-        # 2. < 320*320
-        size = (320, 320)
-        im.thumbnail(size)
-        # 3. less than 200 kB !!
-        im.save(logo_path, "JPEG", optimize=True, quality=85)
-    if shownotes and not episode.chapters:
-        has_chapters = shownotes.extract_chapters()
-        if not has_chapters:
-            audio_metadata = File(audio_local_path)
-            audio_tags = audio_metadata.tags
-            if audio_tags and hasattr(audio_tags, "getall"):
-                chaps = audio_tags.getall("CHAP")
-                for chap in chaps:
-                    start_time = str(
-                        timedelta(milliseconds=int(chap.start_time))
-                    ).split(".")[0]
-                    title = chap.sub_frames.getall("TIT2")[0].text[0]
-                    Chapter.create(
-                        from_episode=episode, start_time=start_time, title=title
-                    )
+        with Image.open(logo_path) as im:
+            # then process image to fit restriction:
+            # 1. jpeg format
+            im = im.convert("RGB")
+            # 2. < 320*320
+            size = (320, 320)
+            im.thumbnail(size)
+            # 3. less than 200 kB !!
+            im.save(logo_path, "JPEG", optimize=True, quality=85)
+        if shownotes and not episode.chapters:
+            has_chapters = shownotes.extract_chapters()
+            if not has_chapters:
+                audio_metadata = File(audio_local_path)
+                audio_tags = audio_metadata.tags
+                if audio_tags and hasattr(audio_tags, "getall"):
+                    chaps = audio_tags.getall("CHAP")
+                    for chap in chaps:
+                        start_time = str(
+                            timedelta(milliseconds=int(chap.start_time))
+                        ).split(".")[0]
+                        title = chap.sub_frames.getall("TIT2")[0].text[0]
+                        Chapter.create(
+                            from_episode=episode, start_time=start_time, title=title
+                        )
     try:
         if episode.chapters:
             timeline = "\n".join(

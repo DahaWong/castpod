@@ -342,7 +342,7 @@ async def share_episode(update: Update, context):
                     reply_markup=InlineKeyboardMarkup.from_button(
                         InlineKeyboardButton(
                             f"订阅",
-                            url=f"https://t.me/{manifest.bot_id}?start=podcast-{podcast.id}",
+                            url=f"https://t.me/{manifest.bot_id}?start=podcast_{podcast.id}",
                         )
                     ),
                 )
