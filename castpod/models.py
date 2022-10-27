@@ -1,3 +1,4 @@
+import asyncio
 import re
 from datetime import datetime, timedelta
 from time import mktime
@@ -8,7 +9,7 @@ from bs4 import BeautifulSoup
 import httpx
 from telegraph.aio import Telegraph
 from telegraph.utils import ALLOWED_TAGS
-from telegraph.exceptions import TelegraphException
+from telegraph.exceptions import RetryAfterError
 from pypinyin import Style, pinyin
 from zhconv import convert
 from user_agent import generate_user_agent
@@ -189,18 +190,21 @@ class Shownotes(BaseModel):
         return True
 
     async def generate_telegraph(self):
-        content = format_html(self.content)
-        self.content = content
-        episode = self.episode
         telegraph = Telegraph()
-        podcast = episode.from_podcast
-        logo_url = episode.logo.url or podcast.logo.url
         await telegraph.create_account(
             short_name=manifest.name,
             author_name=manifest.name,
             author_url=manifest.author_url,
         )
-        date_content = f"<p><blockquote><a href='{episode.link or podcast.website}'>{podcast.name}</a> 发表于 {episode.updated_time.date()}</blockquote></p>"
+        content = format_html(self.content)
+        self.content = content
+        episode = self.episode
+        podcast = episode.from_podcast
+        logo_url = episode.logo.url or podcast.logo.url
+        episode_link = episode.link
+        if not re.search(SHORT_DOMAIN, episode_link):
+            episode_link = podcast.website
+        date_content = f"<p><blockquote><a href='{episode_link}'>{podcast.name}</a> 发布于 {episode.updated_time.date()}</blockquote></p>"
         img_content = (
             f"\n<h3>Cover Image</h3><figure><img src='{logo_url}'/><figcaption>{podcast.name}·《{episode.title}》</figcaption></figure>"
             if logo_url and ("img" not in content)
@@ -208,23 +212,22 @@ class Shownotes(BaseModel):
         )
         content = "".join([date_content, content, img_content])
         content = content.replace("\n", "<br />")
-        author_url = episode.link or ""
-        if not re.match(SHORT_DOMAIN, author_url):
-            author_url = podcast.website or ""
-        if not re.match(SHORT_DOMAIN, author_url):
-            author_url = "https://{manifest.bod_id}.t.me"
-        try:
-            res = await telegraph.create_page(
-                title=f"{podcast.name}-{episode.title}",
-                author_name=f"{manifest.name} Bot",
-                author_url=f"https://t.me/{manifest.bot_id}?start=episode_{episode.id}",
-                html_content=content,
-            )
-            self.url = res["url"]
-            return self
-        except TelegraphException:
-            print(episode.link)
-            print(podcast.website)
+        metadata = {
+            "title": f"{podcast.name} · {episode.title}",
+            "author_name": f"{manifest.name} Bot",
+            "author_url": f"https://t.me/{manifest.bot_id}?start=episode_{episode.id}",
+            "html_content": content,
+        }
+        res, trial_count = None, 3
+        while not res and trial_count > 0:
+            try:
+                res = await telegraph.create_page(**metadata)
+                self.url = res.get("url")
+            except RetryAfterError as e:
+                await asyncio.sleep(e.retry_after)
+                trial_count -= 1
+                continue
+        return self
 
 
 class ShownotesIndex(FTSModel):
@@ -299,10 +302,10 @@ def db_init():
             GroupPodcast,
         ]
     )
-    # p = Podcast.get(Podcast.name == "科技島讀")
+    # p = Podcast.get(Podcast.name == "不明白播客")
     # p.delete_instance()
-    # print("done")
-    ## construct index
+    # print(p.name)
+    # construct index
     # shownotes = Shownotes.select()
     # for s in shownotes:
     #     print(s.episode.title)
