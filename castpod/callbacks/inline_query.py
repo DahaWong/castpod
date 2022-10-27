@@ -134,7 +134,7 @@ async def search_new_podcast(update: Update, context):
 
 async def search_all_episode(update: Update, context):
     inline_query = update.inline_query
-    keywords = inline_query.query[1:]
+    keywords = inline_query.query[1:].replace("[", "").replace("]", "")
     if not keywords:
         await inline_query.answer(
             [
@@ -153,7 +153,7 @@ async def search_all_episode(update: Update, context):
         .join(Shownotes)
         .join(ShownotesIndex, on=(Shownotes.id == ShownotesIndex.rowid))
         .where(ShownotesIndex.match(keywords))
-        .order_by(ShownotesIndex.bm25())
+        .order_by(ShownotesIndex.rank())
     )
     if episodes.count():
         await inline_query.answer(
@@ -161,6 +161,7 @@ async def search_all_episode(update: Update, context):
                 InlineQueryResultArticle(
                     id=episode.id,
                     title=episode.title,
+                    description=f"{episode.published_time.date()} · {episode.from_podcast.name}\n{episode.subtitle}",
                     input_message_content=InputTextMessageContent(
                         f"<b>{episode.from_podcast.name}</b>\n{episode.title}\n\n<code>#{episode.id}</code>"
                     ),
@@ -175,7 +176,6 @@ async def search_all_episode(update: Update, context):
                             ),
                         ]
                     ),
-                    description=f"{episode.published_time.date()} · {datetime.timedelta(seconds=episode.duration) or episode.from_podcast.name}\n{episode.subtitle}",
                     thumb_url=episode.logo.thumb_url or episode.logo.url,
                     thumb_width=60,
                     thumb_height=60,
@@ -183,8 +183,7 @@ async def search_all_episode(update: Update, context):
                 for episode in episodes
             ],
             auto_pagination=True,
-            cache_time=10
-            # cache_time=60
+            cache_time=1800,
         )
     else:
         await inline_query.answer(
@@ -209,8 +208,8 @@ async def search_episode(update: Update, context):
     await inline_query.answer(
         list(results),
         auto_pagination=True,
-        cache_time=10,
-        # cache_time=3600
+        # cache_time=10,
+        cache_time=3600,
     )
 
 

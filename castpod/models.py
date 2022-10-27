@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import httpx
 from telegraph.aio import Telegraph
 from telegraph.utils import ALLOWED_TAGS
-from telegraph.exceptions import RetryAfterError
+from telegraph.exceptions import RetryAfterError, TelegraphException
 from pypinyin import Style, pinyin
 from zhconv import convert
 from user_agent import generate_user_agent
@@ -22,11 +22,10 @@ from peewee import (
     ForeignKeyField,
     IntegerField,
     Model,
-    SqliteDatabase,
     TextField,
     UUIDField,
 )
-from playhouse.sqlite_ext import SqliteExtDatabase, FTSModel, SearchField, RowIDField
+from playhouse.sqlite_ext import SqliteExtDatabase, FTS5Model, SearchField, RowIDField
 from castpod.constants import SHORT_DOMAIN
 
 from config import manifest, EXT_PATH
@@ -39,6 +38,9 @@ db = SqliteExtDatabase(
         ("foreign_keys", 1),
     ),  # Enforce foreign-key constraints.
 )
+# is_fts5_installed = FTS5Model.fts5_installed()
+# print(is_fts5_installed)
+db.load_extension("/home/daha/tool/libsimple")
 
 
 class BaseModel(Model):
@@ -218,27 +220,32 @@ class Shownotes(BaseModel):
             "author_url": f"https://t.me/{manifest.bot_id}?start=episode_{episode.id}",
             "html_content": content,
         }
-        res, trial_count = None, 3
-        while not res and trial_count > 0:
+        res, trial_times = None, 3
+        while not res and trial_times > 0:
             try:
                 res = await telegraph.create_page(**metadata)
                 self.url = res.get("url")
             except RetryAfterError as e:
                 await asyncio.sleep(e.retry_after)
-                trial_count -= 1
+            except TelegraphException:
+                await asyncio.sleep(30)
+            finally:
+                trial_times -= 1
                 continue
         return self
 
 
-class ShownotesIndex(FTSModel):
+class ShownotesIndex(FTS5Model):
     # Full-text search index.
     rowid = RowIDField()
-    title = SearchField()
-    content = SearchField()
+    title_hans = SearchField()
+    title_hant = SearchField()
+    content_hans = SearchField()
+    content_hant = SearchField()
 
     class Meta:
         database = db
-        # options = {"tokenize": "simple"}
+        options = {"tokenize": "simple"}
 
 
 class Chapter(BaseModel):
@@ -302,15 +309,15 @@ def db_init():
             GroupPodcast,
         ]
     )
-    # p = Podcast.get(Podcast.name == "不明白播客")
-    # p.delete_instance()
-    # print(p.name)
-    # construct index
+    # ShownotesIndex.drop_table()
+    # Construct index
     # shownotes = Shownotes.select()
     # for s in shownotes:
     #     print(s.episode.title)
     #     store_shownotes(s)
-    # print('done!!!!!!!!')
+    # print("done!!!!!!!!")
+    ShownotesIndex.rebuild()
+    ShownotesIndex.optimize()
 
 
 async def parse_feed(feed, etag="", if_modified_since=""):
@@ -480,10 +487,18 @@ def show_subscription(user_id):
 
 
 def store_shownotes(shownotes: Shownotes):
+    title = shownotes.episode.title
+    content = shownotes.content
+    title_hans = convert(title, "zh-hans")
+    content_hans = convert(content, "zh-hans")
+    title_hant = convert(title, "zh-hant")
+    content_hant = convert(content, "zh-hant")
     ShownotesIndex.insert(
         {
             ShownotesIndex.rowid: shownotes.id,
-            ShownotesIndex.title: shownotes.episode.title,
-            ShownotesIndex.content: shownotes.content,
+            ShownotesIndex.title_hans: title_hans,
+            ShownotesIndex.title_hant: title_hant,
+            ShownotesIndex.content_hans: content_hans,
+            ShownotesIndex.content_hant: content_hant,
         }
     ).execute()
