@@ -62,7 +62,7 @@ async def subscribe_podcast(user_id: int, feed_url: str):
             podcast.save()
     except Exception as e:
         podcast.delete_instance()
-        print(e)
+        raise e
         return None, False
 
     is_new_subscription = UserSubscribePodcast.get_or_create(
@@ -268,7 +268,7 @@ async def download_episode(update: Update, context: CallbackContext):
             performer=podcast.name,
             duration=episode.duration,
             thumb=logo.file_id or open(logo_path, "rb") or episode.logo.url,
-            write_timeout=180,
+            write_timeout=200,
         )
         if not episode.file_id:
             audio = audio_msg.audio
@@ -431,7 +431,7 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
                     podcast_logo = None
             else:
                 podcast_logo = None
-        elif domain == "google.com" or domain == "pca.st":
+        elif domain in ["google.com", "pca.st", "pod.link"]:
             podcast_name = title_text
         elif domain == "apple.com" or domain == "overcast.fm":  # use itunes id
             podcast_itunes_id = re.search(r"(?:id|itunes)([0-9]+)", url)[1]
@@ -443,6 +443,10 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
             podcast = await parse_feed(feed_url)
             podcast_name = podcast["name"]
             podcast_logo = podcast["logo"].url
+        elif domain == "firstory.me":
+            match = re.search(r"(.*?) Podcast Platforms - Flink by Firstory", url)
+            if match:
+                podcast_name = match[1]
         else:
             await send_error_message(user, "请检查链接拼写是否有误 🖐🏻")
             return

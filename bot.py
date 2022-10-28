@@ -3,15 +3,16 @@ from telegram import (
     BotCommandScopeAllPrivateChats,
     BotCommandScopeChat,
 )
-from telegram.ext import Application, ApplicationBuilder
+from telegram.ext import Application, ApplicationBuilder, JobQueue
+from castpod.callbacks.jobs import update_episodes
 
 import config
 from castpod.handlers import register_handlers
 from castpod.models import db_init
 
 
-async def post_init(application: Application) -> None:
-    bot = application.bot
+async def post_init(app: Application) -> None:
+    bot = app.bot
     # Use this method to logout your bot from official telegram api:
     # await bot.log_out()
     # await bot.delete_webhook()
@@ -27,23 +28,25 @@ async def post_init(application: Application) -> None:
     )
 
 
-application = (
+app = (
     ApplicationBuilder()
     .token(config.bot_token)
     .defaults(config.defaults)
     .base_url(config.bot_api)
     .post_init(post_init)
     .write_timeout(180)
-    .read_timeout(15)
+    .read_timeout(30)
     .concurrent_updates(True)
     .build()
 )
 
-register_handlers(application)
+register_handlers(app)
 db_init()
-
+job_queue: JobQueue = app.job_queue
+job_queue.run_repeating(update_episodes, 900)
+# job_queue.run_repeating(update_episodes, interval=900, first=5)
 # Webhook:
-application.run_webhook(
+app.run_webhook(
     listen="127.0.0.1",
     port=8443,
     url_path=config.bot_token,
@@ -53,4 +56,4 @@ application.run_webhook(
 )
 
 # Polling:
-# application.run_polling()
+# app.run_polling()

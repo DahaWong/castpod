@@ -10,8 +10,6 @@ from telegram import (
 import re
 from ..models import (
     Episode,
-    Shownotes,
-    ShownotesIndex,
     User,
     Podcast,
     UserSubscribePodcast,
@@ -159,35 +157,38 @@ async def search_all_episode(update: Update, context):
     )
 
     if episodes.count():
-        await inline_query.answer(
-            [
-                InlineQueryResultArticle(
-                    id=episode.id,
-                    title=episode.title,
-                    description=f"{episode.published_time.date()} · {episode.from_podcast.name}\n{episode.subtitle}",
-                    input_message_content=InputTextMessageContent(
-                        f"<b>{episode.from_podcast.name}</b>\n{episode.title}\n\n<code>#{episode.id}</code>"
-                    ),
-                    reply_markup=InlineKeyboardMarkup.from_row(
-                        [
-                            InlineKeyboardButton(
-                                "订阅列表", switch_inline_query_current_chat=""
-                            ),
-                            InlineKeyboardButton(
-                                "更多单集",
-                                switch_inline_query_current_chat=f"{episode.from_podcast.name}#",
-                            ),
-                        ]
-                    ),
-                    thumb_url=episode.logo.thumb_url or episode.logo.url,
-                    thumb_width=60,
-                    thumb_height=60,
-                )
-                for episode in episodes
-            ],
-            auto_pagination=True,
-            cache_time=1800,
-        )
+        try:
+            await inline_query.answer(
+                [
+                    InlineQueryResultArticle(
+                        id=episode.id,
+                        title=episode.title,
+                        description=f"{episode.published_time.date()}·《{episode.from_podcast.name}》\n{episode.subtitle}",
+                        input_message_content=InputTextMessageContent(
+                            f"<b>{episode.from_podcast.name}</b>\n{episode.title}\n\n<code>#{episode.id}</code>"
+                        ),
+                        reply_markup=InlineKeyboardMarkup.from_row(
+                            [
+                                InlineKeyboardButton(
+                                    "订阅列表", switch_inline_query_current_chat=""
+                                ),
+                                InlineKeyboardButton(
+                                    "更多单集",
+                                    switch_inline_query_current_chat=f"{episode.from_podcast.name}#",
+                                ),
+                            ]
+                        ),
+                        thumb_url=episode.logo.thumb_url or episode.logo.url,
+                        thumb_width=60,
+                        thumb_height=60,
+                    )
+                    for episode in episodes
+                ],
+                auto_pagination=True,
+                cache_time=1800,
+            )
+        except:
+            pass
     else:
         await inline_query.answer(
             [
@@ -231,6 +232,89 @@ async def search_episode(update: Update, context):
     )
 
 
+async def search_episodes_by_date(update, context):
+    inline_query = update.inline_query
+    keywords = inline_query.query[1:]
+    if not keywords:
+        await inline_query.answer(
+            [
+                InlineQueryResultArticle(
+                    id=uuid4(),
+                    title="请输入日期（如：年月日）或者相对时间（如：昨天）",
+                    description=f"{manifest.name} 会根据日期列出当天发布的所有单集",
+                    input_message_content=InputTextMessageContent("/episodes"),
+                )
+            ],
+            auto_pagination=True,
+        )
+    else:
+        episodes = None
+        if keywords in ["今天", "today", "t"]:
+            episodes = Episode.select().where(
+                Episode.published_time == datetime.datetime.today()
+            )
+        elif keywords in ["昨天", "yesterday", "y"]:
+            episodes = Episode.select().where(
+                Episode.published_time
+                == datetime.datetime.today() - datetime.timedelta(days=1)
+            )
+        elif keywords in ["前天", "b"]:
+            episodes = Episode.select().where(
+                Episode.published_time
+                == datetime.datetime.today() - datetime.timedelta(days=2)
+            )
+        # elif keywords in ["本月", "m"]:
+        #     episodes = Episode.select().where(
+        #         Episode.published_time
+        #         == datetime.datetime.today()
+        #     )
+        if episodes.count():
+            try:
+                await inline_query.answer(
+                    [
+                        InlineQueryResultArticle(
+                            id=episode.id,
+                            title=episode.title,
+                            description=f"{episode.published_time.date()}·《{episode.from_podcast.name}》\n{episode.subtitle}",
+                            input_message_content=InputTextMessageContent(
+                                f"<b>{episode.from_podcast.name}</b>\n{episode.title}\n\n<code>#{episode.id}</code>"
+                            ),
+                            reply_markup=InlineKeyboardMarkup.from_row(
+                                [
+                                    InlineKeyboardButton(
+                                        "订阅列表", switch_inline_query_current_chat=""
+                                    ),
+                                    InlineKeyboardButton(
+                                        "更多单集",
+                                        switch_inline_query_current_chat=f"{episode.from_podcast.name}#",
+                                    ),
+                                ]
+                            ),
+                            thumb_url=episode.logo.thumb_url or episode.logo.url,
+                            thumb_width=60,
+                            thumb_height=60,
+                        )
+                        for episode in episodes
+                    ],
+                    auto_pagination=True,
+                    cache_time=1800,
+                )
+            except:
+                pass
+        else:
+            await inline_query.answer(
+                [
+                    InlineQueryResultArticle(
+                        id=uuid4(),
+                        title="没有找到相关的节目",
+                        input_message_content=InputTextMessageContent("/search"),
+                        description=f"换个关键词试试！",
+                    )
+                ],
+                auto_pagination=True,
+            )
+
+
 def show_episodes(podcast, index):
     buttons = [
         InlineKeyboardButton("订阅列表", switch_inline_query_current_chat=""),
@@ -241,6 +325,7 @@ def show_episodes(podcast, index):
     episodes = podcast.episodes
     if index:
         if re.match(r"^-?[0-9]{1,4}$", index):
+            episodes = episodes.order_by(-Episode.published_time)
             index = int(index)
             if abs(index) <= len(episodes):
                 if index >= 0:
@@ -272,6 +357,8 @@ def show_episodes(podcast, index):
                     input_message_content=InputTextMessageContent(podcast.name),
                     description=f"换个关键词试试",
                 )
+    else:
+        episodes = episodes.order_by(-Episode.published_time)
     for episode in episodes:
         yield InlineQueryResultArticle(
             id=uuid4(),

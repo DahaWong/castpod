@@ -24,11 +24,11 @@ from peewee import (
     Model,
     TextField,
     UUIDField,
+    IntegrityError,
 )
 from playhouse.sqlite_ext import SqliteExtDatabase, FTS5Model, SearchField, RowIDField
 from castpod.constants import SHORT_DOMAIN
-
-from config import manifest, EXT_PATH
+from config import manifest
 
 db = SqliteExtDatabase(
     database="castpod.db",
@@ -102,17 +102,17 @@ class Podcast(BaseModel):
         return podcast, is_created
 
     async def initialize(self):
-        parsed = await parse_feed("https://" + self.feed)
+        result = await parse_feed("https://" + self.feed)
         is_success = True
-        if not parsed:
-            parsed = await parse_feed("http://" + self.feed)
-        if not (parsed and parsed["name"]):
+        if not result:
+            result = await parse_feed("http://" + self.feed)
+        if not (result and result["name"]):
             is_success = False
             return self, is_success
-        self.name = parsed["name"]
+        self.name = result["name"]
         match = re.search(
             r"[\u4E00-\u9FFF\u3400-\u4DBF\u20000-\u2A6DF\u2A700-\u2B73F\u2B740-\u2B81F\u2B820-\u2CEAF\u2CEB0-\u2EBEF\u30000-\u3134F\uF900-\uFAFF\u2E80-\u2EFF\u31C0-\u31EF\u3000-\u303F\u2FF0-\u2FFF\u3300-\u33FF\uFE30-\uFE4F\uF900-\uFAFF\u2F800-\u2FA1F\u3200-\u32FF\u1F200-\u1F2FF\u2F00-\u2FDF]+",
-            parsed["name"],
+            result["name"],
         )
         if match:
             self.pinyin_abbr = "".join(
@@ -121,14 +121,14 @@ class Podcast(BaseModel):
             self.pinyin_full = "".join(
                 x[0] for x in pinyin(match[0], style=Style.NORMAL, strict=False)
             )
-        self.logo = parsed["logo"]
-        self.host = parsed["host"]
-        self.website = parsed["website"]
-        self.email = parsed["email"]
+        self.logo = result["logo"]
+        self.host = result["host"]
+        self.website = result["website"]
+        self.email = result["email"]
         with db.atomic():
-            for item in parsed["entries"]:
+            for item in result["entries"]:
                 kwargs, shownotes = parse_episode(item, self)
-                episode = Episode.create(id=uuid4(), **kwargs)
+                episode = Episode.create(**kwargs)
                 if shownotes:
                     shownotes.episode = episode
                     shownotes.save()
@@ -136,9 +136,41 @@ class Podcast(BaseModel):
                     store_shownotes(shownotes)
         return self, is_success
 
+    async def update_feed(self):
+        result = await parse_feed(
+            url="http://" + self.feed,
+            etag=self.etag or "",
+            if_modified_since=self.last_modified or "",
+        )
+        if not result:
+            result = await parse_feed(
+                "http://" + self.feed, self.etag or "", self.last_modified or ""
+            )
+        if not result:
+            return
+        entries = result.get("entries")
+        if not entries:
+            return
+        with db.atomic():
+            # TODO: can use Model.insert_many() stead, but must refactor the shownotes data first
+            for item in entries:
+                # print("...")
+                kwargs, shownotes = parse_episode(item, self)
+                try:
+                    episode = Episode.create(**kwargs, is_downloaded=False)
+                    print(f"{self.name} {episode.published_time}：{episode.title}")
+                    if shownotes:
+                        shownotes.episode = episode
+                        shownotes.save()
+                        store_shownotes(shownotes)
+                except IntegrityError:
+                    continue
+        return self
+
 
 class Episode(BaseModel):
     id = UUIDField(primary_key=True)
+    # link = TextField(null=True, unique=True)  # some sites also call it 'guid'
     link = TextField(null=True, unique=True)  # some sites also call it 'guid'
     from_podcast = ForeignKeyField(Podcast, backref="episodes", on_delete="CASCADE")
     title = TextField(null=True)
@@ -153,7 +185,7 @@ class Episode(BaseModel):
     performer = TextField(null=True)
     size = IntegerField(null=True)
     duration = IntegerField(null=True)
-    is_downloaded = BooleanField(default=False)  # remove this
+    is_downloaded = BooleanField(default=True)  # remove this
 
 
 class Shownotes(BaseModel):
@@ -314,8 +346,8 @@ def db_init():
     # p = Podcast.get(Podcast.name == None)
     # print(p.name)
     # p.delete_instance()
-    # ShownotesIndex.drop_table()
     # Construct index
+    # ShownotesIndex.drop_table()
     # shownotes = Shownotes.select()
     # for s in shownotes:
     #     print(s.episode.title)
@@ -325,7 +357,7 @@ def db_init():
     ShownotesIndex.optimize()
 
 
-async def parse_feed(feed, etag="", if_modified_since=""):
+async def parse_feed(url, etag="", if_modified_since=""):
     user_agent = generate_user_agent(os="linux", device_type="desktop")
     headers = {
         "User-Agent": user_agent,
@@ -333,21 +365,22 @@ async def parse_feed(feed, etag="", if_modified_since=""):
         "If-Modified-Since": if_modified_since,
     }
     async with httpx.AsyncClient() as client:
-        res = await client.get(feed, follow_redirects=True, timeout=12, headers=headers)
+        res = await client.get(url, follow_redirects=True, timeout=10, headers=headers)
+    print(res.status_code)
     if res.status_code != httpx.codes.OK:
         return
     result = feedparser.parse(res.content)
+    print(result.feed.title)
     feed = result.feed
     podcast = {}
     if not result.entries:
         return
         # self.delete_instance()
         # raise Exception(f"Feed has no entries.")
-    podcast["feed"] = feed
     name = feed.get("title")
     podcast["name"] = unescape(name) if len(name) <= 63 else unescape(name)[:63] + "…"
-    podcast["description"] = feed.get("subtitle") or feed.get("")
-    podcast["language"] = feed.get("language")
+    podcast["description"] = unescape(feed.get("subtitle") or "")
+    podcast["language"] = unescape(feed.get("language") or "")
     author = feed.get("author_detail")
     if author:
         podcast["host"] = unescape(author.get("name") or "")
@@ -355,18 +388,20 @@ async def parse_feed(feed, etag="", if_modified_since=""):
     podcast["logo"] = Logo.create(url=feed["image"]["href"])
     podcast["website"] = feed.get("link")
     podcast["entries"] = result.entries
-    podcast["etag"] = result.get("etag")
-    last_modified: str = result.get("last-modified")
+    podcast["etag"] = res.headers.get("etag")
+    last_modified = res.headers.get("last-modified")
     if last_modified:
         podcast["last_modified"] = datetime.strptime(
             last_modified, "%a, %d %b %Y %H:%M:%S GMT"
         )
+        # pprint(podcast)
     return podcast
 
 
 def parse_episode(item, podcast):
     episode = {}
-    episode["from_podcast"] = podcast.id
+    episode["id"] = uuid4()
+    episode["from_podcast"] = podcast
     # print(item.title)
     enclosures = item.enclosures
     if enclosures:
@@ -386,6 +421,7 @@ def parse_episode(item, podcast):
 
     episode["duration"] = set_duration(item.get("itunes_duration"))
     episode["link"] = item.get("link")
+    print(episode["link"])
     episode["summary"] = unescape(item.get("summary") or "")
     # TODO: error
     shownotes_content = (
@@ -509,7 +545,8 @@ def store_shownotes(shownotes: Shownotes):
     content_hans = convert(content, "zh-hans")
     title_hant = convert(title, "zh-hant")
     content_hant = convert(content, "zh-hant")
-    ShownotesIndex.insert(
+    print(shownotes.id)
+    c = ShownotesIndex.insert(
         {
             ShownotesIndex.rowid: shownotes.id,
             ShownotesIndex.title_hans: title_hans,
@@ -518,3 +555,4 @@ def store_shownotes(shownotes: Shownotes):
             ShownotesIndex.content_hant: content_hant,
         }
     ).execute()
+    print(c)

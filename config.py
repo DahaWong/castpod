@@ -66,6 +66,7 @@ class manifest:
     bot_id = "cspdbot"
     author = "Daha"
     author_id = "dahawong"
+    dev_id = 429646222
     author_url = "https://daha.me/"
     version = "0.1.8"
     discription = ""
