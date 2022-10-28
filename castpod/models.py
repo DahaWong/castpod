@@ -80,6 +80,7 @@ class Podcast(BaseModel):
     id = UUIDField(primary_key=True)
     feed = TextField(unique=True)
     name = CharField(null=True, max_length=64)
+    language = CharField(null=True, max_length=11)  # max length eg. {3}-{3}-{3}
     logo = ForeignKeyField(Logo, null=True)
     host = TextField(null=True)
     website = TextField(null=True)
@@ -124,7 +125,7 @@ class Podcast(BaseModel):
         self.website = parsed["website"]
         self.email = parsed["email"]
         with db.atomic():
-            for item in parsed["items"]:
+            for item in parsed["entries"]:
                 kwargs, shownotes = parse_episode(item, self)
                 episode = Episode.create(id=uuid4(), **kwargs)
                 if shownotes:
@@ -137,9 +138,9 @@ class Podcast(BaseModel):
 
 class Episode(BaseModel):
     id = UUIDField(primary_key=True)
+    link = TextField(null=True, unique=True)  # some sites also call it 'guid'
     from_podcast = ForeignKeyField(Podcast, backref="episodes", on_delete="CASCADE")
     title = TextField(null=True)
-    link = TextField(null=True)
     subtitle = TextField(null=True)
     summary = TextField(null=True)
     logo = ForeignKeyField(Logo, null=True)
@@ -309,6 +310,9 @@ def db_init():
             GroupPodcast,
         ]
     )
+    # p = Podcast.get(Podcast.name == None)
+    # print(p.name)
+    # p.delete_instance()
     # ShownotesIndex.drop_table()
     # Construct index
     # shownotes = Shownotes.select()
@@ -339,18 +343,17 @@ async def parse_feed(feed, etag="", if_modified_since=""):
         # self.delete_instance()
         # raise Exception(f"Feed has no entries.")
     podcast["feed"] = feed
-    podcast["name"] = (
-        unescape(feed.title)
-        if len(feed.title) <= 63
-        else unescape(feed.title)[:63] + "…"
-    )
+    name = feed.get("title")
+    podcast["name"] = unescape(name) if len(name) <= 63 else unescape(name)[:63] + "…"
+    podcast["description"] = feed.get("subtitle") or feed.get("")
+    podcast["language"] = feed.get("language")
     author = feed.get("author_detail")
     if author:
         podcast["host"] = unescape(author.get("name") or "")
         podcast["email"] = unescape(author.get("email") or "")
     podcast["logo"] = Logo.create(url=feed["image"]["href"])
     podcast["website"] = feed.get("link")
-    podcast["items"] = result.get("items")
+    podcast["entries"] = result.entries
     podcast["etag"] = result.get("etag")
     last_modified: str = result.get("last-modified")
     if last_modified:
@@ -394,7 +397,7 @@ def parse_episode(item, podcast):
     if len(excerpt) >= 47:
         excerpt = excerpt[:47] + "…"
     episode["subtitle"] = unescape(item.get("subtitle") or excerpt or "")
-    episode["published_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
+    episode["published_time"] = datetime.fromtimestamp(mktime(item.created_parsed))
     episode["updated_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
     return episode, shownotes
 
@@ -480,6 +483,7 @@ def filter_subscription(user_id, keywords):
 
 
 def show_subscription(user_id):
+    # TODO: 检查这里的查询是不是限制在了本用户之内？
     podcasts = (
         Podcast.select().join(UserSubscribePodcast).join(User).where(User.id == user_id)
     )

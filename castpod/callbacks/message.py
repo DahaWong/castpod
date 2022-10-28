@@ -121,13 +121,14 @@ async def save_subscription(update: Update, context: CallbackContext):
                     user=user.id, podcast=podcast
                 )[1]
                 if is_new_podcast:
-                    podcast = await podcast.initialize()
+                    podcast, is_success = await podcast.initialize()
+                    if not is_success:
+                        raise Exception
                     podcast.save()
                 if is_new_subscription:
                     podcasts_count += 1
             except:
-                if podcast:
-                    podcast.delete_instance()
+                podcast.delete_instance()
                 failed_results.append(result)
                 continue
         if podcasts_count:
@@ -156,7 +157,8 @@ async def download_episode(update: Update, context: CallbackContext):
     user = update.effective_user
     reply_msg = await message.reply_text("正在获取节目…")
     match = re.search(r"#([a-z0-9\-]{36})", message.text)
-    if match: episode_id = match[1]
+    if match:
+        episode_id = match[1]
     print(match[1])
     episode = Episode.get(Episode.id == episode_id)
     podcast = episode.from_podcast
@@ -448,7 +450,7 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
                 caption=f"<b>{podcast_name}</b>",
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
-                        "+ 订阅此播客", switch_inline_query_current_chat=f"+{podcast_name}"
+                        "+ 搜索此播客", switch_inline_query_current_chat=f"+{podcast_name}"
                     )
                 ),
             )
@@ -457,7 +459,7 @@ async def subscribe_from_url(update: Update, context: CallbackContext):
                 text=f"<b>{podcast_name}</b>",
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
-                        "+ 订阅此播客", switch_inline_query_current_chat=f"+{podcast_name}"
+                        "+ 搜索此播客", switch_inline_query_current_chat=f"+{podcast_name}"
                     )
                 ),
             )

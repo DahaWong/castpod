@@ -1,4 +1,4 @@
-from ..utils import search_itunes, send_error_message
+from ..utils import search_itunes
 from telegram import (
     InlineQueryResultArticle,
     InlineQueryResultCachedAudio,
@@ -72,7 +72,7 @@ async def search_subscription(update: Update, context):
 async def search_new_podcast(update: Update, context):
     inline_query = update.inline_query
     keywords = inline_query.query[1:]
-    results = []
+    results = np.empty(1)
     if not keywords:
         results = [
             InlineQueryResultArticle(
@@ -141,20 +141,28 @@ async def search_all_episode(update: Update, context):
                 InlineQueryResultArticle(
                     id=uuid4(),
                     title="请输入关键词来搜索单集…",
-                    description=f"比如你手边的那本书，或是昨天刚看的电影？",
-                    input_message_content=InputTextMessageContent("/search"),
+                    description=f"{manifest.name} 会在已订阅的所有播客里寻找相关单集",
+                    input_message_content=InputTextMessageContent("/episodes"),
                 )
             ],
             auto_pagination=True,
         )
         return
+    subscribed_podcasts = (
+        Podcast.select()
+        .join(UserSubscribePodcast)
+        .where(UserSubscribePodcast.user == update.effective_user.id)
+    )
+
     episodes = (
         Episode.select()
         .join(Shownotes)
         .join(ShownotesIndex, on=(Shownotes.id == ShownotesIndex.rowid))
         .where(ShownotesIndex.match(keywords))
         .order_by(ShownotesIndex.rank())
+        .where(Episode.from_podcast.in_(subscribed_podcasts))
     )
+
     if episodes.count():
         await inline_query.answer(
             [
