@@ -48,7 +48,7 @@ def register_handlers(application):
             ),
             MessageHandler(
                 filters.ChatType.PRIVATE & filters.Entity("url"),
-                message.subscribe_feed,
+                message.subscribe_by_feed_url,
             ),
             MessageHandler(
                 filters.Regex(
@@ -69,7 +69,7 @@ def register_handlers(application):
                     | filters.Document.MimeType("application/xml")
                     | filters.Document.FileExtension("opm")
                 ),
-                message.save_subscription,
+                message.subscribe_by_opml,
                 block=False,
             ),
             MessageHandler(

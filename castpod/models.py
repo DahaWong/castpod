@@ -81,6 +81,7 @@ class Podcast(BaseModel):
     feed = TextField(unique=True)
     name = CharField(null=True, max_length=64)
     language = CharField(null=True, max_length=11)  # max length eg. {3}-{3}-{3}
+    description = TextField(null=True)
     logo = ForeignKeyField(Logo, null=True)
     host = TextField(null=True)
     website = TextField(null=True)
@@ -397,8 +398,10 @@ def parse_episode(item, podcast):
     if len(excerpt) >= 47:
         excerpt = excerpt[:47] + "…"
     episode["subtitle"] = unescape(item.get("subtitle") or excerpt or "")
-    episode["published_time"] = datetime.fromtimestamp(mktime(item.created_parsed))
-    episode["updated_time"] = datetime.fromtimestamp(mktime(item.updated_parsed))
+    episode["published_time"] = datetime.fromtimestamp(
+        mktime(item.get("created_parsed") or item.get("updated_parsed"))
+    )
+    episode["updated_time"] = datetime.fromtimestamp(mktime(item.get("updated_parsed")))
     return episode, shownotes
 
 
@@ -482,12 +485,21 @@ def filter_subscription(user_id, keywords):
     return podcasts
 
 
-def show_subscription(user_id):
+def get_subscription(user_id):
     # TODO: 检查这里的查询是不是限制在了本用户之内？
     podcasts = (
         Podcast.select().join(UserSubscribePodcast).join(User).where(User.id == user_id)
     )
     return podcasts
+
+
+def select_episodes_by_keywords(episodes, keywords: str):
+    return (
+        episodes.join(Shownotes)
+        .join(ShownotesIndex, on=(Shownotes.id == ShownotesIndex.rowid))
+        .where(ShownotesIndex.match(keywords))
+        .order_by(ShownotesIndex.rank())
+    )
 
 
 def store_shownotes(shownotes: Shownotes):

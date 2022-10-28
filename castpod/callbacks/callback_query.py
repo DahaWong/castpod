@@ -10,9 +10,8 @@ from castpod.components import PodcastPage
 from castpod.models import (
     User,
     Podcast,
-    Episode,
     UserSubscribePodcast,
-    show_subscription,
+    get_subscription,
 )
 from castpod.utils import generate_opml
 
@@ -35,9 +34,7 @@ async def logout(update: Update, context: CallbackContext):
                     InlineKeyboardButton(
                         text="不，直接删除", callback_data="confirm_delete_account"
                     ),
-                    InlineKeyboardButton(
-                        text="导出订阅", callback_data="export_before_logout"
-                    ),
+                    InlineKeyboardButton(text="导出订阅", callback_data="export"),
                 ],
                 [InlineKeyboardButton(text="返回", callback_data="back_to_help")],
             ]
@@ -179,32 +176,12 @@ async def confirm_unsubscribe(update: Update, context: CallbackContext):
     )
 
 
-async def export_before_logout(update: Update, context: CallbackContext):
-    user = User.validate_user(update.effective_user)
-    message = update.callback_query.message
-    podcasts = Podcast.objects(subscribers__in=[user])
-    if not podcasts:
-        await message.reply_text("还没有订阅播客，请先订阅后导出~")
-        return
-    subscribed_podcasts = Podcast.subscribe_by(user)
-    await message.reply_document(
-        filename=f"castpod-{date.today()}.xml",
-        document=generate_opml(user, subscribed_podcasts),
-        reply_markup=InlineKeyboardMarkup.from_column(
-            [
-                InlineKeyboardButton("继续删除账号", callback_data="confirm_delete_account"),
-                InlineKeyboardButton("返回帮助界面", callback_data="back_to_help"),
-            ]
-        ),
-    )
-
-
 async def export(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     message = update.effective_message
     callback_query = update.callback_query
-    podcasts = show_subscription(user_id)
-    if not podcasts:
+    podcasts = get_subscription(user_id)
+    if not podcasts.count():
         await message.reply_text("还没有订阅播客呢，订阅以后才可以导出")
         return
     await message.reply_document(

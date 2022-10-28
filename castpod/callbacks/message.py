@@ -1,5 +1,7 @@
+import asyncio
 from datetime import timedelta
 import os
+from pprint import pprint
 from zhconv import convert
 from bs4 import BeautifulSoup
 from user_agent import generate_user_agent
@@ -7,15 +9,15 @@ import httpx
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    Message,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
     MessageEntity,
 )
-from telegram.constants import MessageLimit
-from telegram.constants import ChatAction
-from telegram.ext import CallbackContext
-from telegram.error import TimedOut
+from telegram.constants import MessageLimit, ChatAction
+from telegram.ext import CallbackContext, ContextTypes
+from telegram.error import TimedOut, BadRequest
 from mutagen import File
 from PIL import Image
 from telegram.constants import MessageLimit
@@ -47,109 +49,109 @@ async def delete_message(update: Update, context: CallbackContext):
     await update.message.delete()
 
 
-async def subscribe_feed(update: Update, context: CallbackContext):
-    message = update.message
-    chat_type = update.effective_chat.type
-    await message.delete()
-    urls = message.parse_entities([MessageEntity.URL]).values()
-    thumbnail_large = thumbnail_small = None
-    if len(urls) == 3:
-        feed, thumbnail_large, thumbnail_small = urls
-    else:
-        feed = list(urls)[0]
-    await message.reply_chat_action(action=ChatAction.TYPING)
-    reply_msg = await message.reply_text(f"订阅中…")
-    feed = re.sub(r"^https?:\/\/", "", feed).lower()  # normalize
-    podcast, is_new_podcast = Podcast.get_or_create(feed=feed)
-    user = User.get(User.id == update.effective_user.id)
+async def subscribe_podcast(user_id: int, feed_url: str):
+    # create-then-delete is a duplicated action, should be combined
+    podcast, is_new_podcast = Podcast.get_or_create(
+        feed=re.sub(r"https?:\/\/", "", feed_url).lower()
+    )
     try:
         if is_new_podcast:
             podcast, is_success = await podcast.initialize()
             if not is_success:
                 raise Exception
             podcast.save()
-            logo = podcast.logo
-            logo.thumb_url = thumbnail_small
-            logo.save()
-        UserSubscribePodcast.get_or_create(user=user, podcast=podcast)
-        in_group = (chat_type == "group") or (chat_type == "supergroup")
-        kwargs = {"mode": "group"} if in_group else {}
-        podcast_page = PodcastPage(podcast, **kwargs)
-        logo = podcast.logo
-        if logo:
-            photo = logo.file_id or thumbnail_large or logo.url
-            msg = await message.reply_photo(
-                photo=photo,
-                caption=podcast_page.text(),
-                reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
-            )
-            if not logo.file_id:
-                podcast.logo.file_id = msg.photo[0].file_id
-                podcast.logo.save()
-                # TODO:then delete the local logo file.
-        else:
-            await message.reply_text(
-                text=podcast_page.text(),
-                reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
-            )
-        await reply_msg.delete()
     except Exception as e:
-        await reply_msg.edit_text("订阅失败 :(")
         podcast.delete_instance()
-        raise e
+        print(e)
+        return None, False
+
+    is_new_subscription = UserSubscribePodcast.get_or_create(
+        user=user_id, podcast=podcast
+    )[1]
+    return podcast, is_new_subscription
 
 
-async def save_subscription(update: Update, context: CallbackContext):
+async def subscribe_by_feed_url(update: Update, context: CallbackContext):
+    message = update.message
+    await message.delete()
+    urls = message.parse_entities([MessageEntity.URL]).values()
+    thumbnail_large = thumbnail_small = None
+    if len(urls) == 3:  # TODO: dangerous!!
+        feed, thumbnail_large, thumbnail_small = urls
+    else:
+        feed = list(urls)[0]
+    await message.reply_chat_action(action=ChatAction.TYPING)
+    reply_msg = await message.reply_text(f"订阅中…")
+    feed = re.sub(r"^https?:\/\/", "", feed).lower()  # normalize
+    podcast, is_new_subscription = await subscribe_podcast(
+        update.effective_user.id, feed
+    )
+    if not podcast:
+        await reply_msg.edit_text("订阅失败 :(")
+        return
+    logo = podcast.logo
+    logo.thumb_url = thumbnail_small
+    logo.save()
+    podcast_page = PodcastPage(podcast)
+    photo = logo.file_id or thumbnail_large or logo.url
+    try:
+        msg = await message.reply_photo(
+            photo=photo,
+            caption=podcast_page.text(),
+            reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
+        )
+        if not logo.file_id:
+            logo.file_id = msg.photo[0].file_id
+            logo.save()
+            # TODO:then delete the local logo file.
+    except:
+        await message.reply_text(
+            text=podcast_page.text(),
+            reply_markup=InlineKeyboardMarkup(podcast_page.keyboard()),
+        )
+    await reply_msg.delete()
+
+
+async def subscribe_by_opml(update: Update, context: CallbackContext):
     # TODO: use asyncio, and use multiple subscribe feed in sql.
     message = update.message
     user = update.effective_user
     # TODO: add progress
-    reply_msg = await message.reply_text("正在解析订阅文件…")
-    podcasts_count = 0
+    reply_msg = await message.reply_text("正在读取订阅文件…")
     try:
         results = await parse_doc(context, user, message.document)
-        failed_results = []
-        for result in results:
-            podcast = None
-            url = result["url"]
-            print(result["name"])
-            try:
-                podcast, is_new_podcast = Podcast.get_or_create(
-                    feed=re.sub(r"https?:\/\/", "", url).lower()
+        tasks = []
+        async with asyncio.TaskGroup() as tg:
+            for result in results:
+                feed_url = result["url"]
+                task = tg.create_task(
+                    subscribe_podcast(update.effective_user.id, feed_url)
                 )
-                is_new_subscription = UserSubscribePodcast.get_or_create(
-                    user=user.id, podcast=podcast
-                )[1]
-                if is_new_podcast:
-                    podcast, is_success = await podcast.initialize()
-                    if not is_success:
-                        raise Exception
-                    podcast.save()
-                if is_new_subscription:
-                    podcasts_count += 1
-            except:
-                podcast.delete_instance()
-                failed_results.append(result)
-                continue
-        if podcasts_count:
-            newline = "\n"
+                task.add_done_callback(tasks.append(task))
+        success = list(
+            filter(lambda task: task.result()[0] and task.result()[1], tasks)
+        )
+        # fail = filter(lambda x: x[0] != None and x[1] == False, subscription_results)
+        if len(success):
+            # newline = "\n"
             await message.reply_text(
-                f"成功订阅 {podcasts_count} 部播客！"
-                if not len(failed_results)
-                else (
-                    f"成功订阅 {podcasts_count} 部播客，部分订阅源解析失败。"
-                    f"\n\n订阅失败的源："
-                    # TODO:use Reduce ?
-                    f"""\n{newline.join([f"- <code><a href='{result['url']}'>{result['name']}</a></code>" for result in failed_results])}"""
-                )
+                # TODO: consider no new subscriptions.
+                f"成功订阅 {len(success)} 部播客！"
+                # if not len(fail)
+                # else (
+                #     f"成功订阅 {podcasts_count} 部播客，部分订阅源解析失败。"
+                #     f"\n\n订阅失败的源："
+                #     # TODO:use Reduce ?
+                #     f"""\n{newline.join([f"- <code><a href='{podcast.feed}'>{podcast.name}</a></code>" for podcast in fail])}"""
+                # )
             )
         else:
-            await message.reply_text("没有检测到需要订阅的节目~")
-        await reply_msg.delete()
+            await message.reply_text("没有检测到需要订阅的节目，或者订阅源中链接损坏~")
     except Exception as e:
-        await reply_msg.delete()
         await send_error_message(user, "订阅失败 :( \n\n请检查订阅文件，以及其中的订阅源是否受损")
         raise e
+    finally:
+        await reply_msg.delete()
 
 
 async def download_episode(update: Update, context: CallbackContext):
@@ -165,7 +167,7 @@ async def download_episode(update: Update, context: CallbackContext):
     logo = episode.logo
     get_shownotes = episode.shownotes
     shownotes = episode.shownotes[0] if get_shownotes else None
-    # todo:not only mp3??
+    # todo:not only mp3??and should reject mp4
     audio_local_path = validate_path(f"public/audio/{podcast.id}/{episode.id}.mp3")
     logo_path = validate_path(f"public/logo/{podcast.id}/{logo.id}.jpeg")
     timeline = ""

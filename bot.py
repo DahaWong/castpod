@@ -1,4 +1,3 @@
-import asyncio
 from telegram import (
     BotCommandScopeAllChatAdministrators,
     BotCommandScopeAllPrivateChats,
@@ -17,7 +16,6 @@ async def post_init(application: Application) -> None:
     # await bot.log_out()
     # await bot.delete_webhook()
     # await bot.close()
-    # Init commands
     await bot.set_my_commands(
         commands=config.private_commands, scope=BotCommandScopeAllPrivateChats()
     )
@@ -29,13 +27,10 @@ async def post_init(application: Application) -> None:
     )
 
 
-# my_request = MyRequest()
-
 application = (
     ApplicationBuilder()
     .token(config.bot_token)
     .defaults(config.defaults)
-    # .request(my_request)
     .base_url(config.bot_api)
     .post_init(post_init)
     .write_timeout(180)
@@ -56,9 +51,6 @@ application.run_webhook(
     max_connections=80,
     drop_pending_updates=True,
 )
-
-# asyncio.run(search_podcast("一天世界"))
-# asyncio.run(lookup_episode("35jDuTZXlOlyScHabBhmUk"))
 
 # Polling:
 # application.run_polling()

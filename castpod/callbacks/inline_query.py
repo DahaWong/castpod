@@ -16,7 +16,8 @@ from ..models import (
     Podcast,
     UserSubscribePodcast,
     filter_subscription,
-    show_subscription,
+    select_episodes_by_keywords,
+    get_subscription,
 )
 import datetime
 from ..constants import SHORT_DOMAIN
@@ -61,7 +62,7 @@ async def search_subscription(update: Update, context):
     user_id = update.effective_user.id
     subscription_empty = False
     if not keywords:
-        podcasts = show_subscription(user_id)
+        podcasts = get_subscription(user_id)
         subscription_empty = True
     else:
         podcasts = filter_subscription(user_id, keywords)
@@ -72,7 +73,7 @@ async def search_subscription(update: Update, context):
 async def search_new_podcast(update: Update, context):
     inline_query = update.inline_query
     keywords = inline_query.query[1:]
-    results = np.empty(1)
+    results = []
     if not keywords:
         results = [
             InlineQueryResultArticle(
@@ -153,14 +154,8 @@ async def search_all_episode(update: Update, context):
         .join(UserSubscribePodcast)
         .where(UserSubscribePodcast.user == update.effective_user.id)
     )
-
-    episodes = (
-        Episode.select()
-        .join(Shownotes)
-        .join(ShownotesIndex, on=(Shownotes.id == ShownotesIndex.rowid))
-        .where(ShownotesIndex.match(keywords))
-        .order_by(ShownotesIndex.rank())
-        .where(Episode.from_podcast.in_(subscribed_podcasts))
+    episodes = select_episodes_by_keywords(Episode.select(), keywords).where(
+        Episode.from_podcast.in_(subscribed_podcasts)
     )
 
     if episodes.count():
@@ -211,7 +206,22 @@ async def search_episode(update: Update, context):
     inline_query = update.inline_query
     match = re.search(r"(.*?)#(.*)", inline_query.query)
     name, index = match[1], match[2]
-    podcast = Podcast.get(Podcast.name == name)
+    results = []
+    try:
+        podcast = Podcast.get(Podcast.name == name)
+    except:
+        results = [
+            InlineQueryResultArticle(
+                id=uuid4(),
+                title="该播客不存在~",
+                description="换个播客名字试试",
+                input_message_content=InputTextMessageContent("🔍"),
+                reply_markup=InlineKeyboardMarkup.from_button(
+                    InlineKeyboardButton("返回搜索栏", switch_inline_query_current_chat="")
+                ),
+            )
+        ]
+        return
     results = show_episodes(podcast, index)
     await inline_query.answer(
         list(results),
@@ -249,19 +259,13 @@ def show_episodes(podcast, index):
                     title="超出检索范围",
                     input_message_content=InputTextMessageContent(":("),
                     description="当前播客只有一期节目"
-                    if podcast.episodes.count() == 1
+                    if episodes.count() == 1
                     else f"请输入 1 ～ {len(episodes)} 之间的数字",
                 )
                 return
         else:
-            episodes = Episode.select().where(
-                (Episode.from_podcast == podcast.id)
-                & (
-                    Episode.title.contains(index)
-                    | Episode.title.contains(convert(index, "zh-hant"))
-                )
-            )
-            if not episodes:
+            episodes = select_episodes_by_keywords(episodes, index)
+            if not episodes.count():
                 yield InlineQueryResultArticle(
                     id=uuid4(),
                     title="没有找到相关的节目",

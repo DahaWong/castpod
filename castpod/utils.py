@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 import errno
 import os
 import re
@@ -91,12 +91,12 @@ def generate_opml(podcasts):
         "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
         "\t<opml version='1.0'>\n"
         "\t\t<head>\n"
-        f"\t\t\t<title>Castpod 订阅 {date.today()}</title>\n"
+        f"\t\t\t<dateCreated>{datetime.isoformat(datetime.now())}</dateCreated>\n"
+        f"\t\t\t<title>Castpod 播客订阅合集 {date.today()}</title>\n"
         "\t\t</head>\n"
         "\t\t<body>\n"
-        "\t\t\t<outline text='feeds'>\n"
     )
-    tail = "\t\t\t</outline>\n" "\t\t</body>\n" "\t</opml>\n"
+    tail = "\t\t</body>\n\t</opml>\n"
     opml = "".join([head, body, tail])
     path = f"public/subscriptions/castpod-{date.today()}.xml"
     with open(path, "w+") as f:
