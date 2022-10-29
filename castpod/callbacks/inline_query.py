@@ -228,7 +228,7 @@ async def search_episode(update: Update, context):
         list(results),
         auto_pagination=True,
         # cache_time=10,
-        cache_time=3600,
+        cache_time=1800,
     )
 
 

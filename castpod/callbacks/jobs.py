@@ -15,8 +15,6 @@ async def update_episodes(context: ContextTypes.DEFAULT_TYPE):
     except ExceptionGroup as eg:
         for err in eg.exceptions:
             pprint(err)
-    finally:
-        await context.bot.send_message(manifest.dev_id, "updated!")
 
 
 # TODO: complete this after code refactoring.

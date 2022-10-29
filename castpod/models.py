@@ -152,26 +152,33 @@ class Podcast(BaseModel):
         if not entries:
             return
         with db.atomic():
+            current_guids = [e.guid for e in Episode.select()]
+            # pprint(current_guids)
             # TODO: can use Model.insert_many() stead, but must refactor the shownotes data first
             for item in entries:
                 # print("...")
-                kwargs, shownotes = parse_episode(item, self)
-                try:
-                    episode = Episode.create(**kwargs, is_downloaded=False)
-                    print(f"{self.name} {episode.published_time}：{episode.title}")
-                    if shownotes:
+                new_episode, shownotes = parse_episode(item, self)
+                # print(new_episode["guid"])
+                if new_episode["guid"] not in current_guids:
+                    new_episode["is_downloaded"] = False
+                    episode = Episode.create(**new_episode)
+                    # print(f"{self.name} {episode.published_time}：{episode.title}")
+                    if shownotes and episode:
                         shownotes.episode = episode
                         shownotes.save()
                         store_shownotes(shownotes)
-                except IntegrityError:
-                    continue
         return self
 
 
 class Episode(BaseModel):
     id = UUIDField(primary_key=True)
     # link = TextField(null=True, unique=True)  # some sites also call it 'guid'
-    link = TextField(null=True, unique=True)  # some sites also call it 'guid'
+    link = TextField(
+        null=True
+    )  # feedparser use 'guid' as link if link is not specified, so notice that a link is not always conform to url format.
+    guid = TextField(
+        null=False
+    )  # globally uid, but can'be considered unique among other feeds
     from_podcast = ForeignKeyField(Podcast, backref="episodes", on_delete="CASCADE")
     title = TextField(null=True)
     subtitle = TextField(null=True)
@@ -179,13 +186,14 @@ class Episode(BaseModel):
     logo = ForeignKeyField(Logo, null=True)
     published_time = DateTimeField(null=True)
     updated_time = DateTimeField(null=True)
+    # added_time = DateTimeField(default=datetime.today())
     message_id = IntegerField(null=True)
     file_id = TextField(null=True)
     url = TextField(null=True)  # audio file url
     performer = TextField(null=True)
     size = IntegerField(null=True)
     duration = IntegerField(null=True)
-    is_downloaded = BooleanField(default=True)  # remove this
+    is_downloaded = BooleanField(default=True)
 
 
 class Shownotes(BaseModel):
@@ -343,9 +351,34 @@ def db_init():
             GroupPodcast,
         ]
     )
-    # p = Podcast.get(Podcast.name == None)
-    # print(p.name)
-    # p.delete_instance()
+    # ps = Podcast.select()
+    # ua = generate_user_agent(os="linux", device_type="desktop")
+    # for p in ps:
+    #     res = httpx.get(
+    #         "https://" + p.feed,
+    #         follow_redirects=True,
+    #         headers={"User-Agent": ua},
+    #     )
+    #     r = feedparser.parse(res.content)
+    #     entries = r.entries
+    #     es = []
+    #     for e in p.episodes:
+    #         guid = [
+    #             en.get("id") or en.get("link") or en.get("guid")
+    #             for en in entries
+    #             if en.get("title") == e.title
+    #         ]
+    #         if not guid:
+    #             continue
+    #         e.guid = guid[0]
+    #         print(e.title)
+    #         print(e.guid)
+    #         e.save()
+    #         es.append(e)
+    #     with db.atomic():
+    #         Episode.bulk_update(es, fields=['link'], batch_size=50)
+    #     print(f"{p.name} 完成！")
+
     # Construct index
     # ShownotesIndex.drop_table()
     # shownotes = Shownotes.select()
@@ -366,11 +399,11 @@ async def parse_feed(url, etag="", if_modified_since=""):
     }
     async with httpx.AsyncClient() as client:
         res = await client.get(url, follow_redirects=True, timeout=10, headers=headers)
-    print(res.status_code)
+    # print(res.status_code)
     if res.status_code != httpx.codes.OK:
         return
     result = feedparser.parse(res.content)
-    print(result.feed.title)
+    # print(result.feed.title)
     feed = result.feed
     podcast = {}
     if not result.entries:
@@ -421,7 +454,7 @@ def parse_episode(item, podcast):
 
     episode["duration"] = set_duration(item.get("itunes_duration"))
     episode["link"] = item.get("link")
-    print(episode["link"])
+    episode["guid"] = item.get("id") or episode["link"]
     episode["summary"] = unescape(item.get("summary") or "")
     # TODO: error
     shownotes_content = (

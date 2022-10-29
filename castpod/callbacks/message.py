@@ -259,9 +259,8 @@ async def download_episode(update: Update, context: CallbackContext):
             else caption
         )
         audio_msg = await message.reply_audio(
-            # audio=audio_local_path,
-            # audio=open(audio_local_path, "rb"),  # TODO:why doesn't work??
-            audio=episode.file_id or audio_local_path,
+            audio=open(audio_local_path, "rb"),  # TODO:why doesn't work??
+            # audio=episode.file_id or audio_local_path,
             caption=caption,
             reply_markup=markup,
             title=episode.title,

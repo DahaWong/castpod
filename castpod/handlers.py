@@ -85,7 +85,9 @@ def register_handlers(application):
                 inline_query.search_new_podcast, chat_types=[Chat.SENDER], pattern="^\+"
             ),
             InlineQueryHandler(
-                inline_query.search_episodes_by_date, chat_types=[Chat.SENDER], pattern="^\@"
+                inline_query.search_episodes_by_date,
+                chat_types=[Chat.SENDER],
+                pattern="^\@",
             ),
             InlineQueryHandler(
                 inline_query.search_all_episode,
