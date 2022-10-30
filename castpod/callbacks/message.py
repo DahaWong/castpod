@@ -51,11 +51,13 @@ async def delete_message(update: Update, context: CallbackContext):
 
 async def subscribe_podcast(user_id: int, feed_url: str):
     # create-then-delete is a duplicated action, should be combined
+    print(re.sub(r"https?:\/\/", "", feed_url).lower())
     podcast, is_new_podcast = Podcast.get_or_create(
         feed=re.sub(r"https?:\/\/", "", feed_url).lower()
     )
     try:
         if is_new_podcast:
+            print("is_new!")
             podcast, is_success = await podcast.initialize()
             if not is_success:
                 raise Exception
@@ -259,8 +261,7 @@ async def download_episode(update: Update, context: CallbackContext):
             else caption
         )
         audio_msg = await message.reply_audio(
-            audio=open(audio_local_path, "rb"),  # TODO:why doesn't work??
-            # audio=episode.file_id or audio_local_path,
+            audio=episode.file_id or open(audio_local_path, "rb"),
             caption=caption,
             reply_markup=markup,
             title=episode.title,

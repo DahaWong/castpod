@@ -12,12 +12,13 @@ public/*
 *.xml
 *.opml
 dump/
+sample/
 
 # Dev
 test.py
 requirements-dev
 *.code-workspace
-
+.python-version
 # db
 *.db
 *.db-shm

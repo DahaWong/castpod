@@ -31,6 +31,7 @@ def register_handlers(application):
             CommandHandler("episodes", command.search_episodes, block=False),
             CommandHandler("help", command.show_help_info, block=False),
             CommandHandler("about", command.about, block=False),
+            CommandHandler("spotify", command.connect_spotify, block=False),
             # MessageHandler(
             #     filters.AUDIO & filters.UpdateType.EDITED, message.pin_audio
             # ),
@@ -119,4 +120,4 @@ def register_handlers(application):
 
     for handler in handlers:
         application.add_handler(handler)
-    # application.add_error_handler(error.handle_error)
+    application.add_error_handler(error.handle_error)

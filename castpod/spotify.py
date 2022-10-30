@@ -3,11 +3,13 @@ import base64
 import json
 import httpx
 import config
-
+from uuid import UUID, uuid4
+from manifest import manifest
 
 # import config
 
 root = "https://api.spotify.com/v1"
+REDIRECT_URL = f"https://t.me/{manifest.bot_id}?start=spotify"
 
 
 async def get_access_token() -> str:
@@ -23,6 +25,19 @@ async def get_access_token() -> str:
     token = json.loads(res.content)["access_token"]
     # print(token)
     return token
+
+
+def make_authorize_url(scope: str, state: UUID):
+    # TODO: use pickle persistence
+    url = (
+        "https://accounts.spotify.com/authorize?"
+        f"response_type=code&"
+        f"client_id={config.client_id}&"
+        f"scope={scope}&"
+        f"redirect_uri={REDIRECT_URL}&"
+        f"state={state}"
+    )
+    return url
 
 
 def make_headers(token: str) -> dict:

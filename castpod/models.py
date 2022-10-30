@@ -173,6 +173,7 @@ class Podcast(BaseModel):
 class Episode(BaseModel):
     id = UUIDField(primary_key=True)
     # link = TextField(null=True, unique=True)  # some sites also call it 'guid'
+    # TODO: link is still unique now, need to duplicate the column to reconstruct it.
     link = TextField(
         null=True
     )  # feedparser use 'guid' as link if link is not specified, so notice that a link is not always conform to url format.
@@ -240,13 +241,20 @@ class Shownotes(BaseModel):
             author_name=manifest.name,
             author_url=manifest.author_url,
         )
+        pprint(self.content)
         content = format_html(self.content)
+        pprint(content)
         self.content = content
         episode = self.episode
         podcast = episode.from_podcast
         logo_url = episode.logo.url or podcast.logo.url
         episode_link = episode.link
-        if not re.search(SHORT_DOMAIN, episode_link):
+        print(episode.link or "None!!!")
+        print(episode.guid)
+        match = None
+        if episode.link:
+            match = re.search(SHORT_DOMAIN, episode_link)
+        if not (episode_link and match):
             episode_link = podcast.website
         date_content = f"<p><blockquote><a href='{episode_link}'>{podcast.name}</a> 发布于 {episode.updated_time.date()}</blockquote></p>"
         img_content = (
@@ -256,6 +264,8 @@ class Shownotes(BaseModel):
         )
         content = "".join([date_content, content, img_content])
         content = content.replace("\n", "<br />")
+        pprint(content)
+        content = content.replace("<br>", "<br />")
         metadata = {
             "title": f"{podcast.name} · {episode.title}",
             "author_name": f"{manifest.name} Bot",
@@ -378,7 +388,8 @@ def db_init():
     #     with db.atomic():
     #         Episode.bulk_update(es, fields=['link'], batch_size=50)
     #     print(f"{p.name} 完成！")
-
+    # p = Podcast.delete().where(Podcast.name == "得意忘形播客").execute()
+    # print(p)
     # Construct index
     # ShownotesIndex.drop_table()
     # shownotes = Shownotes.select()
@@ -386,6 +397,8 @@ def db_init():
     #     print(s.episode.title)
     #     store_shownotes(s)
     # print("done!!!!!!!!")
+    # c=Shownotes.delete().where(Shownotes.episode==None).execute()
+    # print(c)
     ShownotesIndex.rebuild()
     ShownotesIndex.optimize()
 
@@ -527,8 +540,8 @@ def format_html(text):
         "li",
     }
     for tag in soup.find_all():
-        if tag.name not in ALLOWED_TAGS or (
-            tag.name not in ALLOWED_VOID_TAGS and len(tag.get_text()) == 0
+        if (tag.name not in ALLOWED_TAGS) or (
+            (tag.name not in ALLOWED_VOID_TAGS) and len(tag.get_text()) == 0
         ):
             tag.unwrap()
     return str(soup)
@@ -578,7 +591,7 @@ def store_shownotes(shownotes: Shownotes):
     content_hans = convert(content, "zh-hans")
     title_hant = convert(title, "zh-hant")
     content_hant = convert(content, "zh-hant")
-    print(shownotes.id)
+    # print(shownotes.id)
     c = ShownotesIndex.insert(
         {
             ShownotesIndex.rowid: shownotes.id,
@@ -588,4 +601,4 @@ def store_shownotes(shownotes: Shownotes):
             ShownotesIndex.content_hant: content_hant,
         }
     ).execute()
-    print(c)
+    # print(c)

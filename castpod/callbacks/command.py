@@ -1,4 +1,5 @@
 import re
+from uuid import uuid4
 
 from telegram import (
     InlineKeyboardButton,
@@ -13,6 +14,7 @@ from castpod.components import PodcastPage
 from castpod.models import Episode, Podcast, User, UserSubscribePodcast
 from config import manifest
 from manifest import manifest
+import castpod.spotify as spotify
 
 
 async def start(update: Update, context):
@@ -34,6 +36,10 @@ async def start(update: Update, context):
     elif not context.args:
         await message.reply_text("欢迎回来！")
         return
+
+    if context.args:
+        if context.args[0].startswith("spotify"):
+            print(context.args)
 
     # if subscribing podcast via deep link:
     if context.args and context.args[0] != "login":
@@ -169,4 +175,17 @@ async def show_help_info(update: Update, context: CallbackContext):
                 InlineKeyboardButton("导出订阅", callback_data="export"),
             ]
         ),
+    )
+
+
+async def connect_spotify(update: Update, context: CallbackContext):
+    state = uuid4()
+    context.chat_data["spotify_authorize_state"] = state
+    scope = "user-read-playback-position"
+    button = InlineKeyboardButton(
+        text="前往 Spotify", url=spotify.make_authorize_url(scope, state)
+    )
+    await update.message.reply_text(
+        text="点击下方的按钮以关联你的 Spotify 账号：",
+        reply_markup=InlineKeyboardMarkup.from_button(button),
     )
