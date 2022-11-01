@@ -10,6 +10,7 @@ config.read("config.ini")  # Read the configuration file on your machine.
 # Bot
 bot_token = config["BOT"]["TOKEN"]
 bot_api = config["BOT"]["API"]
+callback_url = config["BOT"]["CALLBACK_URL"]
 # podcast_vault = config["BOT"]["PODCAST_VAULT"]
 defaults = Defaults(parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
@@ -21,6 +22,12 @@ dev_email = config["DEV"]["EMAIL"]
 # Spotify
 client_id = config["SPOTIFY"]["CLIENT_ID"]
 client_secret = config["SPOTIFY"]["CLIENT_SECRET"]
+
+# Wit.ai
+class Wit(object):
+    wit = config["WIT"]
+    client_tokens = {"zh": wit["CLIENT_TOKEN"], "jp": wit["CLIENT_TOKEN_JP"]}
+
 
 # Path
 EXT_PATH = config["SQL"]["EXT_PATH"]

@@ -1,5 +1,6 @@
+import random
 import re
-from uuid import uuid4
+import string
 
 from telegram import (
     InlineKeyboardButton,
@@ -38,8 +39,9 @@ async def start(update: Update, context):
         return
 
     if context.args:
-        if context.args[0].startswith("spotify"):
-            print(context.args)
+        if context.args[0].startswith("spotify_"):
+            context.chat_data.pop(["spotify_authorize_state"])
+            await update.message.reply_text(context.args[0])
 
     # if subscribing podcast via deep link:
     if context.args and context.args[0] != "login":
@@ -178,8 +180,13 @@ async def show_help_info(update: Update, context: CallbackContext):
     )
 
 
+def random_word():
+    letters = string.ascii_lowercase
+    return "".join(random.choice(letters) for _ in range(4))
+
+
 async def connect_spotify(update: Update, context: CallbackContext):
-    state = uuid4()
+    state = random_word()
     context.chat_data["spotify_authorize_state"] = state
     scope = "user-read-playback-position"
     button = InlineKeyboardButton(

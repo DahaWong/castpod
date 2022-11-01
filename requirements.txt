@@ -9,3 +9,5 @@ lxml
 pypinyin
 zhconv
 user-agent
+python-magic # which needs the libmagic C library installed on your machine, see https://github.com/ahupp/python-magic
+pydub

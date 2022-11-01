@@ -4,12 +4,11 @@ import json
 import httpx
 import config
 from uuid import UUID, uuid4
-from manifest import manifest
 
 # import config
 
 root = "https://api.spotify.com/v1"
-REDIRECT_URL = f"https://t.me/{manifest.bot_id}?start=spotify"
+REDIRECT_URL = config.callback_url
 
 
 async def get_access_token() -> str:
@@ -27,7 +26,7 @@ async def get_access_token() -> str:
     return token
 
 
-def make_authorize_url(scope: str, state: UUID):
+def make_authorize_url(scope: str, state: str):
     # TODO: use pickle persistence
     url = (
         "https://accounts.spotify.com/authorize?"
