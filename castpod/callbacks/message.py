@@ -210,11 +210,12 @@ async def download_episode(update: Update, context: CallbackContext):
         await message.reply_chat_action(ChatAction.UPLOAD_VOICE)
         if logo.url:
             ua = generate_user_agent(os="linux", device_type="desktop")
-            res = httpx.get(
-                logo.url,
-                follow_redirects=True,
-                headers={"User-Agent": ua},
-            )
+            async with httpx.AsyncClient() as client:
+                res = await client.get(
+                    logo.url,
+                    follow_redirects=True,
+                    headers={"User-Agent": ua},
+                )
             with open(logo_path, "wb") as f:
                 f.write(res.content)
         with Image.open(logo_path) as im:
