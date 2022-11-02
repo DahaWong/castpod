@@ -530,14 +530,9 @@ def format_html(text):
     # a) Unwrap all unallowed tags and b) Remove all empty tags.
     ALLOWED_VOID_TAGS = {
         "br",
-        "img",
-        "figure",
         "aside",
         "iframe",
-        "ol",
-        "ul",
         "hr",
-        "li",
     }
     for tag in soup.find_all():
         if (tag.name not in ALLOWED_TAGS) or (

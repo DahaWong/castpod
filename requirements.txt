@@ -9,5 +9,5 @@ lxml
 pypinyin
 zhconv
 user-agent
-python-magic # which needs the libmagic C library installed on your machine, see https://github.com/ahupp/python-magic
-pydub
+python-magic # Needs the libmagic C library installed on your machine, see https://github.com/ahupp/python-magic
+pydub # Needs the ffmpeg for mp3 file cutting
