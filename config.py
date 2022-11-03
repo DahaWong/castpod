@@ -53,21 +53,7 @@ group_commands = [
     ("update", "更新节目"),
 ]
 
-
-# Build
-# persistence = PicklePersistence(filename='persistence')
-# update_info = {
-#     'token': bot_token,
-#     'use_context': True,
-#     'persistence': persistence,
-#     'base_url': bot_api,
-#     'defaults': defaults,
-#     'workers': 6
-# }
-
-# Manifest
-
-
+# TODO: refactor
 class manifest:
     name = "Castpod"
     bot_id = "cspdbot"

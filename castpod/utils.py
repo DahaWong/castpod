@@ -40,22 +40,23 @@ def validate_path(path):
 async def streaming_download(path: str, url: str, progress_msg: Message):
     validate_path(path)
     # can it be asynced?
-    async with httpx.AsyncClient() as client:
-        async with client.stream("GET", url, follow_redirects=True) as res:
-            total = int(res.headers["Content-Length"])
-            with open(path, "wb") as f:
-                s = 0
-                for chunk in res.iter_raw(4194304):
-                    s += len(chunk)
-                    percentage = round(s / total * 100)
-                    percentage_hint = str(percentage) + "%"
-                    try:
-                        await progress_msg.edit_text(
-                            f"<pre>{percentage_hint:<4}</pre> | {percentage // 10 * '■' }{(10 - percentage // 10) * '□'}"
-                        )
-                    except BadRequest:
-                        pass
-                    f.write(chunk)
+    client = httpx.AsyncClient()
+    async with client.stream("GET", url, follow_redirects=True) as res:
+        total = int(res.headers["Content-Length"])
+        with open(path, "wb") as f:
+            s = 0
+            async for chunk in res.aiter_raw(4194304):
+                s += len(chunk)
+                percentage = round(s / total * 100)
+                percentage_hint = str(percentage) + "%"
+                try:
+                    await progress_msg.edit_text(
+                        f"<pre>{percentage_hint:<4}</pre> | {percentage // 10 * '■' }{(10 - percentage // 10) * '□'}"
+                    )
+                except BadRequest:
+                    pass
+                f.write(chunk)
+    client.aclose()
     return path
 
 

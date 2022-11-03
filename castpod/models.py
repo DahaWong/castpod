@@ -28,7 +28,7 @@ from peewee import (
 )
 from playhouse.sqlite_ext import SqliteExtDatabase, FTS5Model, SearchField, RowIDField
 from castpod.constants import SHORT_DOMAIN
-from config import manifest
+from config import EXT_PATH, manifest
 
 db = SqliteExtDatabase(
     database="castpod.db",
@@ -106,7 +106,8 @@ class Podcast(BaseModel):
         is_success = True
         if not result:
             result = await parse_feed("http://" + self.feed)
-        if not (result and result["name"]):
+        if not result or not result["name"]:
+            # print(result)
             is_success = False
             return self, is_success
         self.name = result["name"]
@@ -128,9 +129,11 @@ class Podcast(BaseModel):
         with db.atomic():
             for item in result["entries"]:
                 kwargs, shownotes = parse_episode(item, self)
+                print(kwargs["link"])
                 episode = Episode.create(**kwargs)
                 if shownotes:
                     shownotes.episode = episode
+                    print(episode.title)
                     shownotes.save()
                     # print(episode.title)
                     store_shownotes(shownotes)
@@ -172,16 +175,14 @@ class Podcast(BaseModel):
 
 class Episode(BaseModel):
     id = UUIDField(primary_key=True)
-    # link = TextField(null=True, unique=True)  # some sites also call it 'guid'
     # TODO: link is still unique now, need to duplicate the column to reconstruct it.
+    from_podcast = ForeignKeyField(
+        Podcast, backref="episodes", on_delete="CASCADE", null=True
+    )
+    title = TextField(null=True)
     link = TextField(
         null=True
     )  # feedparser use 'guid' as link if link is not specified, so notice that a link is not always conform to url format.
-    guid = TextField(
-        null=False
-    )  # globally uid, but can'be considered unique among other feeds
-    from_podcast = ForeignKeyField(Podcast, backref="episodes", on_delete="CASCADE")
-    title = TextField(null=True)
     subtitle = TextField(null=True)
     summary = TextField(null=True)
     logo = ForeignKeyField(Logo, null=True)
@@ -195,6 +196,9 @@ class Episode(BaseModel):
     size = IntegerField(null=True)
     duration = IntegerField(null=True)
     is_downloaded = BooleanField(default=True)
+    guid = TextField(
+        null=False
+    )  # globally uid, but can'be considered unique among other feeds
 
 
 class Shownotes(BaseModel):
@@ -342,7 +346,7 @@ class GroupPodcast(BaseModel):
 
 def db_init():
     db.connect()
-    # db.load_extension(EXT_PATH + "libsimple")
+    db.load_extension(EXT_PATH + "libsimple")
     db.create_tables(
         [
             User,
@@ -364,6 +368,7 @@ def db_init():
     # ps = Podcast.select()
     # ua = generate_user_agent(os="linux", device_type="desktop")
     # for p in ps:
+    #     print(p.name)
     #     res = httpx.get(
     #         "https://" + p.feed,
     #         follow_redirects=True,
@@ -371,13 +376,19 @@ def db_init():
     #     )
     #     r = feedparser.parse(res.content)
     #     entries = r.entries
-    #     es = []
-    #     for e in p.episodes:
-    #         guid = [
-    #             en.get("id") or en.get("link") or en.get("guid")
-    #             for en in entries
-    #             if en.get("title") == e.title
-    #         ]
+    #     for item in entries:
+    #         try:
+    #             e = Episode.get(Episode.guid==item.get('guid') or item.get('link'))
+    #         except:
+    #             continue
+    #         shownotes_content = (
+    #             item.get("content")[0]["value"]
+    #             if item.get("content")
+    #             else e.summary
+    #         )
+    #         Shownotes.create(content=shownotes_content, episode=e)
+    #         print(e.title)
+    # print('done')
     #         if not guid:
     #             continue
     #         e.guid = guid[0]
@@ -388,8 +399,10 @@ def db_init():
     #     with db.atomic():
     #         Episode.bulk_update(es, fields=['link'], batch_size=50)
     #     print(f"{p.name} 完成！")
-    # p = Podcast.delete().where(Podcast.name == "得意忘形播客").execute()
-    # print(p)
+
+    # e = Episode.select().where(Episode.link == "https://deepmind.com/podcast").execute()
+    # print(e)
+
     # Construct index
     # ShownotesIndex.drop_table()
     # shownotes = Shownotes.select()
@@ -397,8 +410,11 @@ def db_init():
     #     print(s.episode.title)
     #     store_shownotes(s)
     # print("done!!!!!!!!")
+
+    # TODO: check the reason that so many shownotes don't have episodes.
     # c=Shownotes.delete().where(Shownotes.episode==None).execute()
     # print(c)
+
     ShownotesIndex.rebuild()
     ShownotesIndex.optimize()
 
@@ -410,9 +426,11 @@ async def parse_feed(url, etag="", if_modified_since=""):
         "ETag": etag,
         "If-Modified-Since": if_modified_since,
     }
+    # print(url)
     async with httpx.AsyncClient() as client:
         res = await client.get(url, follow_redirects=True, timeout=10, headers=headers)
     # print(res.status_code)
+    # print(res.content)
     if res.status_code != httpx.codes.OK:
         return
     result = feedparser.parse(res.content)

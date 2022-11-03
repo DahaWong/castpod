@@ -51,9 +51,9 @@ async def delete_message(update: Update, context: CallbackContext):
 
 async def subscribe_podcast(user_id: int, feed_url: str):
     # create-then-delete is a duplicated action, should be combined
-    print(re.sub(r"https?:\/\/", "", feed_url).lower())
     podcast, is_new_podcast = Podcast.get_or_create(
-        feed=re.sub(r"https?:\/\/", "", feed_url).lower()
+        feed=re.sub(r"https?:\/\/", "", feed_url)
+        # TODO: lower() the domain part.
     )
     try:
         if is_new_podcast:
@@ -84,7 +84,8 @@ async def subscribe_by_feed_url(update: Update, context: CallbackContext):
         feed = list(urls)[0]
     await message.reply_chat_action(action=ChatAction.TYPING)
     reply_msg = await message.reply_text(f"订阅中…")
-    feed = re.sub(r"^https?:\/\/", "", feed).lower()  # normalize
+    feed = re.sub(r"^https?:\/\/", "", feed)
+    # TODO: lower() the domain part.
     podcast, is_new_subscription = await subscribe_podcast(
         update.effective_user.id, feed
     )

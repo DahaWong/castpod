@@ -27,7 +27,6 @@ async def get_access_token() -> str:
 
 
 def make_authorize_url(scope: str, state: str):
-    # TODO: use pickle persistence
     url = (
         "https://accounts.spotify.com/authorize?"
         f"response_type=code&"
