@@ -164,13 +164,12 @@ async def download_episode(update: Update, context: CallbackContext):
     match = re.search(r"#([a-z0-9\-]{36})", message.text)
     if match:
         episode_id = match[1]
-    print(match[1])
     episode = Episode.get(Episode.id == episode_id)
     podcast = episode.from_podcast
     logo = episode.logo
     get_shownotes = episode.shownotes
     shownotes = episode.shownotes[0] if get_shownotes else None
-    # todo:not only mp3??and should reject mp4
+    # TODO:not only mp3??and should reject mp4 and other not-audio mime format
     audio_local_path = validate_path(f"public/audio/{podcast.id}/{episode.id}.mp3")
     logo_path = validate_path(f"public/logo/{podcast.id}/{logo.id}.jpeg")
     timeline = ""
@@ -262,6 +261,7 @@ async def download_episode(update: Update, context: CallbackContext):
             if len(caption) >= MessageLimit.CAPTION_LENGTH
             else caption
         )
+        print(caption)
         audio_msg = await message.reply_audio(
             audio=episode.file_id or open(audio_local_path, "rb"),
             caption=caption,

@@ -222,7 +222,7 @@ class Shownotes(BaseModel):
                 result = str(result)
                 start_time = re.search(TIME_DELTA, result)[0]
                 start_time = start_time.replace("：", ":")
-                title = re.sub(TIME_DELTA, "", result).strip()
+                title = re.sub(TIME_DELTA, "", result).strip("-").strip()
                 title = re.sub(r"^(?:\(\)|\{\}|\<\>|【】|（|\[]|\||·|)", "", title)
                 Chapter.create(
                     from_episode=self.episode, start_time=start_time, title=title
@@ -399,9 +399,6 @@ def db_init():
     #     with db.atomic():
     #         Episode.bulk_update(es, fields=['link'], batch_size=50)
     #     print(f"{p.name} 完成！")
-
-    # e = Episode.select().where(Episode.link == "https://deepmind.com/podcast").execute()
-    # print(e)
 
     # Construct index
     # ShownotesIndex.drop_table()
