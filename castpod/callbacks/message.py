@@ -261,7 +261,7 @@ async def download_episode(update: Update, context: CallbackContext):
             if len(caption) >= MessageLimit.CAPTION_LENGTH
             else caption
         )
-        print(caption)
+        # print(caption)
         audio_msg = await message.reply_audio(
             audio=episode.file_id or open(audio_local_path, "rb"),
             caption=caption,

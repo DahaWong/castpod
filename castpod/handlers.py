@@ -27,11 +27,11 @@ def register_handlers(application):
     handlers.extend(
         [
             CommandHandler("start", command.start, filters=filters.ChatType.PRIVATE),
-            CommandHandler("search", command.search, block=False),
-            CommandHandler("episodes", command.search_episodes, block=False),
-            CommandHandler("help", command.show_help_info, block=False),
-            CommandHandler("about", command.about, block=False),
-            CommandHandler("spotify", command.connect_spotify, block=False),
+            CommandHandler("search", command.search, ),
+            CommandHandler("episodes", command.search_episodes, ),
+            CommandHandler("help", command.show_help_info, ),
+            CommandHandler("about", command.about, ),
+            CommandHandler("spotify", command.connect_spotify, ),
             # MessageHandler(
             #     filters.AUDIO & filters.UpdateType.EDITED, message.pin_audio
             # ),
@@ -45,7 +45,7 @@ def register_handlers(application):
                 & filters.Entity("url")
                 & filters.Regex(OTHER_URL),
                 message.subscribe_from_url,
-                block=False,
+                
             ),
             MessageHandler(
                 filters.ChatType.PRIVATE & filters.Entity("url"),
@@ -56,7 +56,7 @@ def register_handlers(application):
                     r"#[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}"
                 ),
                 message.download_episode,
-                block=False,
+                
             ),
             MessageHandler(
                 filters.ChatType.PRIVATE
@@ -71,7 +71,7 @@ def register_handlers(application):
                     | filters.Document.FileExtension("opm")
                 ),
                 message.subscribe_by_opml,
-                block=False,
+                
             ),
             MessageHandler(
                 filters.TEXT & filters.VIA_BOT & filters.Regex("[^🔍]"),

@@ -147,7 +147,7 @@ class Podcast(BaseModel):
         )
         if not result:
             result = await parse_feed(
-                "http://" + self.feed, self.etag or "", self.last_modified or ""
+                "https://" + self.feed, self.etag or "", self.last_modified or ""
             )
         if not result:
             return
@@ -170,6 +170,7 @@ class Podcast(BaseModel):
                         shownotes.episode = episode
                         shownotes.save()
                         store_shownotes(shownotes)
+                    print(f"updated: {new_episode['title']}")
         return self
 
 
@@ -412,8 +413,8 @@ def db_init():
     # c=Shownotes.delete().where(Shownotes.episode==None).execute()
     # print(c)
 
-    ShownotesIndex.rebuild()
-    ShownotesIndex.optimize()
+    # ShownotesIndex.rebuild()
+    # ShownotesIndex.optimize()
 
 
 async def parse_feed(url, etag="", if_modified_since=""):
@@ -424,8 +425,13 @@ async def parse_feed(url, etag="", if_modified_since=""):
         "If-Modified-Since": if_modified_since,
     }
     # print(url)
-    async with httpx.AsyncClient() as client:
-        res = await client.get(url, follow_redirects=True, timeout=10, headers=headers)
+    try:
+        async with httpx.AsyncClient() as client:
+            res = await client.get(
+                url, follow_redirects=True, timeout=10, headers=headers
+            )
+    except:
+        return
     # print(res.status_code)
     # print(res.content)
     if res.status_code != httpx.codes.OK:
@@ -453,7 +459,7 @@ async def parse_feed(url, etag="", if_modified_since=""):
     last_modified = res.headers.get("last-modified")
     if last_modified:
         podcast["last_modified"] = datetime.strptime(
-            last_modified, "%a, %d %b %Y %H:%M:%S GMT"
+            last_modified, "%a, %d %b %Y %H:%M:%S %Z"
         )
         # pprint(podcast)
     return podcast

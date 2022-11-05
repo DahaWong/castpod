@@ -35,15 +35,15 @@ app = (
     .base_url(config.bot_api)
     .post_init(post_init)
     .write_timeout(200)
-    .read_timeout(30)
-    .concurrent_updates(True)
+    .read_timeout(60)
+    .concurrent_updates(128)
     .build()
 )
 
 register_handlers(app)
 db_init()
-job_queue: JobQueue = app.job_queue
-job_queue.run_repeating(update_episodes, 900)
+job_queue = app.job_queue
+job_queue.run_repeating(update_episodes, 1800)
 # job_queue.run_repeating(update_episodes, interval=900, first=5)
 # Webhook:
 app.run_webhook(

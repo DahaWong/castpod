@@ -7,6 +7,7 @@ from telegram import (
     InlineKeyboardMarkup,
     Update,
 )
+from telegram.error import BadRequest
 import re
 from ..models import (
     Episode,
@@ -224,12 +225,16 @@ async def search_episode(update: Update, context):
         ]
         return
     results = show_episodes(podcast, index)
-    await inline_query.answer(
-        list(results),
-        auto_pagination=True,
-        # cache_time=10,
-        cache_time=1800,
-    )
+    try:
+        await inline_query.answer(
+            list(results),
+            auto_pagination=True,
+            # cache_time=10,
+            cache_time=1800,
+        )
+    except BadRequest:
+        pass
+
 
 
 async def search_episodes_by_date(update, context):
@@ -440,7 +445,7 @@ async def share_episode(update: Update, context):
                     reply_markup=InlineKeyboardMarkup.from_button(
                         InlineKeyboardButton(
                             f"订阅",
-                            url=f"https://t.me/{manifest.bot_id}?start=podcast_{podcast.id}",
+                            url=f"https://t.me/{manifest.bot_id}?start=podcast_{episode.from_podcast.id}",
                         )
                     ),
                 )

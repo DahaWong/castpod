@@ -6,12 +6,14 @@ from ..models import Episode, Podcast, User, UserSubscribePodcast
 
 
 async def update_episodes(context: ContextTypes.DEFAULT_TYPE):
-    """Check new episodes of all podcasts every 15 minute."""
+    """Check new episodes of all podcasts every 30 minute."""
     podcasts = Podcast.select()
     try:
         async with asyncio.TaskGroup() as tg:
             for podcast in podcasts:
+                print(podcast.name)
                 task = tg.create_task(podcast.update_feed())
+                # await asyncio.shield(task)
     except ExceptionGroup as eg:
         for err in eg.exceptions:
             pprint(err)
