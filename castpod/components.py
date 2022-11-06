@@ -11,7 +11,7 @@ class PodcastPage(object):
         host = f"主播：{self.podcast.host}" if self.podcast.host else ""
         email = f"\n信箱： {self.podcast.email}" if self.podcast.email else ""
         line_break = "\n\n" if host or email else ""
-        return f"<b>{self.podcast.name}</b>{line_break}{host}{email}"
+        return f"#<b>{self.podcast.name}</b>{line_break}{host}{email}"
 
     def keyboard(self):
         if self.mode == "private":

@@ -193,7 +193,7 @@ async def download_episode(update: Update, context: CallbackContext):
             f"\n\n<a href='{shownotes.url}'>📖 本期附录</a>" if shownotes else ""
         )
         await message.reply_text(
-            text=f"<b>{podcast.name}</b>\n{episode.title}{shownotes_text}\n\n{timeline}",
+            text=f"#<b>{podcast.name}</b>\n{episode.title}{shownotes_text}\n\n{timeline}",
             reply_markup=markup,
         )
         await reply_msg.delete()
@@ -254,7 +254,7 @@ async def download_episode(update: Update, context: CallbackContext):
             f"\n\n<a href='{shownotes.url}'>📖 本期附录</a>" if shownotes else ""
         )
         caption = (
-            f"<b>{podcast.name}</b>\n{episode.title}{shownotes_text}\n\n{timeline}"
+            f"#<b>{podcast.name}</b>\n{episode.title}{shownotes_text}\n\n{timeline}"
         )
         caption = (
             caption[: MessageLimit.CAPTION_LENGTH - 1] + "…"

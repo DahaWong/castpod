@@ -128,14 +128,13 @@ class Podcast(BaseModel):
         self.email = result["email"]
         with db.atomic():
             for item in result["entries"]:
-                kwargs, shownotes = parse_episode(item, self)
+                kwargs, shownotes_content = parse_episode(item, self)
                 print(kwargs["link"])
                 episode = Episode.create(**kwargs)
-                if shownotes:
-                    shownotes.episode = episode
-                    print(episode.title)
-                    shownotes.save()
-                    # print(episode.title)
+                if shownotes_content:
+                    shownotes = Shownotes.create(
+                        episode=episode, content=shownotes_content
+                    )
                     store_shownotes(shownotes)
         return self, is_success
 
@@ -160,15 +159,16 @@ class Podcast(BaseModel):
             # TODO: can use Model.insert_many() stead, but must refactor the shownotes data first
             for item in entries:
                 # print("...")
-                new_episode, shownotes = parse_episode(item, self)
+                new_episode, shownotes_content = parse_episode(item, self)
                 # print(new_episode["guid"])
                 if new_episode["guid"] not in current_guids:
                     new_episode["is_downloaded"] = False
                     episode = Episode.create(**new_episode)
                     # print(f"{self.name} {episode.published_time}：{episode.title}")
-                    if shownotes and episode:
-                        shownotes.episode = episode
-                        shownotes.save()
+                    if shownotes_content and episode:
+                        shownotes = Shownotes.create(
+                            episode=episode, content=shownotes_content
+                        )
                         store_shownotes(shownotes)
                     print(f"updated: {new_episode['title']}")
         return self
@@ -212,7 +212,7 @@ class Shownotes(BaseModel):
     def extract_chapters(self):
         INLINE = r"<\/?(?:s|strong|b|em|i|del|u|cite|span|a).*?>"
         content = re.sub(INLINE, "", self.content)
-        # content = re.sub(r"<br *\/>", "\n", self.content)
+        content = re.sub(r"<br *\/?>", "\n", self.content)
         TIME_DELTA = r"(?:[0-9]{1,2}[:：])?[0-9]{1,3}[:：][0-5][0-9]"
         soup = BeautifulSoup(markup=content, features="html.parser")
         results = soup.find_all(string=re.compile(TIME_DELTA))
@@ -229,8 +229,10 @@ class Shownotes(BaseModel):
                     from_episode=self.episode, start_time=start_time, title=title
                 )
         else:
-            CHAPTER_ITEM = r"((?:[0-9]{1,2}[:：'])?[0-9]{1,3}[:：'][0-5][0-9])(.+?)(?=(?:(?:[0-9]{1,2}[:：'])?[0-9]{1,3}[:：'][0-5][0-9])|\n)"
+            CHAPTER_ITEM = r"((?:[0-9]{1,2}[:：'])?[0-9]{1,3}[:：'][0-5][0-9])(.+?)(?:\n|\<br *\/?\>|$)+"
+            # CHAPTER_ITEM = r"((?:[0-9]{1,2}[:：'])?[0-9]{1,3}[:：'][0-5][0-9])(.+?)(?:\n|\<.+?\/?\>|$)+"
             matches = re.finditer(CHAPTER_ITEM, results[0])
+            print(results[0])
             for match in matches:
                 start_time = match[1].replace("：", ":").replace("'", "")
                 title = match[2].lstrip("]】>|｜ ").rstrip("[【<|｜ ")
@@ -389,7 +391,6 @@ def db_init():
     #         )
     #         Shownotes.create(content=shownotes_content, episode=e)
     #         print(e.title)
-    # print('done')
     #         if not guid:
     #             continue
     #         e.guid = guid[0]
@@ -410,11 +411,10 @@ def db_init():
     # print("done!!!!!!!!")
 
     # TODO: check the reason that so many shownotes don't have episodes.
-    # c=Shownotes.delete().where(Shownotes.episode==None).execute()
-    # print(c)
 
     # ShownotesIndex.rebuild()
     # ShownotesIndex.optimize()
+    # print('done')
 
 
 async def parse_feed(url, etag="", if_modified_since=""):
@@ -491,12 +491,12 @@ def parse_episode(item, podcast):
     episode["guid"] = item.get("id") or episode["link"]
     episode["summary"] = unescape(item.get("summary") or "")
     # TODO: error
-    shownotes_content = (
-        item.get("content")[0]["value"] if item.get("content") else episode["summary"]
-    )
-    shownotes = None
-    if shownotes_content:
-        shownotes = Shownotes.create(content=shownotes_content)
+    shownotes_content = ""
+    content = item.get("content")
+    if content and content[0].get("value"):
+        shownotes_content = content[0].get("value").strip()
+    else:
+        shownotes_content = episode["summary"].strip()
     excerpt = re.sub(r"\<.*?\>", "", episode["summary"]).strip()
     if len(excerpt) >= 47:
         excerpt = excerpt[:47] + "…"
@@ -505,7 +505,7 @@ def parse_episode(item, podcast):
         mktime(item.get("created_parsed") or item.get("updated_parsed"))
     )
     episode["updated_time"] = datetime.fromtimestamp(mktime(item.get("updated_parsed")))
-    return episode, shownotes
+    return episode, shownotes_content
 
 
 def set_duration(duration: str) -> int:

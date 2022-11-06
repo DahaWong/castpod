@@ -56,7 +56,7 @@ async def streaming_download(path: str, url: str, progress_msg: Message):
                 except BadRequest:
                     pass
                 f.write(chunk)
-    client.aclose()
+    await client.aclose()
     return path
 
 
